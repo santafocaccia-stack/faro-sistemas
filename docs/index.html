@@ -4,454 +4,1000 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Faro Sistemas — Roadmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #21253a;
-      --border: #2a2d3e;
-      --text: #e2e8f0;
+      --bg-1: #0a0b10;
+      --bg-2: #12141d;
+      --surface: rgba(26, 29, 41, 0.6);
+      --surface-solid: #1a1d29;
+      --border: rgba(99, 102, 241, 0.12);
+      --border-strong: rgba(99, 102, 241, 0.25);
+      --text: #f1f5f9;
+      --text-soft: #cbd5e1;
       --muted: #64748b;
-      --green: #22c55e;
-      --yellow: #eab308;
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.4);
+      --yellow: #f59e0b;
+      --yellow-glow: rgba(245, 158, 11, 0.4);
       --accent: #6366f1;
-      --accent2: #818cf8;
+      --accent2: #a855f7;
+      --pink: #ec4899;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { height: 100%; }
+
     body {
-      background: var(--bg);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.25), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 50%, rgba(168, 85, 247, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(16, 185, 129, 0.1), transparent),
+        linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      background-attachment: fixed;
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+      -webkit-font-smoothing: antialiased;
       min-height: 100vh;
-      padding: 2rem 1rem 4rem;
+      padding: 3rem 1.5rem 5rem;
+      position: relative;
+      overflow-x: hidden;
     }
 
-    .container { max-width: 1000px; margin: 0 auto; }
+    /* Dot grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.07) 1px, transparent 0);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
 
     /* ── Header ── */
     header {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      margin-bottom: 2.5rem;
-      padding-bottom: 1.5rem;
+      gap: 1.25rem;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
       border-bottom: 1px solid var(--border);
     }
+
     .logo {
-      width: 46px; height: 46px;
-      background: linear-gradient(135deg, var(--accent), #a855f7);
-      border-radius: 12px;
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.4rem;
-    }
-    header h1 { font-size: 1.5rem; font-weight: 700; }
-    header p  { color: var(--muted); font-size: 0.875rem; margin-top: 2px; }
-    .updated  {
-      margin-left: auto;
-      font-size: .75rem; color: var(--muted);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 4px 12px; border-radius: 20px;
-    }
-
-    /* ── Barra global ── */
-    .global-bar {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.1rem 1.4rem;
-      margin-bottom: 2.5rem;
-      display: flex; align-items: center; gap: 1rem;
-    }
-    .global-bar span { font-size: .875rem; color: var(--muted); white-space: nowrap; }
-    .bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-    .bar-fill  { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 4px; transition: width .8s cubic-bezier(.4,0,.2,1); }
-    .bar-pct   { font-size: .875rem; font-weight: 700; color: var(--green); white-space: nowrap; }
-
-    /* ── Sección label ── */
-    .section-label {
-      font-size: .7rem; font-weight: 700;
-      letter-spacing: .1em; text-transform: uppercase;
-      color: var(--muted); margin-bottom: 1.25rem;
-    }
-
-    /* ══════════════════════════════════
-       ROADMAP POR FASES
-    ══════════════════════════════════ */
-    .roadmap { margin-bottom: 3rem; }
-
-    .phase {
-      display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 0 2rem;
-      margin-bottom: 2.5rem;
+      font-size: 1.6rem;
+      box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.2);
       position: relative;
     }
-
-    /* línea vertical entre fases */
-    .phase:not(:last-child)::after {
+    .logo::after {
       content: '';
-      position: absolute;
-      left: 140px;
-      top: 100%;
-      width: 2px;
-      height: 2.5rem;
-      background: linear-gradient(var(--border), transparent);
-      transform: translateX(-50%);
+      position: absolute; inset: -2px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      filter: blur(16px); opacity: .5;
+      z-index: -1;
     }
 
-    /* ── Etiqueta de fase ── */
-    .phase-label {
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(180deg, #fff, #94a3b8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    header p {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .updated {
+      margin-left: auto;
+      font-size: .75rem;
+      color: var(--text-soft);
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-weight: 500;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Stats grid ── */
+    .stats {
+      display: grid;
+      grid-template-columns: 2fr repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(99, 102, 241, 0.05));
+      pointer-events: none;
+    }
+
+    .stat-label {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .5rem;
+    }
+
+    .stat-progress { grid-row: span 1; }
+    .stat-progress .stat-value {
+      display: flex;
+      align-items: baseline;
+      gap: .5rem;
+      margin-bottom: .75rem;
+    }
+    .stat-pct {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -.04em;
+      background: linear-gradient(135deg, var(--accent), var(--green));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+    .stat-pct-label { color: var(--muted); font-size: .875rem; font-weight: 500; }
+    .bar-track {
+      height: 6px;
+      background: rgba(99, 102, 241, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      border-radius: 999px;
+      transition: width 1.2s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+    }
+
+    .phase-stat {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
-      padding-top: .35rem;
-      padding-right: 1rem;
-      border-right: 2px solid var(--border);
+      justify-content: space-between;
+    }
+    .phase-stat .stat-num {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+    .phase-stat .stat-sub {
+      font-size: .7rem;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .phase-stat .stat-name {
+      font-size: .8rem;
+      color: var(--text-soft);
+      margin-top: 6px;
+      font-weight: 600;
+    }
+    .phase-stat .pulse {
+      position: absolute;
+      top: 1.25rem; right: 1.25rem;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .phase-stat .pulse.done { background: var(--green); box-shadow: 0 0 12px var(--green-glow); }
+    .phase-stat .pulse.wip  { background: var(--yellow); animation: pulse 2s infinite; }
+    .phase-stat .pulse.todo { background: var(--muted); opacity: .4; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 var(--yellow-glow); }
+      50%      { box-shadow: 0 0 0 8px transparent; }
+    }
+
+    /* ── Mapa conceptual radial ── */
+    .map-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-label {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    .map-wrap {
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15), transparent 50%);
+      pointer-events: none;
+    }
+
+    .mind-map {
+      position: relative;
+      width: 100%;
+      min-height: 720px;
+    }
+
+    .mind-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* ── Nodo central ── */
+    .node-center {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 160px; height: 160px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .25rem;
+      box-shadow: 0 0 60px rgba(99, 102, 241, 0.6),
+                  inset 0 2px 0 rgba(255, 255, 255, 0.2),
+                  inset 0 -20px 40px rgba(0, 0, 0, 0.2);
+      z-index: 5;
+    }
+    .node-center::before {
+      content: '';
+      position: absolute; inset: -4px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      filter: blur(20px); opacity: .5;
+      z-index: -1;
+    }
+    .node-center-icon { font-size: 2rem; }
+    .node-center-name {
+      font-weight: 700;
+      font-size: .875rem;
+      letter-spacing: -.01em;
+      color: white;
+    }
+    .node-center-tag {
+      font-size: .65rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    /* ── Nodos de fase ── */
+    .node-phase {
+      position: absolute;
+      width: 200px;
+      background: var(--surface-solid);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      padding: 1.25rem;
+      backdrop-filter: blur(20px);
+      z-index: 4;
+      transition: all .3s cubic-bezier(.4,0,.2,1);
+    }
+    .node-phase:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.2);
+    }
+    .node-phase.done    { border-left: 3px solid var(--green); }
+    .node-phase.wip     { border-left: 3px solid var(--yellow); }
+    .node-phase.todo    { border-left: 3px solid var(--muted); }
+
+    .phase-tag {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 4px;
+    }
+
+    .phase-title {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      margin-bottom: .75rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .phase-modules {
+      display: flex;
+      flex-direction: column;
       gap: .4rem;
     }
 
-    .phase-num {
-      font-size: .65rem; font-weight: 700;
-      letter-spacing: .1em; text-transform: uppercase;
+    .module-pill {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .4rem .65rem;
+      background: rgba(99, 102, 241, 0.05);
+      border: 1px solid rgba(99, 102, 241, 0.08);
+      border-radius: 8px;
+      font-size: .75rem;
+      color: var(--text-soft);
+      font-weight: 500;
+    }
+    .module-pill.done { color: var(--text); background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.15); }
+    .module-pill .check { font-size: .7rem; flex-shrink: 0; }
+    .module-pill .count {
+      margin-left: auto;
+      font-size: .65rem;
       color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
     }
 
-    .phase-name {
-      font-size: .875rem; font-weight: 700;
-      text-align: right; line-height: 1.3;
-    }
+    /* posiciones de los 4 nodos de fase */
+    .phase-1 { top: 40px;          left: 40px; }
+    .phase-2 { top: 40px;          right: 40px; }
+    .phase-3 { bottom: 40px;       left: 40px; }
+    .phase-4 { bottom: 40px;       right: 40px; }
 
-    .phase-badge {
-      font-size: .65rem; font-weight: 700;
-      padding: 2px 8px; border-radius: 20px;
-      letter-spacing: .04em; white-space: nowrap;
-    }
-    .phase-badge.done  { background: rgba(34,197,94,.15);  color: var(--green);  }
-    .phase-badge.wip   { background: rgba(234,179,8,.15);  color: var(--yellow); }
-    .phase-badge.todo  { background: rgba(100,116,139,.1); color: var(--muted);  }
-
-    /* marca en la línea */
-    .phase-dot {
+    .node-phase { cursor: pointer; }
+    .node-phase::after {
+      content: '→';
       position: absolute;
-      left: 140px; top: .35rem;
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      transform: translateX(-50%);
-      border: 2px solid var(--bg);
+      top: 1rem; right: 1rem;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      font-size: .75rem;
+      color: var(--accent2);
+      transition: all .3s;
+      opacity: 0;
     }
-    .phase-dot.done { background: var(--green); }
-    .phase-dot.wip  { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
-    .phase-dot.todo { background: var(--border); }
+    .node-phase:hover::after { opacity: 1; transform: translateX(2px); }
 
-    /* ── Cards de módulos dentro de la fase ── */
-    .phase-modules {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-      gap: .75rem;
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(10, 11, 16, 0.7);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    .modal {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -45%) scale(.96);
+      width: min(640px, calc(100vw - 2rem));
+      max-height: 85vh;
+      background: linear-gradient(180deg, #1a1d29, #14161f);
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      z-index: 101;
+      opacity: 0;
+      pointer-events: none;
+      transition: all .3s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6),
+                  0 0 0 1px rgba(99, 102, 241, 0.2);
+      display: flex; flex-direction: column;
+    }
+    .modal.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
     }
 
-    .mod-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+    .modal-header {
+      padding: 1.5rem 1.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.08), transparent);
+    }
+    .modal-icon {
+      width: 44px; height: 44px;
       border-radius: 12px;
-      padding: 1.1rem 1.25rem;
-      transition: border-color .2s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
     }
-    .mod-card:hover { border-color: var(--accent2); }
-    .mod-card.done  { border-left: 3px solid var(--green); }
-    .mod-card.wip   { border-left: 3px solid var(--yellow); }
-    .mod-card.todo  { border-left: 3px solid var(--border); }
+    .modal-icon.done { background: rgba(16, 185, 129, 0.15); }
+    .modal-icon.todo { background: rgba(99, 102, 241, 0.12); }
+    .modal-tag {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 4px;
+    }
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: .25rem;
+    }
+    .modal-progress {
+      font-size: .8rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .modal-progress strong { color: var(--text); font-weight: 700; }
 
-    .mod-header {
-      display: flex; align-items: center; gap: .6rem;
+    .modal-close {
+      margin-left: auto;
+      width: 32px; height: 32px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+    .modal-close:hover { color: var(--text); border-color: var(--border-strong); background: rgba(99, 102, 241, 0.05); }
+
+    .modal-body {
+      padding: 1rem 1.75rem 1.75rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-body::-webkit-scrollbar { width: 6px; }
+    .modal-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+    .module-block {
+      margin-top: 1.5rem;
+    }
+    .module-block:first-child { margin-top: .5rem; }
+
+    .module-block-header {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
       margin-bottom: .75rem;
     }
-    .mod-icon   { font-size: 1.1rem; }
-    .mod-name   { font-size: .875rem; font-weight: 600; }
-
-    .mod-tasks  { display: flex; flex-direction: column; gap: .3rem; }
-    .task-item  {
-      font-size: .75rem; color: var(--muted);
-      display: flex; align-items: flex-start; gap: .4rem; line-height: 1.4;
+    .module-block-name {
+      font-size: .95rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
     }
-    .task-item.done { color: var(--text); }
-    .task-check { flex-shrink: 0; margin-top: 1px; }
+    .module-block-progress {
+      margin-left: auto;
+      font-size: .7rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      background: rgba(99, 102, 241, 0.08);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
 
-    /* ══════════════════════════════════
-       DETALLE COLAPSABLE
-    ══════════════════════════════════ */
-    .detail-section { margin-top: .5rem; }
-
-    .mod-detail {
-      background: var(--surface);
-      border: 1px solid var(--border);
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      padding-left: .25rem;
+    }
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .65rem .85rem;
+      background: rgba(99, 102, 241, 0.04);
+      border: 1px solid rgba(99, 102, 241, 0.06);
       border-radius: 10px;
-      margin-bottom: .6rem;
-      overflow: hidden;
+      font-size: .875rem;
+      color: var(--text-soft);
+      transition: all .2s;
     }
-    .mod-detail-header {
-      padding: .85rem 1.25rem;
-      display: flex; align-items: center; gap: .75rem;
-      cursor: pointer; user-select: none;
+    .task-row.done {
+      color: var(--text);
+      background: rgba(16, 185, 129, 0.06);
+      border-color: rgba(16, 185, 129, 0.12);
     }
-    .mod-detail-header:hover { background: rgba(255,255,255,.025); }
-    .mod-detail-header h3 { font-size: .875rem; font-weight: 600; flex: 1; }
-
-    .badge {
-      font-size: .65rem; font-weight: 700;
-      padding: 2px 8px; border-radius: 20px; letter-spacing: .04em;
+    .task-row .check-icon {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .7rem;
+      flex-shrink: 0;
+      border: 1.5px solid var(--muted);
+      color: var(--muted);
     }
-    .badge.done { background: rgba(34,197,94,.15);  color: var(--green);  }
-    .badge.wip  { background: rgba(234,179,8,.15);  color: var(--yellow); }
-    .badge.todo { background: rgba(100,116,139,.1); color: var(--muted);  }
-
-    .mod-detail-tasks { padding: 0 1.25rem 1rem; display: none; }
-    .mod-detail-tasks.open { display: block; }
-
-    .dtask {
-      font-size: .8rem; padding: .3rem 0; color: var(--muted);
-      display: flex; align-items: center; gap: .5rem;
+    .task-row.done .check-icon {
+      background: var(--green);
+      border-color: var(--green);
+      color: white;
+      box-shadow: 0 0 12px var(--green-glow);
     }
-    .dtask.done { color: var(--text); }
 
+    /* ── Footer ── */
     footer {
-      margin-top: 3rem;
-      padding-top: 1.5rem;
+      margin-top: 4rem;
+      padding-top: 2rem;
       border-top: 1px solid var(--border);
       text-align: center;
-      font-size: .75rem; color: var(--muted);
+      font-size: .8rem;
+      color: var(--muted);
+      font-weight: 500;
     }
-    footer a { color: var(--accent2); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
+    footer a {
+      color: var(--text-soft);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color .2s;
+    }
+    footer a:hover { color: var(--accent2); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stat-progress { grid-column: span 2; }
+      .mind-map { min-height: auto; }
+      .node-center { position: relative; left: auto; top: auto; transform: none; margin: 0 auto 2rem; }
+      .node-phase { position: relative; left: auto; top: auto; right: auto; bottom: auto; width: 100%; margin-bottom: 1rem; }
+      .mind-svg { display: none; }
+    }
   </style>
 </head>
 <body>
 <div class="container">
 
+  <!-- Header -->
   <header>
     <div class="logo">🏗️</div>
     <div>
       <h1>Faro Sistemas</h1>
-      <p>Roadmap de desarrollo — carnicería vertical SaaS</p>
+      <p>Mapa conceptual y roadmap del producto</p>
     </div>
     <div class="updated" id="updated"></div>
   </header>
 
-  <!-- Barra global -->
-  <div class="global-bar">
-    <span>Progreso general</span>
-    <div class="bar-track"><div class="bar-fill" id="bar" style="width:0%"></div></div>
-    <span class="bar-pct" id="pct">0%</span>
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card stat-progress">
+      <div class="stat-label">Progreso global</div>
+      <div class="stat-value">
+        <span class="stat-pct" id="pct">0%</span>
+        <span class="stat-pct-label"><span id="done-count">0</span> de <span id="total-count">0</span> tareas</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar" style="width:0%"></div></div>
+    </div>
+    <div class="stat-card phase-stat">
+      <div class="pulse done"></div>
+      <div class="stat-label">Fase 1</div>
+      <div class="stat-num" id="p1-num">0/0</div>
+      <div class="stat-name">Fundación</div>
+    </div>
+    <div class="stat-card phase-stat">
+      <div class="pulse todo"></div>
+      <div class="stat-label">Fase 2</div>
+      <div class="stat-num" id="p2-num">0/0</div>
+      <div class="stat-name">Catálogo</div>
+    </div>
+    <div class="stat-card phase-stat">
+      <div class="pulse todo"></div>
+      <div class="stat-label">Fase 3</div>
+      <div class="stat-num" id="p3-num">0/0</div>
+      <div class="stat-name">Ventas</div>
+    </div>
+    <div class="stat-card phase-stat">
+      <div class="pulse todo"></div>
+      <div class="stat-label">Fase 4</div>
+      <div class="stat-num" id="p4-num">0/0</div>
+      <div class="stat-name">Insights</div>
+    </div>
   </div>
 
-  <!-- Roadmap por fases -->
-  <div class="roadmap" id="roadmap"></div>
+  <!-- Mapa conceptual -->
+  <div class="map-section">
+    <div class="section-label">Mapa conceptual</div>
+    <div class="map-wrap">
+      <div class="mind-map" id="mindmap">
 
-  <!-- Detalle colapsable -->
-  <div class="section-label">Detalle de tareas</div>
-  <div class="detail-section" id="detail"></div>
+        <!-- SVG líneas curvas (se generan por JS) -->
+        <svg class="mind-svg" id="svg-lines" viewBox="0 0 1000 720" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="g-done" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#6366f1" stop-opacity="0.4"/>
+            </linearGradient>
+            <linearGradient id="g-todo" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#475569" stop-opacity="0.15"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+        </svg>
+
+        <!-- Nodo central -->
+        <div class="node-center">
+          <div class="node-center-icon">🏗️</div>
+          <div class="node-center-name">Faro Sistemas</div>
+          <div class="node-center-tag">v0.1</div>
+        </div>
+
+        <!-- Fase 1 -->
+        <div class="node-phase phase-1 done">
+          <div class="phase-tag">Fase 1 · Completa</div>
+          <div class="phase-title">⚡ Fundación</div>
+          <div class="phase-modules">
+            <div class="module-pill done">
+              <span class="check">✅</span>
+              <span>Infraestructura</span>
+              <span class="count">6/6</span>
+            </div>
+            <div class="module-pill done">
+              <span class="check">✅</span>
+              <span>Base de datos</span>
+              <span class="count">7/7</span>
+            </div>
+            <div class="module-pill done">
+              <span class="check">✅</span>
+              <span>Auth</span>
+              <span class="count">4/5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fase 2 -->
+        <div class="node-phase phase-2 todo">
+          <div class="phase-tag">Fase 2 · Pendiente</div>
+          <div class="phase-title">📦 Catálogo</div>
+          <div class="phase-modules">
+            <div class="module-pill">
+              <span class="check">⬜</span>
+              <span>Productos</span>
+              <span class="count">0/4</span>
+            </div>
+            <div class="module-pill">
+              <span class="check">⬜</span>
+              <span>Clientes</span>
+              <span class="count">0/3</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fase 3 -->
+        <div class="node-phase phase-3 todo">
+          <div class="phase-tag">Fase 3 · Pendiente</div>
+          <div class="phase-title">🛒 Ventas</div>
+          <div class="phase-modules">
+            <div class="module-pill">
+              <span class="check">⬜</span>
+              <span>Punto de venta</span>
+              <span class="count">0/5</span>
+            </div>
+            <div class="module-pill">
+              <span class="check">⬜</span>
+              <span>Cuenta corriente</span>
+              <span class="count">0/3</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fase 4 -->
+        <div class="node-phase phase-4 todo">
+          <div class="phase-tag">Fase 4 · Pendiente</div>
+          <div class="phase-title">📊 Insights</div>
+          <div class="phase-modules">
+            <div class="module-pill">
+              <span class="check">⬜</span>
+              <span>Reportes</span>
+              <span class="count">0/3</span>
+            </div>
+            <div class="module-pill">
+              <span class="check">⬜</span>
+              <span>Configuración</span>
+              <span class="count">0/3</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="backdrop"></div>
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-icon" id="modal-icon">📦</div>
+      <div>
+        <div class="modal-tag" id="modal-tag"></div>
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-progress" id="modal-progress"></div>
+      </div>
+      <button class="modal-close" id="modal-close" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
 
   <footer>
-    Faro Sistemas &middot; se actualiza con cada deploy &middot;
-    <a href="https://github.com/santafocaccia-stack/faro-sistemas">ver código en GitHub</a>
+    Faro Sistemas &middot; actualizado con cada deploy &middot;
+    <a href="https://github.com/santafocaccia-stack/faro-sistemas">GitHub →</a>
   </footer>
 
 </div>
 
 <script>
 const PHASES = [
-  {
-    num: 'Fase 1', name: 'Fundación', status: 'done',
+  { id: 'p1', name: 'Fundación', icon: '⚡', status: 'done',
     modules: [
-      {
-        name: 'Infraestructura', icon: '⚙️', status: 'done',
-        tasks: [
-          { label: 'Next.js 15 App Router', done: true },
-          { label: 'TypeScript strict', done: true },
-          { label: 'Tailwind + shadcn/ui', done: true },
-          { label: 'Drizzle ORM', done: true },
-          { label: 'Supabase Auth SSR', done: true },
-          { label: 'Middleware de sesión', done: true },
-        ]
-      },
-      {
-        name: 'Base de datos', icon: '🗄️', status: 'done',
-        tasks: [
-          { label: 'Schema tenants', done: true },
-          { label: 'Schema users', done: true },
-          { label: 'Schema productos', done: true },
-          { label: 'Schema clientes', done: true },
-          { label: 'Schema ventas', done: true },
-          { label: 'Schema cuenta corriente', done: true },
-          { label: 'Migración aplicada', done: true },
-        ]
-      },
-      {
-        name: 'Auth', icon: '🔐', status: 'done',
-        tasks: [
-          { label: 'Login', done: true },
-          { label: 'Signup', done: true },
-          { label: 'Onboarding / crear tenant', done: true },
-          { label: 'Bootstrap Consumidor Final', done: true },
-          { label: 'Recuperar contraseña', done: false },
-        ]
-      },
-    ]
-  },
-  {
-    num: 'Fase 2', name: 'Catálogo', status: 'todo',
+      { name: 'Infraestructura', tasks: [
+        { label: 'Next.js 15 App Router',   done: true },
+        { label: 'TypeScript strict',       done: true },
+        { label: 'Tailwind + shadcn/ui',    done: true },
+        { label: 'Drizzle ORM',             done: true },
+        { label: 'Supabase Auth SSR',       done: true },
+        { label: 'Middleware de sesión',    done: true },
+      ]},
+      { name: 'Base de datos', tasks: [
+        { label: 'Schema tenants',                  done: true },
+        { label: 'Schema users + users_tenants',    done: true },
+        { label: 'Schema productos',                done: true },
+        { label: 'Schema clientes',                 done: true },
+        { label: 'Schema ventas + ventas_lineas',   done: true },
+        { label: 'Schema cuenta corriente',         done: true },
+        { label: 'Migración aplicada en Supabase',  done: true },
+      ]},
+      { name: 'Auth', tasks: [
+        { label: 'Login',                       done: true },
+        { label: 'Signup',                      done: true },
+        { label: 'Onboarding / crear tenant',   done: true },
+        { label: 'Bootstrap Consumidor Final',  done: true },
+        { label: 'Recuperar contraseña',        done: false },
+      ]},
+    ]},
+  { id: 'p2', name: 'Catálogo', icon: '📦', status: 'todo',
     modules: [
-      {
-        name: 'Productos', icon: '📦', status: 'todo',
-        tasks: [
-          { label: 'Listado con filtros', done: false },
-          { label: 'Alta / edición', done: false },
-          { label: 'Stock kg y unidad', done: false },
-          { label: 'Precios mayorista / minorista', done: false },
-        ]
-      },
-      {
-        name: 'Clientes', icon: '👥', status: 'todo',
-        tasks: [
-          { label: 'Listado', done: false },
-          { label: 'Alta / edición', done: false },
-          { label: 'Ficha con saldo', done: false },
-        ]
-      },
-    ]
-  },
-  {
-    num: 'Fase 3', name: 'Ventas', status: 'todo',
+      { name: 'Productos', tasks: [
+        { label: 'Listado con filtros',              done: false },
+        { label: 'Alta / edición',                   done: false },
+        { label: 'Stock por kg y por unidad',        done: false },
+        { label: 'Precios mayorista / minorista',    done: false },
+      ]},
+      { name: 'Clientes', tasks: [
+        { label: 'Listado',                          done: false },
+        { label: 'Alta / edición',                   done: false },
+        { label: 'Ficha con saldo y movimientos',    done: false },
+      ]},
+    ]},
+  { id: 'p3', name: 'Ventas', icon: '🛒', status: 'todo',
     modules: [
-      {
-        name: 'Punto de venta', icon: '🛒', status: 'todo',
-        tasks: [
-          { label: 'Venta minorista (mostrador)', done: false },
-          { label: 'Venta mayorista', done: false },
-          { label: 'Selección de cliente', done: false },
-          { label: 'Carrito de productos', done: false },
-          { label: 'Cobro contado / cta. cte.', done: false },
-        ]
-      },
-      {
-        name: 'Historial', icon: '📋', status: 'todo',
-        tasks: [
-          { label: 'Listado de ventas', done: false },
-          { label: 'Filtros por fecha y canal', done: false },
-          { label: 'Detalle de venta', done: false },
-        ]
-      },
-      {
-        name: 'Cuenta Corriente', icon: '📒', status: 'todo',
-        tasks: [
-          { label: 'Estado de cuenta por cliente', done: false },
-          { label: 'Registrar pago', done: false },
-          { label: 'Libro mayor de movimientos', done: false },
-        ]
-      },
-    ]
-  },
-  {
-    num: 'Fase 4', name: 'Insights', status: 'todo',
+      { name: 'Punto de venta', tasks: [
+        { label: 'Venta minorista (mostrador)',  done: false },
+        { label: 'Venta mayorista',              done: false },
+        { label: 'Selección de cliente',         done: false },
+        { label: 'Carrito de productos',         done: false },
+        { label: 'Cobro contado / cuenta corriente', done: false },
+      ]},
+      { name: 'Cuenta corriente', tasks: [
+        { label: 'Estado de cuenta por cliente',  done: false },
+        { label: 'Registrar pago',                done: false },
+        { label: 'Libro mayor de movimientos',    done: false },
+      ]},
+    ]},
+  { id: 'p4', name: 'Insights', icon: '📊', status: 'todo',
     modules: [
-      {
-        name: 'Reportes', icon: '📊', status: 'todo',
-        tasks: [
-          { label: 'Ventas del día', done: false },
-          { label: 'Ranking de productos', done: false },
-          { label: 'Clientes con saldo deudor', done: false },
-        ]
-      },
-      {
-        name: 'Configuración', icon: '🔧', status: 'todo',
-        tasks: [
-          { label: 'Datos del negocio', done: false },
-          { label: 'Gestión de empleados', done: false },
-          { label: 'Habilitar canales de venta', done: false },
-        ]
-      },
-    ]
-  },
+      { name: 'Reportes', tasks: [
+        { label: 'Ventas del día',          done: false },
+        { label: 'Ranking de productos',    done: false },
+        { label: 'Clientes con saldo deudor', done: false },
+      ]},
+      { name: 'Configuración', tasks: [
+        { label: 'Datos del negocio',       done: false },
+        { label: 'Gestión de empleados',    done: false },
+        { label: 'Habilitar canales',       done: false },
+      ]},
+    ]},
 ];
 
-const label = { done: 'Completo', wip: 'En progreso', todo: 'Pendiente' };
-
-// ── Roadmap por fases ──
-const roadmapEl = document.getElementById('roadmap');
-PHASES.forEach(phase => {
-  const modulesHtml = phase.modules.map(m => {
-    const tasksHtml = m.tasks.map(t => `
-      <div class="task-item ${t.done ? 'done' : ''}">
-        <span class="task-check">${t.done ? '✅' : '⬜'}</span>
-        <span>${t.label}</span>
-      </div>`).join('');
-    return `
-      <div class="mod-card ${m.status}">
-        <div class="mod-header">
-          <span class="mod-icon">${m.icon}</span>
-          <span class="mod-name">${m.name}</span>
-        </div>
-        <div class="mod-tasks">${tasksHtml}</div>
-      </div>`;
-  }).join('');
-
-  roadmapEl.innerHTML += `
-    <div class="phase">
-      <div class="phase-dot ${phase.status}"></div>
-      <div class="phase-label">
-        <span class="phase-num">${phase.num}</span>
-        <span class="phase-name">${phase.name}</span>
-        <span class="phase-badge ${phase.status}">${label[phase.status]}</span>
-      </div>
-      <div class="phase-modules">${modulesHtml}</div>
-    </div>`;
-});
-
-// ── Detalle colapsable ──
-const detailEl = document.getElementById('detail');
-let idx = 0;
-PHASES.forEach(phase => {
-  phase.modules.forEach(m => {
-    const i = idx++;
-    const tasksHtml = m.tasks.map(t =>
-      `<div class="dtask ${t.done ? 'done' : ''}">
-        <span>${t.done ? '✅' : '⬜'}</span> ${t.label}
-      </div>`
-    ).join('');
-    detailEl.innerHTML += `
-      <div class="mod-detail">
-        <div class="mod-detail-header" onclick="toggle(${i})">
-          <span>${m.icon}</span>
-          <h3>${m.name}</h3>
-          <span class="badge ${m.status}">${label[m.status]}</span>
-          <span style="color:var(--muted);font-size:.8rem" id="arr-${i}">▼</span>
-        </div>
-        <div class="mod-detail-tasks" id="tasks-${i}">${tasksHtml}</div>
-      </div>`;
-  });
-});
-
-function toggle(i) {
-  const el = document.getElementById('tasks-' + i);
-  const ar = document.getElementById('arr-' + i);
-  el.classList.toggle('open');
-  ar.textContent = el.classList.contains('open') ? '▲' : '▼';
+// Helpers
+function moduleStats(m) {
+  return { done: m.tasks.filter(t => t.done).length, total: m.tasks.length };
+}
+function phaseStats(p) {
+  return p.modules.reduce((a, m) => {
+    const s = moduleStats(m);
+    return { done: a.done + s.done, total: a.total + s.total };
+  }, { done: 0, total: 0 });
 }
 
-// ── Barra global ──
-const allTasks = PHASES.flatMap(p => p.modules.flatMap(m => m.tasks));
-const pct = Math.round(allTasks.filter(t => t.done).length / allTasks.length * 100);
+// Stats
+let totalDone = 0, totalAll = 0;
+PHASES.forEach(p => {
+  const s = phaseStats(p);
+  totalDone += s.done; totalAll += s.total;
+  document.getElementById(p.id + '-num').textContent = `${s.done}/${s.total}`;
+});
+const pct = Math.round(totalDone / totalAll * 100);
+document.getElementById('done-count').textContent = totalDone;
+document.getElementById('total-count').textContent = totalAll;
 setTimeout(() => {
   document.getElementById('bar').style.width = pct + '%';
   document.getElementById('pct').textContent = pct + '%';
 }, 200);
 
-// ── Fecha ──
+// Fecha
 document.getElementById('updated').textContent =
-  'Actualizado: ' + new Date(document.lastModified).toLocaleDateString('es-AR');
+  new Date(document.lastModified).toLocaleDateString('es-AR', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  });
+
+// ── Líneas SVG curvas conectando centro con fases ──
+function drawLines() {
+  const map = document.getElementById('mindmap');
+  const svg = document.getElementById('svg-lines');
+  const center = document.querySelector('.node-center');
+
+  const mapRect = map.getBoundingClientRect();
+  const cx = (center.getBoundingClientRect().left - mapRect.left) + center.offsetWidth / 2;
+  const cy = (center.getBoundingClientRect().top  - mapRect.top)  + center.offsetHeight / 2;
+
+  svg.setAttribute('viewBox', `0 0 ${mapRect.width} ${mapRect.height}`);
+
+  // limpiar líneas previas
+  svg.querySelectorAll('path').forEach(p => p.remove());
+
+  ['phase-1','phase-2','phase-3','phase-4'].forEach((cls, i) => {
+    const el = document.querySelector('.' + cls);
+    const r = el.getBoundingClientRect();
+    const px = (r.left - mapRect.left) + r.width  / 2;
+    const py = (r.top  - mapRect.top)  + r.height / 2;
+
+    // bezier control points
+    const c1x = cx + (px - cx) * 0.4;
+    const c1y = cy;
+    const c2x = px - (px - cx) * 0.4;
+    const c2y = py;
+
+    const isDone = el.classList.contains('done');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${cx} ${cy} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${px} ${py}`);
+    path.setAttribute('stroke', isDone ? 'url(#g-done)' : 'url(#g-todo)');
+    path.setAttribute('stroke-width', isDone ? '2.5' : '1.5');
+    path.setAttribute('stroke-dasharray', isDone ? '0' : '4 6');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-linecap', 'round');
+    if (isDone) path.setAttribute('filter', 'url(#glow)');
+    svg.appendChild(path);
+  });
+}
+
+window.addEventListener('load', drawLines);
+window.addEventListener('resize', drawLines);
+
+// ── Modal ──
+const backdrop = document.getElementById('backdrop');
+const modal = document.getElementById('modal');
+
+function openPhase(phase) {
+  const stats = phaseStats(phase);
+  const isDone = phase.status === 'done';
+
+  document.getElementById('modal-icon').textContent = phase.icon;
+  document.getElementById('modal-icon').className = 'modal-icon ' + (isDone ? 'done' : 'todo');
+  document.getElementById('modal-tag').textContent =
+    `Fase ${phase.id.replace('p','')} · ${isDone ? 'Completa' : 'Pendiente'}`;
+  document.getElementById('modal-title').textContent = phase.name;
+  document.getElementById('modal-progress').innerHTML =
+    `<strong>${stats.done}</strong> de <strong>${stats.total}</strong> tareas completadas`;
+
+  const body = document.getElementById('modal-body');
+  body.innerHTML = phase.modules.map(m => {
+    const s = moduleStats(m);
+    const tasksHtml = m.tasks.map(t => `
+      <div class="task-row ${t.done ? 'done' : ''}">
+        <div class="check-icon">${t.done ? '✓' : ''}</div>
+        <span>${t.label}</span>
+      </div>
+    `).join('');
+    return `
+      <div class="module-block">
+        <div class="module-block-header">
+          <div class="module-block-name">${m.name}</div>
+          <div class="module-block-progress">${s.done}/${s.total}</div>
+        </div>
+        <div class="task-list">${tasksHtml}</div>
+      </div>
+    `;
+  }).join('');
+
+  backdrop.classList.add('open');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  backdrop.classList.remove('open');
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+backdrop.addEventListener('click', closeModal);
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// Click en cada nodo de fase
+PHASES.forEach((phase, i) => {
+  const el = document.querySelector('.phase-' + (i + 1));
+  if (el) el.addEventListener('click', () => openPhase(phase));
+});
 </script>
 </body>
 </html>
