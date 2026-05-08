@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faro Sistemas — Roadmap</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3e;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --blue: #3b82f6;
+      --accent: #6366f1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      width: 44px; height: 44px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header p { color: var(--muted); font-size: 0.875rem; margin-top: 2px; }
+
+    .updated {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── Progreso general ── */
+    .progress-section { margin-bottom: 2.5rem; }
+
+    .progress-section h2 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .modules {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: .75rem;
+    }
+
+    .module {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .module-icon { font-size: 1.25rem; flex-shrink: 0; }
+
+    .module-name { font-size: .875rem; font-weight: 500; }
+    .module-status { font-size: .7rem; margin-top: 2px; }
+
+    .status-done   { color: var(--green); }
+    .status-wip    { color: var(--yellow); }
+    .status-todo   { color: var(--muted); }
+
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-left: auto;
+    }
+    .dot-done  { background: var(--green); }
+    .dot-wip   { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+    .dot-todo  { background: var(--border); }
+
+    /* ── Barra de progreso global ── */
+    .global-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .global-bar span { font-size: .875rem; color: var(--muted); white-space: nowrap; }
+    .bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      border-radius: 4px;
+      transition: width .6s ease;
+    }
+    .bar-pct { font-size: .875rem; font-weight: 600; color: var(--green); white-space: nowrap; }
+
+    /* ── Diagrama ── */
+    .diagram-section h2 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .diagram-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+
+    /* ── Detalle por módulo ── */
+    .detail-section { margin-top: 2.5rem; }
+    .detail-section h2 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .module-detail {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: .75rem;
+      overflow: hidden;
+    }
+
+    .module-header {
+      padding: .875rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .module-header:hover { background: rgba(255,255,255,.03); }
+
+    .module-header h3 { font-size: .875rem; font-weight: 600; flex: 1; }
+
+    .badge {
+      font-size: .65rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: .04em;
+    }
+    .badge-done  { background: rgba(34,197,94,.15);  color: var(--green); }
+    .badge-wip   { background: rgba(234,179, 8,.15); color: var(--yellow); }
+    .badge-todo  { background: rgba(100,116,139,.15); color: var(--muted); }
+
+    .module-tasks {
+      padding: 0 1.25rem 1rem;
+      display: none;
+    }
+    .module-tasks.open { display: block; }
+
+    .task {
+      font-size: .8rem;
+      padding: .3rem 0;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .task.done { color: var(--text); }
+    .task.wip  { color: var(--yellow); }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">🏗️</div>
+    <div>
+      <h1>Faro Sistemas</h1>
+      <p>Roadmap de desarrollo — carnicería vertical SaaS</p>
+    </div>
+    <div class="updated" id="updated"></div>
+  </header>
+
+  <!-- Barra global -->
+  <div class="global-bar">
+    <span>Progreso general</span>
+    <div class="bar-track">
+      <div class="bar-fill" id="bar" style="width:0%"></div>
+    </div>
+    <span class="bar-pct" id="pct">0%</span>
+  </div>
+
+  <!-- Cards de módulos -->
+  <div class="progress-section">
+    <h2>Módulos</h2>
+    <div class="modules" id="modules"></div>
+  </div>
+
+  <!-- Diagrama Mermaid -->
+  <div class="diagram-section">
+    <h2>Mapa conceptual</h2>
+    <div class="diagram-wrap">
+      <pre class="mermaid">
+mindmap
+  root((Faro Sistemas))
+    Infraestructura
+      ✅ Next.js 15 App Router
+      ✅ TypeScript strict
+      ✅ Tailwind + shadcn/ui
+      ✅ Drizzle ORM
+      ✅ Supabase Postgres
+      ✅ Supabase Auth SSR
+      ✅ Middleware de sesión
+    Base de datos
+      ✅ tenants
+      ✅ users + users_tenants
+      ✅ productos
+      ✅ clientes
+      ✅ ventas + ventas_lineas
+      ✅ pagos
+      ✅ movimientos_cuenta_corriente
+      ✅ Migración aplicada en Supabase
+    Auth
+      ✅ Login
+      ✅ Signup
+      ✅ Onboarding / crear tenant
+      ✅ Bootstrap Consumidor Final
+      ⬜ Recuperar contraseña
+    Productos
+      ⬜ Listado con filtros
+      ⬜ Alta / edición
+      ⬜ Stock por kg y por unidad
+      ⬜ Precios mayorista / minorista
+    Clientes
+      ⬜ Listado
+      ⬜ Alta / edición
+      ⬜ Ficha con saldo y movimientos
+    Ventas
+      ⬜ Nueva venta minorista
+      ⬜ Nueva venta mayorista
+      ⬜ Selección de cliente
+      ⬜ Carrito de productos
+      ⬜ Cobro contado / cuenta corriente
+      ⬜ Historial de ventas
+    Cuenta Corriente
+      ⬜ Estado de cuenta por cliente
+      ⬜ Registrar pago
+      ⬜ Movimientos libro mayor
+    Reportes
+      ⬜ Ventas del día
+      ⬜ Ranking de productos
+      ⬜ Clientes con saldo deudor
+    Config del Negocio
+      ⬜ Datos del tenant
+      ⬜ Gestión de empleados
+      ⬜ Habilitar mayorista/minorista
+      </pre>
+    </div>
+  </div>
+
+  <!-- Detalle colapsable por módulo -->
+  <div class="detail-section">
+    <h2>Detalle de tareas</h2>
+    <div id="detail"></div>
+  </div>
+
+  <footer>
+    Faro Sistemas · actualizado automáticamente con cada deploy ·
+    <a href="https://github.com/santafocaccia-stack/faro-sistemas" style="color:var(--accent);text-decoration:none">ver código</a>
+  </footer>
+
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#6366f1' } });
+
+  const MODULES = [
+    {
+      name: 'Infraestructura',
+      icon: '⚙️',
+      status: 'done',
+      tasks: [
+        { label: 'Next.js 15 App Router', done: true },
+        { label: 'TypeScript strict', done: true },
+        { label: 'Tailwind + shadcn/ui', done: true },
+        { label: 'Drizzle ORM', done: true },
+        { label: 'Supabase Postgres', done: true },
+        { label: 'Supabase Auth SSR', done: true },
+        { label: 'Middleware de sesión', done: true },
+      ]
+    },
+    {
+      name: 'Base de datos',
+      icon: '🗄️',
+      status: 'done',
+      tasks: [
+        { label: 'Schema tenants', done: true },
+        { label: 'Schema users + users_tenants', done: true },
+        { label: 'Schema productos', done: true },
+        { label: 'Schema clientes', done: true },
+        { label: 'Schema ventas + ventas_lineas', done: true },
+        { label: 'Schema pagos', done: true },
+        { label: 'Schema movimientos_cuenta_corriente', done: true },
+        { label: 'Migración aplicada en Supabase', done: true },
+      ]
+    },
+    {
+      name: 'Auth',
+      icon: '🔐',
+      status: 'done',
+      tasks: [
+        { label: 'Login', done: true },
+        { label: 'Signup', done: true },
+        { label: 'Onboarding / crear tenant', done: true },
+        { label: 'Bootstrap Consumidor Final', done: true },
+        { label: 'Recuperar contraseña', done: false },
+      ]
+    },
+    {
+      name: 'Productos',
+      icon: '📦',
+      status: 'todo',
+      tasks: [
+        { label: 'Listado con filtros', done: false },
+        { label: 'Alta / edición', done: false },
+        { label: 'Stock por kg y por unidad', done: false },
+        { label: 'Precios mayorista / minorista', done: false },
+      ]
+    },
+    {
+      name: 'Clientes',
+      icon: '👥',
+      status: 'todo',
+      tasks: [
+        { label: 'Listado', done: false },
+        { label: 'Alta / edición', done: false },
+        { label: 'Ficha con saldo y movimientos', done: false },
+      ]
+    },
+    {
+      name: 'Ventas',
+      icon: '🛒',
+      status: 'todo',
+      tasks: [
+        { label: 'Nueva venta minorista (mostrador)', done: false },
+        { label: 'Nueva venta mayorista', done: false },
+        { label: 'Selección de cliente', done: false },
+        { label: 'Carrito de productos', done: false },
+        { label: 'Cobro: contado / cuenta corriente', done: false },
+        { label: 'Historial de ventas', done: false },
+      ]
+    },
+    {
+      name: 'Cuenta Corriente',
+      icon: '📒',
+      status: 'todo',
+      tasks: [
+        { label: 'Estado de cuenta por cliente', done: false },
+        { label: 'Registrar pago', done: false },
+        { label: 'Movimientos (libro mayor)', done: false },
+      ]
+    },
+    {
+      name: 'Reportes',
+      icon: '📊',
+      status: 'todo',
+      tasks: [
+        { label: 'Ventas del día', done: false },
+        { label: 'Ranking de productos', done: false },
+        { label: 'Clientes con saldo deudor', done: false },
+      ]
+    },
+    {
+      name: 'Configuración',
+      icon: '🔧',
+      status: 'todo',
+      tasks: [
+        { label: 'Datos del tenant', done: false },
+        { label: 'Gestión de empleados', done: false },
+        { label: 'Habilitar mayorista / minorista', done: false },
+      ]
+    },
+  ];
+
+  const statusLabel = { done: 'Completo', wip: 'En progreso', todo: 'Pendiente' };
+  const statusClass = { done: 'status-done', wip: 'status-wip', todo: 'status-todo' };
+  const badgeClass  = { done: 'badge-done',  wip: 'badge-wip',  todo: 'badge-todo'  };
+  const dotClass    = { done: 'dot-done',    wip: 'dot-wip',    todo: 'dot-todo'    };
+
+  // Cards de módulos
+  const modulesEl = document.getElementById('modules');
+  MODULES.forEach(m => {
+    modulesEl.innerHTML += `
+      <div class="module">
+        <span class="module-icon">${m.icon}</span>
+        <div>
+          <div class="module-name">${m.name}</div>
+          <div class="module-status ${statusClass[m.status]}">${statusLabel[m.status]}</div>
+        </div>
+        <div class="dot ${dotClass[m.status]}"></div>
+      </div>`;
+  });
+
+  // Barra global
+  const total = MODULES.reduce((a, m) => a + m.tasks.length, 0);
+  const done  = MODULES.reduce((a, m) => a + m.tasks.filter(t => t.done).length, 0);
+  const pct   = Math.round(done / total * 100);
+  setTimeout(() => {
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('pct').textContent = pct + '%';
+  }, 200);
+
+  // Detalle colapsable
+  const detailEl = document.getElementById('detail');
+  MODULES.forEach((m, i) => {
+    const tasksHtml = m.tasks.map(t =>
+      `<div class="task ${t.done ? 'done' : ''}">
+        <span>${t.done ? '✅' : '⬜'}</span> ${t.label}
+      </div>`
+    ).join('');
+
+    detailEl.innerHTML += `
+      <div class="module-detail">
+        <div class="module-header" onclick="toggle(${i})">
+          <span>${m.icon}</span>
+          <h3>${m.name}</h3>
+          <span class="badge ${badgeClass[m.status]}">${statusLabel[m.status]}</span>
+          <span style="color:var(--muted);font-size:.8rem" id="arrow-${i}">▼</span>
+        </div>
+        <div class="module-tasks" id="tasks-${i}">${tasksHtml}</div>
+      </div>`;
+  });
+
+  function toggle(i) {
+    const el = document.getElementById('tasks-' + i);
+    const ar = document.getElementById('arrow-' + i);
+    el.classList.toggle('open');
+    ar.textContent = el.classList.contains('open') ? '▲' : '▼';
+  }
+
+  // Fecha de actualización
+  document.getElementById('updated').textContent =
+    'Actualizado: ' + new Date(document.lastModified).toLocaleDateString('es-AR');
+</script>
+</body>
+</html>
