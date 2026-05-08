@@ -638,7 +638,7 @@
       <div class="stat-name">Fundación</div>
     </div>
     <div class="stat-card phase-stat">
-      <div class="pulse todo"></div>
+      <div class="pulse wip"></div>
       <div class="stat-label">Fase 2</div>
       <div class="stat-num" id="p2-num">0/0</div>
       <div class="stat-name">Catálogo</div>
@@ -715,14 +715,14 @@
         </div>
 
         <!-- Fase 2 -->
-        <div class="node-phase phase-2 todo">
-          <div class="phase-tag">Fase 2 · Pendiente</div>
+        <div class="node-phase phase-2 wip">
+          <div class="phase-tag">Fase 2 · En progreso</div>
           <div class="phase-title">📦 Catálogo</div>
           <div class="phase-modules">
-            <div class="module-pill">
-              <span class="check">⬜</span>
+            <div class="module-pill done">
+              <span class="check">✅</span>
               <span>Productos</span>
-              <span class="count">0/4</span>
+              <span class="count">4/5</span>
             </div>
             <div class="module-pill">
               <span class="check">⬜</span>
@@ -823,13 +823,14 @@ const PHASES = [
         { label: 'Recuperar contraseña',        done: false },
       ]},
     ]},
-  { id: 'p2', name: 'Catálogo', icon: '📦', status: 'todo',
+  { id: 'p2', name: 'Catálogo', icon: '📦', status: 'wip',
     modules: [
       { name: 'Productos', tasks: [
-        { label: 'Listado con filtros',              done: false },
-        { label: 'Alta / edición',                   done: false },
-        { label: 'Stock por kg y por unidad',        done: false },
-        { label: 'Precios mayorista / minorista',    done: false },
+        { label: 'Listado',                          done: true },
+        { label: 'Alta / edición',                   done: true },
+        { label: 'Stock por kg y por unidad',        done: true },
+        { label: 'Precios mayorista / minorista',    done: true },
+        { label: 'Filtros y búsqueda avanzada',      done: false },
       ]},
       { name: 'Clientes', tasks: [
         { label: 'Listado',                          done: false },
