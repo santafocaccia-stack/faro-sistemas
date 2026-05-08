@@ -22,7 +22,8 @@ declare global {
   var __pgClient: ReturnType<typeof postgres> | undefined;
 }
 
-const client = global.__pgClient ?? postgres(connectionString, { max: 10 });
+// prepare: false requerido por Supabase Transaction pooler (puerto 6543)
+const client = global.__pgClient ?? postgres(connectionString, { prepare: false, max: 10 });
 if (process.env.NODE_ENV !== 'production') global.__pgClient = client;
 
 export const db = drizzle(client, { schema });
