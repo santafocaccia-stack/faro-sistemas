@@ -8,13 +8,14 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 const items = [
-  { href: '/dashboard',           label: 'Inicio',          icon: LayoutDashboard },
-  { href: '/dashboard/productos', label: 'Productos',       icon: Package },
-  { href: '/dashboard/clientes',  label: 'Clientes',        icon: Users },
-  { href: '/dashboard/ventas',    label: 'Ventas',          icon: ShoppingCart },
-  { href: '/dashboard/cc',        label: 'Cuenta Corriente', icon: BookOpen },
-  { href: '/dashboard/reportes',  label: 'Reportes',        icon: BarChart3 },
-  { href: '/dashboard/config',    label: 'Configuración',   icon: Settings },
+  { href: '/dashboard',                     label: 'Inicio',            icon: LayoutDashboard },
+  { href: '/dashboard/productos',           label: 'Productos',         icon: Package },
+  { href: '/dashboard/clientes',            label: 'Clientes',          icon: Users },
+  { href: '/dashboard/ventas/minorista',    label: 'Venta Minorista',   icon: ShoppingCart },
+  { href: '/dashboard/ventas/mayorista',    label: 'Venta Mayorista',   icon: ShoppingCart },
+  { href: '/dashboard/cc',                  label: 'Cuenta Corriente',  icon: BookOpen },
+  { href: '/dashboard/reportes',            label: 'Reportes',          icon: BarChart3 },
+  { href: '/dashboard/config',              label: 'Configuración',     icon: Settings },
 ];
 
 export function DashboardSidebar({ email }: { email: string }) {

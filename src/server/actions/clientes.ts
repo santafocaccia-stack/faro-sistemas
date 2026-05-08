@@ -97,13 +97,7 @@ export async function actualizarCliente(id: string, input: ClienteInput) {
       descuentoPorcentaje: input.descuentoPorcentaje || null,
       notas: input.notas || null,
     })
-    .where(
-      and(
-        byTenant(session.tenantId, clientes),
-        eq(clientes.id, id),
-        eq(clientes.esConsumidorFinal, false),
-      )
-    );
+    .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, id)));
 
   revalidatePath('/dashboard/clientes');
   revalidatePath(`/dashboard/clientes/${id}`);
@@ -114,11 +108,6 @@ export async function desactivarCliente(id: string) {
   await db
     .update(clientes)
     .set({ activo: false })
-    .where(
-      and(
-        byTenantAnd(session.tenantId, clientes, eq(clientes.id, id)),
-        eq(clientes.esConsumidorFinal, false),
-      )
-    );
+    .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, id)));
   revalidatePath('/dashboard/clientes');
 }

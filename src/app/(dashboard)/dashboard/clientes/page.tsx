@@ -16,7 +16,7 @@ const tipoBadge: Record<string, string> = {
 
 export default async function ClientesPage() {
   const clientes = await listarClientes();
-  const visibles = clientes.filter((c) => !c.esConsumidorFinal);
+  const visibles = clientes;
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
