@@ -5,6 +5,7 @@ import { formatARS } from '@/lib/utils';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import { ExportCsvButton } from '@/components/export-csv-button';
 
 const PERIODOS: { value: Periodo; label: string }[] = [
   { value: 'hoy',        label: 'Hoy' },
@@ -43,6 +44,17 @@ export default async function ReportesPage({ searchParams }: Props) {
   }
   const dias = [...diasMap.entries()].sort((a, b) => b[0].localeCompare(a[0]));
 
+  // Props para CSV export
+  const csvProps = {
+    periodo,
+    resumen:      data.resumen,
+    minorista:    data.minorista,
+    mayorista:    data.mayorista,
+    porMetodo:    data.porMetodo,
+    topProductos: data.topProductos,
+    dias,
+  };
+
   // Calcular máximo del período para barras
   const maxDia = Math.max(...dias.map(([, v]) => v.minorista + v.mayorista), 1);
 
@@ -58,21 +70,27 @@ export default async function ReportesPage({ searchParams }: Props) {
           </p>
         </div>
 
-        {/* Filtro de período pill */}
-        <div className="flex gap-1 p-1 bg-muted rounded-lg">
-          {PERIODOS.map((p) => (
-            <Link
-              key={p.value}
-              href={`/dashboard/reportes?periodo=${p.value}`}
-              className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all duration-150 ${
-                periodo === p.value
-                  ? 'bg-card text-foreground shadow-[0_1px_2px_oklch(0_0_0_/_0.3)]'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {p.label}
-            </Link>
-          ))}
+        {/* Controles: filtro + export */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Filtro de período pill */}
+          <div className="flex gap-1 p-1 bg-muted rounded-lg">
+            {PERIODOS.map((p) => (
+              <Link
+                key={p.value}
+                href={`/dashboard/reportes?periodo=${p.value}`}
+                className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all duration-150 ${
+                  periodo === p.value
+                    ? 'bg-card text-foreground shadow-[0_1px_2px_oklch(0_0_0_/_0.3)]'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {p.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Botón export CSV */}
+          <ExportCsvButton {...csvProps} />
         </div>
       </div>
 

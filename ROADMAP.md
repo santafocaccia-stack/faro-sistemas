@@ -1,6 +1,6 @@
 # Mapa Conceptual — Faro Sistemas
 
-> Actualizado 2026-05-09 (v2).
+> Actualizado 2026-05-09 (v3).
 
 ```mermaid
 mindmap
@@ -67,7 +67,7 @@ mindmap
       ✅ Métodos de pago
       ✅ Desglose por día minorista vs mayorista
       ✅ Skeleton loader
-      ⬜ Exportar a CSV / Excel
+      ✅ Exportar a CSV
     Configuración
       ✅ Datos del tenant nombre + CUIT
       ✅ Habilitar mayorista / minorista
@@ -103,7 +103,7 @@ mindmap
 | Clientes | ✅ Completo | Listado, CRUD, ficha CC |
 | Ventas | 🔄 95% | Falta barcode scanner |
 | Cuenta Corriente | ✅ Completo | Movimientos, pagos, saldo |
-| Reportes | 🔄 85% | Falta exportar CSV |
+| Reportes | ✅ Completo | KPIs, ranking, métodos de pago, desglose diario, export CSV |
 | Config negocio | 🔄 85% | Equipo listo, falta precios por cliente |
 | UX / Diseño | 🔄 90% | Falta PWA |
 | Negocio SaaS | ⬜ Pendiente | Todo el monetization layer |
@@ -124,7 +124,7 @@ mindmap
 
 | # | Feature | Por qué |
 |---|---|---|
-| 4 | **Exportar reportes a CSV** | Los negocios necesitan mandar datos al contador. |
+| 4 | **Exportar reportes a CSV** | ✅ Implementado — descarga CSV con resumen, ventas por día, métodos de pago y top productos |
 | 5 | **Precios especiales por cliente** | Mayoristas con acuerdos puntuales tienen precios distintos al general. |
 | 6 | **PWA / mobile POS** | Usar desde tablet en mostrador sin instalar nada. |
 | 7 | **Lectura de código de barras** | Acelera 10× el ingreso de productos en caja. |
