@@ -8,6 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { BoletaImprimible, PrintButton } from '@/components/boleta-imprimible';
+import { RemitoPDFButton } from '@/components/pdf-download-button';
 
 const estadoBadge: Record<string, { label: string; className: string }> = {
   pagada:    { label: 'Pagada',    className: 'bg-success/15 text-success border-success/20' },
@@ -45,7 +46,29 @@ export default async function DetalleVentaPage({ params }: Props) {
             <ChevronLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
             Volver al historial
           </Link>
-          <PrintButton canal={venta.canal} />
+          <div className="flex items-center gap-2">
+            {venta.canal === 'mayorista' && (
+              <RemitoPDFButton
+                numero={venta.numero}
+                fecha={venta.fecha}
+                clienteNombre={clienteNombre ?? 'Sin cliente'}
+                lineas={lineas.map((l) => ({
+                  descripcion:    l.descripcion,
+                  cantidad:       l.cantidad,
+                  precioUnitario: l.precioUnitario,
+                  subtotal:       l.subtotal,
+                }))}
+                subtotal={venta.subtotal}
+                descuento={venta.descuento}
+                total={venta.total}
+                notas={venta.notas}
+                negocioNombre={tenant?.nombre ?? 'Mi negocio'}
+                negocioCuit={tenant?.cuit}
+                metodoPago={metodoPago}
+              />
+            )}
+            <PrintButton canal={venta.canal} />
+          </div>
         </div>
 
         {/* Header */}

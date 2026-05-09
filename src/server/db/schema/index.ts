@@ -8,3 +8,4 @@ export * from './productos';
 export * from './clientes';
 export * from './ventas';
 export * from './cuenta-corriente';
+export * from './presupuestos';

@@ -1,6 +1,6 @@
 # Mapa Conceptual — Faro Sistemas
 
-> Actualizado 2026-05-09 (v4).
+> Actualizado 2026-05-09 (v5).
 
 ```mermaid
 mindmap
@@ -54,6 +54,7 @@ mindmap
       ✅ Skeleton loaders
       ✅ Boleta ticket imprimible 80mm
       ✅ Remito mayorista A4 imprimible
+      ✅ Remito mayorista descarga PDF real
       ✅ Lectura de código de barras (HID/USB)
     Cuenta Corriente
       ✅ Listado clientes con deuda
@@ -68,6 +69,12 @@ mindmap
       ✅ Desglose por día minorista vs mayorista
       ✅ Skeleton loader
       ✅ Exportar a CSV
+    Presupuestos
+      ✅ Listado con estado
+      ✅ Crear presupuesto con productos
+      ✅ Detalle de presupuesto
+      ✅ Cambiar estado (borrador/enviado/aprobado/rechazado)
+      ✅ Exportar PDF descargable
     Configuración
       ✅ Datos del tenant nombre + CUIT
       ✅ Habilitar mayorista / minorista

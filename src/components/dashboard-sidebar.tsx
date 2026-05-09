@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Package, Users, ShoppingCart, BookOpen, BarChart3,
-  Settings, LayoutDashboard, LogOut, History, Search, Command, UsersRound,
+  Settings, LayoutDashboard, LogOut, History, Search, Command, UsersRound, FileText,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -38,9 +38,10 @@ const sections: NavSection[] = [
   {
     title: 'Administración',
     items: [
-      { href: '/dashboard/productos', label: 'Productos',      icon: Package },
-      { href: '/dashboard/clientes',  label: 'Clientes',       icon: Users },
-      { href: '/dashboard/cc',        label: 'Cta. corriente', icon: BookOpen },
+      { href: '/dashboard/productos',     label: 'Productos',      icon: Package },
+      { href: '/dashboard/clientes',      label: 'Clientes',       icon: Users },
+      { href: '/dashboard/cc',            label: 'Cta. corriente', icon: BookOpen },
+      { href: '/dashboard/presupuestos',  label: 'Presupuestos',   icon: FileText },
     ],
   },
   {
