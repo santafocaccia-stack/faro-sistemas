@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { Plus, Package } from 'lucide-react';
 import { listarProductos } from '@/server/actions/productos';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -10,49 +8,61 @@ import { formatARS, formatKg } from '@/lib/utils';
 
 export default async function ProductosPage() {
   const productos = await listarProductos();
+  const stockBajoCount = productos.filter(
+    (p) => p.stockMinimo && Number(p.stockActual) <= Number(p.stockMinimo)
+  ).length;
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto space-y-8 animate-fade-up">
+
+      {/* Header */}
+      <div className="flex items-end justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Productos</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Productos</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             {productos.length} {productos.length === 1 ? 'producto' : 'productos'} en el catálogo
+            {stockBajoCount > 0 && (
+              <span className="text-warning"> · {stockBajoCount} con stock bajo</span>
+            )}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/productos/nuevo">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo producto
-          </Link>
-        </Button>
+        <Link
+          href="/dashboard/productos/nuevo"
+          className="inline-flex items-center gap-2 px-4 h-9 rounded-lg bg-primary text-primary-foreground text-[13px] font-medium hover:brightness-110 transition-all glow-primary"
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.25} />
+          Nuevo producto
+        </Link>
       </div>
 
       {productos.length === 0 ? (
-        <div className="border rounded-lg bg-background p-12 text-center">
-          <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-          <h3 className="font-semibold mb-1">Aún no hay productos</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Empezá cargando los productos que vendés.
+        <div className="rounded-xl border border-border bg-card p-14 text-center">
+          <div className="h-14 w-14 rounded-2xl bg-primary/8 border border-primary/15 mx-auto mb-4 flex items-center justify-center">
+            <Package className="h-5 w-5 text-primary" strokeWidth={1.75} />
+          </div>
+          <p className="text-sm font-medium mb-1">Catálogo vacío</p>
+          <p className="text-xs text-muted-foreground mb-5 max-w-sm mx-auto">
+            Empezá cargando los productos que vendés. Podés definir precios diferenciados para minorista y mayorista.
           </p>
-          <Button asChild>
-            <Link href="/dashboard/productos/nuevo">
-              <Plus className="h-4 w-4 mr-2" />
-              Cargar primer producto
-            </Link>
-          </Button>
+          <Link
+            href="/dashboard/productos/nuevo"
+            className="inline-flex items-center gap-2 px-3.5 h-9 rounded-lg bg-primary text-primary-foreground text-[13px] font-medium hover:brightness-110 transition-all glow-primary"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.25} />
+            Cargar primer producto
+          </Link>
         </div>
       ) : (
-        <div className="border rounded-lg bg-background overflow-hidden">
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Categoría</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead className="text-right">P. Mayorista</TableHead>
-                <TableHead className="text-right">P. Minorista</TableHead>
-                <TableHead>Estado</TableHead>
+              <TableRow className="hover:bg-transparent border-b border-border/60">
+                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 pl-4">Producto</TableHead>
+                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Categoría</TableHead>
+                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Stock</TableHead>
+                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">P. Mayor.</TableHead>
+                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">P. Minor.</TableHead>
+                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 pr-4">Estado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -61,34 +71,40 @@ export default async function ProductosPage() {
                 const stockNum = Number(p.stockActual);
                 const stockBajo = p.stockMinimo && stockNum <= Number(p.stockMinimo);
                 return (
-                  <TableRow key={p.id} className="cursor-pointer hover:bg-muted/40">
-                    <TableCell>
+                  <TableRow key={p.id} className="hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer group">
+                    <TableCell className="pl-4 py-2.5">
                       <Link href={`/dashboard/productos/${p.id}`} className="block">
-                        <div className="font-medium">{p.nombre}</div>
+                        <p className="text-[13px] font-medium">{p.nombre}</p>
                         {p.codigo && (
-                          <div className="text-xs text-muted-foreground">{p.codigo}</div>
+                          <p className="text-[11px] text-muted-foreground font-mono">{p.codigo}</p>
                         )}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {p.categoria ?? '—'}
+                    <TableCell className="py-2.5 text-xs text-muted-foreground">
+                      {p.categoria ?? <span className="text-muted-foreground/40">—</span>}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      <span className={stockBajo ? 'text-destructive font-medium' : ''}>
+                    <TableCell className="py-2.5 text-right">
+                      <span className={`font-mono tabular-nums text-[13px] ${stockBajo ? 'text-warning font-semibold' : ''}`}>
                         {p.tipoUnidad === 'por_kg' ? formatKg(stockNum) : `${stockNum} ${unidad}`}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">
+                    <TableCell className="py-2.5 text-right font-mono tabular-nums text-[13px] text-muted-foreground">
                       {formatARS(Number(p.precioMayorista))}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">
+                    <TableCell className="py-2.5 text-right font-mono tabular-nums text-[13px]">
                       {formatARS(Number(p.precioMinorista))}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="pr-4 py-2.5">
                       {p.activo ? (
-                        <Badge variant="secondary">Activo</Badge>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                          Activo
+                        </span>
                       ) : (
-                        <Badge variant="outline" className="text-muted-foreground">Inactivo</Badge>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60">
+                          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+                          Inactivo
+                        </span>
                       )}
                     </TableCell>
                   </TableRow>

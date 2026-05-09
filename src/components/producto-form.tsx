@@ -3,9 +3,9 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Tag, Boxes, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -70,68 +70,66 @@ export function ProductoForm({ producto }: Props) {
   }
 
   const unidad = form.tipoUnidad === 'por_kg' ? 'kg' : 'un';
+  const inputCls = 'h-9 bg-background/40 border-border/60 text-sm';
+  const labelCls = 'text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
-      {/* Identificación */}
-      <section className="bg-background border rounded-lg p-6 space-y-4">
-        <h2 className="font-semibold">Identificación</h2>
+    <form onSubmit={handleSubmit} className="space-y-4">
 
+      {/* Identificación */}
+      <FormSection icon={Tag} title="Identificación" subtitle="Datos básicos del producto">
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label htmlFor="nombre">Nombre *</Label>
+          <Field label="Nombre *" htmlFor="nombre">
             <Input
               id="nombre"
               required
               value={form.nombre}
               onChange={(e) => update('nombre', e.target.value)}
               placeholder="Bola de lomo"
+              className={inputCls}
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="codigo">Código (opcional)</Label>
+          </Field>
+          <Field label="Código" htmlFor="codigo" hint="opcional">
             <Input
               id="codigo"
               value={form.codigo ?? ''}
               onChange={(e) => update('codigo', e.target.value)}
-              placeholder="Código interno o de barras"
+              placeholder="Interno o de barras"
+              className={`${inputCls} font-mono`}
             />
-          </div>
+          </Field>
         </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="categoria">Categoría</Label>
+        <Field label="Categoría" htmlFor="categoria">
           <Input
             id="categoria"
             value={form.categoria ?? ''}
             onChange={(e) => update('categoria', e.target.value)}
             placeholder="Vacuno, cerdo, pollo..."
+            className={inputCls}
           />
-        </div>
+        </Field>
 
-        <div className="space-y-1">
-          <Label htmlFor="descripcion">Descripción</Label>
+        <Field label="Descripción" htmlFor="descripcion">
           <Textarea
             id="descripcion"
             value={form.descripcion ?? ''}
             onChange={(e) => update('descripcion', e.target.value)}
             rows={2}
+            className="bg-background/40 border-border/60 text-sm"
           />
-        </div>
-      </section>
+        </Field>
+      </FormSection>
 
       {/* Unidad y stock */}
-      <section className="bg-background border rounded-lg p-6 space-y-4">
-        <h2 className="font-semibold">Unidad y stock</h2>
-
+      <FormSection icon={Boxes} title="Unidad y stock" subtitle="Cómo se mide y cuánto hay disponible">
         <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label htmlFor="tipoUnidad">Tipo de unidad</Label>
+          <Field label="Tipo de unidad" htmlFor="tipoUnidad">
             <Select
               value={form.tipoUnidad}
               onValueChange={(v) => update('tipoUnidad', v as 'por_kg' | 'por_unidad')}
             >
-              <SelectTrigger id="tipoUnidad">
+              <SelectTrigger id="tipoUnidad" className={inputCls}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -139,48 +137,45 @@ export function ProductoForm({ producto }: Props) {
                 <SelectItem value="por_unidad">Por unidad</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="stockActual">Stock actual ({unidad})</Label>
+          </Field>
+          <Field label={`Stock actual (${unidad})`} htmlFor="stockActual">
             <Input
               id="stockActual"
               type="number"
               step={form.tipoUnidad === 'por_kg' ? '0.001' : '1'}
               value={form.stockActual}
               onChange={(e) => update('stockActual', e.target.value)}
+              className={`${inputCls} font-mono tabular-nums`}
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="stockMinimo">Stock mínimo (opcional)</Label>
+          </Field>
+          <Field label="Stock mínimo" htmlFor="stockMinimo" hint="alerta">
             <Input
               id="stockMinimo"
               type="number"
               step={form.tipoUnidad === 'por_kg' ? '0.001' : '1'}
               value={form.stockMinimo ?? ''}
               onChange={(e) => update('stockMinimo', e.target.value)}
-              placeholder="Alerta de stock bajo"
+              placeholder="—"
+              className={`${inputCls} font-mono tabular-nums`}
             />
-          </div>
+          </Field>
         </div>
-      </section>
+      </FormSection>
 
       {/* Precios */}
-      <section className="bg-background border rounded-lg p-6 space-y-4">
-        <h2 className="font-semibold">Precios</h2>
-
+      <FormSection icon={DollarSign} title="Precios" subtitle="Costo y precio de venta por canal">
         <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label htmlFor="costoPromedio">Costo promedio ($/{unidad})</Label>
+          <Field label={`Costo promedio ($/${unidad})`} htmlFor="costoPromedio">
             <Input
               id="costoPromedio"
               type="number"
               step="0.01"
               value={form.costoPromedio}
               onChange={(e) => update('costoPromedio', e.target.value)}
+              className={`${inputCls} font-mono tabular-nums`}
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="precioMayorista">Precio mayorista ($/{unidad})</Label>
+          </Field>
+          <Field label={`P. mayorista ($/${unidad}) *`} htmlFor="precioMayorista">
             <Input
               id="precioMayorista"
               type="number"
@@ -188,10 +183,10 @@ export function ProductoForm({ producto }: Props) {
               required
               value={form.precioMayorista}
               onChange={(e) => update('precioMayorista', e.target.value)}
+              className={`${inputCls} font-mono tabular-nums`}
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="precioMinorista">Precio minorista ($/{unidad})</Label>
+          </Field>
+          <Field label={`P. minorista ($/${unidad}) *`} htmlFor="precioMinorista">
             <Input
               id="precioMinorista"
               type="number"
@@ -199,18 +194,19 @@ export function ProductoForm({ producto }: Props) {
               required
               value={form.precioMinorista}
               onChange={(e) => update('precioMinorista', e.target.value)}
+              className={`${inputCls} font-mono tabular-nums`}
             />
-          </div>
+          </Field>
         </div>
-      </section>
+      </FormSection>
 
       {/* Estado */}
-      <section className="bg-background border rounded-lg p-6">
+      <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between">
           <div>
-            <Label htmlFor="activo" className="font-semibold">Producto activo</Label>
-            <p className="text-sm text-muted-foreground mt-1">
-              Si está inactivo, no aparece en el listado de venta.
+            <label htmlFor="activo" className="text-sm font-semibold">Producto activo</label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Si está inactivo, no aparece en el punto de venta.
             </p>
           </div>
           <Switch
@@ -219,12 +215,18 @@ export function ProductoForm({ producto }: Props) {
             onCheckedChange={(v) => update('activo', v)}
           />
         </div>
-      </section>
+      </div>
 
       {/* Acciones */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pt-2">
         {isEdit ? (
-          <Button type="button" variant="ghost" onClick={handleDesactivar} disabled={isPending}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleDesactivar}
+            disabled={isPending}
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          >
             Desactivar producto
           </Button>
         ) : <div />}
@@ -233,11 +235,46 @@ export function ProductoForm({ producto }: Props) {
           <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending} className="glow-primary">
             {isPending ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear producto'}
           </Button>
         </div>
       </div>
     </form>
+  );
+
+  function Field({ label, htmlFor, hint, children }: { label: string; htmlFor: string; hint?: string; children: React.ReactNode }) {
+    return (
+      <div className="space-y-1.5">
+        <label htmlFor={htmlFor} className={labelCls}>
+          {label}{hint && <span className="ml-1 normal-case text-muted-foreground/40">({hint})</span>}
+        </label>
+        {children}
+      </div>
+    );
+  }
+}
+
+function FormSection({
+  icon: Icon, title, subtitle, children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+      <div className="flex items-center gap-2.5">
+        <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Icon className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+          {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </div>
   );
 }

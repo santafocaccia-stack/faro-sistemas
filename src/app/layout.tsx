@@ -1,18 +1,22 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import './globals.css';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'Faro Sistemas',
-  description: 'Sistema de gestión para PyMEs argentinas',
+  description: 'Gestión comercial premium para PyMEs argentinas',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${inter.variable} dark h-full antialiased`}>
-      <body className="min-h-full bg-background text-foreground">{children}</body>
+    <html
+      lang="es"
+      className={`${GeistSans.variable} ${GeistMono.variable} dark h-full antialiased`}
+    >
+      <body className="min-h-full bg-background text-foreground font-sans">
+        {children}
+      </body>
     </html>
   );
 }

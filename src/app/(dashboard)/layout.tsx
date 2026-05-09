@@ -1,14 +1,18 @@
 import { requireSession } from '@/server/auth/session';
-import { DashboardSidebar } from '@/components/dashboard-sidebar';
-import { Toaster } from '@/components/ui/sonner';
+import { listarProductos } from '@/server/actions/productos';
+import { listarClientes } from '@/server/actions/clientes';
+import { DashboardShell } from '@/components/dashboard-shell';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
+  const [productos, clientes] = await Promise.all([
+    listarProductos({ soloActivos: true }),
+    listarClientes(),
+  ]);
+
   return (
-    <div className="min-h-screen flex">
-      <DashboardSidebar email={session.email} />
-      <main className="flex-1 overflow-y-auto bg-muted/20">{children}</main>
-      <Toaster />
-    </div>
+    <DashboardShell email={session.email} productos={productos} clientes={clientes}>
+      {children}
+    </DashboardShell>
   );
 }

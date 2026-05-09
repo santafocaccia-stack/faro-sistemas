@@ -3,73 +3,97 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================
+   FARO — Paleta "Carbón + Ascua"
+   Neutro frío + accent terracotta (la brasa)
+   ============================================ */
+
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+
+  --background: oklch(0.985 0.002 250);
+  --foreground: oklch(0.14 0.005 250);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.14 0.005 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.14 0.005 250);
+  --primary: oklch(0.62 0.19 38);
+  --primary-foreground: oklch(0.99 0.005 60);
+  --secondary: oklch(0.96 0.003 250);
+  --secondary-foreground: oklch(0.20 0.005 250);
+  --muted: oklch(0.96 0.003 250);
+  --muted-foreground: oklch(0.50 0.005 250);
+  --accent: oklch(0.94 0.003 250);
+  --accent-foreground: oklch(0.20 0.005 250);
+  --destructive: oklch(0.58 0.22 18);
+  --success: oklch(0.62 0.15 145);
+  --warning: oklch(0.78 0.13 75);
+  --border: oklch(0.14 0.005 250 / 0.10);
+  --input: oklch(0.14 0.005 250 / 0.10);
+  --ring: oklch(0.62 0.19 38 / 0.45);
+  --sidebar: oklch(0.97 0.003 250);
+  --sidebar-foreground: oklch(0.14 0.005 250);
+  --sidebar-primary: oklch(0.62 0.19 38);
+  --sidebar-primary-foreground: oklch(0.99 0.005 60);
+  --sidebar-accent: oklch(0.93 0.004 250);
+  --sidebar-accent-foreground: oklch(0.20 0.005 250);
+  --sidebar-border: oklch(0.14 0.005 250 / 0.08);
+  --sidebar-ring: oklch(0.62 0.19 38 / 0.45);
+  --chart-1: oklch(0.68 0.19 38);
+  --chart-2: oklch(0.62 0.15 145);
+  --chart-3: oklch(0.78 0.13 75);
+  --chart-4: oklch(0.55 0.13 250);
+  --chart-5: oklch(0.65 0.18 305);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* — Superficies (4 niveles de elevación) — */
+  --background: oklch(0.14 0.003 250);   /* base — casi neutro, leve tinte azul */
+  --foreground: oklch(0.97 0 0);         /* casi blanco, no puro */
+  --card: oklch(0.175 0.004 250);        /* surface elevada */
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.205 0.005 250);     /* overlays */
+  --popover-foreground: oklch(0.97 0 0);
+
+  /* — Brand: Ascua — */
+  --primary: oklch(0.68 0.19 38);        /* terracotta vivo, la brasa */
+  --primary-foreground: oklch(0.14 0.005 40);
+
+  --secondary: oklch(0.24 0.004 250);
+  --secondary-foreground: oklch(0.95 0 0);
+
+  --muted: oklch(0.21 0.003 250);
+  --muted-foreground: oklch(0.64 0.005 250);
+
+  --accent: oklch(0.28 0.005 250);
+  --accent-foreground: oklch(0.97 0 0);
+
+  /* — Semánticos (desaturados para dark) — */
+  --destructive: oklch(0.60 0.22 18);
+  --success: oklch(0.68 0.15 145);
+  --warning: oklch(0.78 0.13 75);
+
+  /* — Bordes con alpha (premium feel) — */
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.10);
+  --ring: oklch(0.68 0.19 38 / 0.45);
+
+  /* — Sidebar dedicada — */
+  --sidebar: oklch(0.13 0.003 250);       /* un toque más oscura que background */
+  --sidebar-foreground: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.68 0.19 38);
+  --sidebar-primary-foreground: oklch(0.14 0.005 40);
+  --sidebar-accent: oklch(0.20 0.004 250);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: oklch(1 0 0 / 0.06);
+  --sidebar-ring: oklch(0.68 0.19 38 / 0.45);
+
+  /* — Charts — */
+  --chart-1: oklch(0.68 0.19 38);
+  --chart-2: oklch(0.68 0.15 145);
+  --chart-3: oklch(0.78 0.13 75);
+  --chart-4: oklch(0.62 0.13 250);
+  --chart-5: oklch(0.70 0.18 305);
 }
 
 @theme inline {
@@ -88,6 +112,8 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -104,7 +130,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -115,7 +142,165 @@
   border-color: var(--color-border);
 }
 
+html {
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  font-feature-settings: "cv11", "ss01", "ss03";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Gradiente sutil — vive detrás del contenido */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 60% 40% at 0% 0%, oklch(0.68 0.19 38 / 0.06), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, oklch(0.55 0.13 250 / 0.04), transparent 60%);
+}
+
+/* Grain overlay — siempre arriba de todo, transparente al click */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Scrollbar premium */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 0.08);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 0.16);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* Tabular nums + slashed zero por defecto en montos */
+.tabular-nums {
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* Focus ring premium con glow */
+:focus-visible {
+  outline: none;
+}
+.focus-ring,
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="combobox"]:focus-visible,
+[role="menuitem"]:focus-visible {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+/* Ribbon helper para sidebar items activos */
+.nav-active-ribbon {
+  position: relative;
+}
+.nav-active-ribbon::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--primary);
+}
+
+/* Glow primary sutil para CTAs hero */
+.glow-primary {
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.04) inset,
+    0 1px 2px oklch(0 0 0 / 0.4),
+    0 0 24px oklch(0.68 0.19 38 / 0.20);
+}
+.glow-primary:hover {
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.06) inset,
+    0 1px 2px oklch(0 0 0 / 0.4),
+    0 0 32px oklch(0.68 0.19 38 / 0.32);
+}
+
+/* Animación fade-in para entradas de página */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 240ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ── PRINT ─────────────────────────────────────── */
+@media print {
+  /* Ocultar chrome del dashboard */
+  aside,
+  nav,
+  .no-print,
+  body::before,
+  body::after {
+    display: none !important;
+  }
+
+  /* Fondo y color base para impresión */
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Ocultar contenido de pantalla, mostrar solo el ticket */
+  .screen-only {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+
+  /* Ticket minorista: tamaño papel térmico 80mm */
+  .ticket-page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  /* Remito mayorista: A4 */
+  .remito-page {
+    size: A4;
+    margin: 20mm 18mm;
+  }
+
+  /* Bordes y sombras → negro simple */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

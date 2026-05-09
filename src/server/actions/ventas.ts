@@ -137,3 +137,23 @@ export async function listarVentas(canal: CanalVenta) {
     .limit(100);
   return rows;
 }
+
+export async function obtenerVenta(id: string) {
+  const session = await requireSession();
+  const [row] = await db
+    .select({ venta: ventas, clienteNombre: clientes.razonSocial })
+    .from(ventas)
+    .leftJoin(clientes, eq(ventas.clienteId, clientes.id))
+    .where(and(byTenant(session.tenantId, ventas), eq(ventas.id, id)))
+    .limit(1);
+  if (!row) return null;
+
+  const [lineas, pagoRow] = await Promise.all([
+    db.select().from(ventasLineas).where(eq(ventasLineas.ventaId, id)),
+    db.select({ metodo: pagos.metodo }).from(pagos).where(eq(pagos.ventaId, id)).limit(1),
+  ]);
+
+  const metodoPago = pagoRow[0]?.metodo ?? null;
+
+  return { ...row, lineas, metodoPago };
+}
