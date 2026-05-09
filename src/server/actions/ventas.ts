@@ -3,7 +3,7 @@
 import { eq, and, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
-  ventas, ventasLineas, pagos, movimientosCuentaCorriente, clientes,
+  ventas, ventasLineas, pagos, movimientosCuentaCorriente, clientes, productos,
   type CanalVenta, type MetodoPago,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
@@ -78,6 +78,15 @@ export async function crearVenta(input: NuevaVentaInput) {
         subtotal: l.subtotal,
       }))
     );
+
+    // Descontar stock de productos (solo los que tienen productoId)
+    for (const l of input.lineas) {
+      if (!l.productoId) continue;
+      await tx
+        .update(productos)
+        .set({ stockActual: sql`${productos.stockActual} - ${l.cantidad}::numeric` })
+        .where(and(byTenant(session.tenantId, productos), eq(productos.id, l.productoId)));
+    }
 
     if (!esCuentaCorriente && input.metodoPago) {
       // Pago contado

@@ -6,6 +6,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ExportCsvButton } from '@/components/export-csv-button';
+import { METODO_LABEL } from '@/lib/constants';
 
 const PERIODOS: { value: Periodo; label: string }[] = [
   { value: 'hoy',        label: 'Hoy' },
@@ -13,16 +14,6 @@ const PERIODOS: { value: Periodo; label: string }[] = [
   { value: 'mes',        label: '30 días' },
   { value: 'tres_meses', label: '3 meses' },
 ];
-
-const METODO_LABEL: Record<string, string> = {
-  efectivo:        'Efectivo',
-  transferencia:   'Transferencia',
-  tarjeta_debito:  'Tarjeta débito',
-  tarjeta_credito: 'Tarjeta crédito',
-  mercado_pago:    'Mercado Pago',
-  cheque:          'Cheque',
-  otro:            'Otro',
-};
 
 type Props = { searchParams: Promise<{ periodo?: string }> };
 

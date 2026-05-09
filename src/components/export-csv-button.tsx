@@ -2,16 +2,7 @@
 
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const METODO_LABEL: Record<string, string> = {
-  efectivo:        'Efectivo',
-  transferencia:   'Transferencia',
-  tarjeta_debito:  'Tarjeta débito',
-  tarjeta_credito: 'Tarjeta crédito',
-  mercado_pago:    'Mercado Pago',
-  cheque:          'Cheque',
-  otro:            'Otro',
-};
+import { METODO_LABEL } from '@/lib/constants';
 
 const PERIODO_LABEL: Record<string, string> = {
   hoy:        'Hoy',

@@ -367,7 +367,7 @@
     <div class="stat-card phase-stat"><div class="pulse done"></div><div class="stat-label">Fase 1</div><div class="stat-num" id="p1-num">0/0</div><div class="stat-name">Fundación</div></div>
     <div class="stat-card phase-stat"><div class="pulse done"></div><div class="stat-label">Fase 2</div><div class="stat-num" id="p2-num">0/0</div><div class="stat-name">Catálogo</div></div>
     <div class="stat-card phase-stat"><div class="pulse wip"></div> <div class="stat-label">Fase 3</div><div class="stat-num" id="p3-num">0/0</div><div class="stat-name">Operaciones</div></div>
-    <div class="stat-card phase-stat"><div class="pulse wip"></div> <div class="stat-label">Fase 4</div><div class="stat-num" id="p4-num">0/0</div><div class="stat-name">Insights</div></div>
+    <div class="stat-card phase-stat"><div class="pulse done"></div><div class="stat-label">Fase 4</div><div class="stat-num" id="p4-num">0/0</div><div class="stat-name">Insights</div></div>
     <div class="stat-card phase-stat"><div class="pulse todo"></div><div class="stat-label">Fase 5</div><div class="stat-num" id="p5-num">0/0</div><div class="stat-name">SaaS</div></div>
   </div>
 
@@ -402,7 +402,7 @@
         <div class="node-center">
           <div class="node-center-icon">🏗️</div>
           <div class="node-center-name">Faro Sistemas</div>
-          <div class="node-center-tag">v0.9 · MVP</div>
+          <div class="node-center-tag">v1.0 · MVP</div>
         </div>
 
         <!-- Fase 1 — Fundación ✅ -->
@@ -434,16 +434,17 @@
             <div class="module-pill done"><span class="check">✅</span><span>Punto de venta</span><span class="count">6/6</span></div>
             <div class="module-pill done"><span class="check">✅</span><span>Comprobantes</span><span class="count">2/2</span></div>
             <div class="module-pill done"><span class="check">✅</span><span>Cuenta corriente</span><span class="count">4/4</span></div>
-            <div class="module-pill wip"><span class="check">🔄</span><span>Extras</span><span class="count">0/2</span></div>
+            <div class="module-pill wip"><span class="check">🔄</span><span>Extras</span><span class="count">2/3</span></div>
           </div>
         </div>
 
-        <!-- Fase 4 — Insights 🟡 -->
-        <div class="node-phase phase-4 wip" id="node-p4">
-          <div class="phase-tag">Fase 4 · En progreso</div>
+        <!-- Fase 4 — Insights ✅ -->
+        <div class="node-phase phase-4 done" id="node-p4">
+          <div class="phase-tag">Fase 4 · Completa</div>
           <div class="phase-title">📊 Insights + UX</div>
           <div class="phase-modules">
-            <div class="module-pill done"><span class="check">✅</span><span>Reportes</span><span class="count">4/5</span></div>
+            <div class="module-pill done"><span class="check">✅</span><span>Reportes</span><span class="count">5/5</span></div>
+            <div class="module-pill done"><span class="check">✅</span><span>Presupuestos</span><span class="count">5/5</span></div>
             <div class="module-pill done"><span class="check">✅</span><span>Configuración</span><span class="count">5/5</span></div>
             <div class="module-pill done"><span class="check">✅</span><span>UX Premium</span><span class="count">6/6</span></div>
           </div>
@@ -562,20 +563,28 @@ const PHASES = [
         { label: 'Registrar pago',               done: true },
         { label: 'Movimientos libro mayor',      done: true },
       ]},
-      { name: 'Extras pendientes', tasks: [
-        { label: 'Lectura de código de barras',  done: false },
-        { label: 'Precios especiales por cliente', done: false },
+      { name: 'Extras', tasks: [
+        { label: 'Lectura de código de barras (HID/USB)',  done: true },
+        { label: 'Stock se descuenta al cerrar venta',      done: true },
+        { label: 'Precios especiales por cliente',          done: false },
       ]},
     ]},
 
   { id: 'p4', name: 'Insights + UX', icon: '📊', status: 'wip',
     modules: [
       { name: 'Reportes', tasks: [
-        { label: 'KPIs por período (hoy/semana/mes/3m)', done: true },
-        { label: 'Top productos por monto',              done: true },
-        { label: 'Métodos de pago con % y gráfico',     done: true },
-        { label: 'Desglose diario minorista vs mayorista', done: true },
-        { label: 'Exportar a CSV / Excel',               done: false },
+        { label: 'KPIs por período (hoy/semana/mes/3m)',   done: true },
+        { label: 'Top productos por monto',                done: true },
+        { label: 'Métodos de pago con % y gráfico',        done: true },
+        { label: 'Desglose diario minorista vs mayorista',  done: true },
+        { label: 'Exportar a CSV / Excel',                 done: true },
+      ]},
+      { name: 'Presupuestos', tasks: [
+        { label: 'Listado con filtro por estado',           done: true },
+        { label: 'Crear presupuesto con líneas',            done: true },
+        { label: 'Detalle y cambio de estado',              done: true },
+        { label: 'PDF descargable A4',                      done: true },
+        { label: 'Numeración atómica (sin race condition)', done: true },
       ]},
       { name: 'Configuración', tasks: [
         { label: 'Datos del negocio nombre + CUIT',   done: true },

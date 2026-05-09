@@ -97,43 +97,47 @@ export async function crearPresupuesto(input: PresupuestoInput) {
   const descuento = Number(input.descuento ?? 0);
   const total = subtotal - descuento;
 
-  // Número correlativo por tenant
-  const [{ maxNum }] = await db
-    .select({ maxNum: sql<number>`coalesce(max(${presupuestos.numero}), 0)::int` })
-    .from(presupuestos)
-    .where(byTenant(tenantId, presupuestos));
+  // Número correlativo por tenant — envuelto en transacción para evitar race condition
+  const creado = await db.transaction(async (tx) => {
+    const result = await tx
+      .select({ maxNum: sql<number>`coalesce(max(${presupuestos.numero}), 0)::int` })
+      .from(presupuestos)
+      .where(byTenant(tenantId, presupuestos));
 
-  const numero = (maxNum ?? 0) + 1;
+    const numero = (result[0]?.maxNum ?? 0) + 1;
 
-  const [creado] = await db
-    .insert(presupuestos)
-    .values({
-      tenantId,
-      numero,
-      clienteId:    input.clienteId   || null,
-      clienteNombre: input.clienteNombre || null,
-      validezDias:  input.validezDias,
-      notas:        input.notas || null,
-      subtotal:     subtotal.toFixed(2),
-      descuento:    descuento.toFixed(2),
-      total:        total.toFixed(2),
-    })
-    .returning({ id: presupuestos.id });
+    const [inserted] = await tx
+      .insert(presupuestos)
+      .values({
+        tenantId,
+        numero,
+        clienteId:     input.clienteId    || null,
+        clienteNombre: input.clienteNombre || null,
+        validezDias:   input.validezDias,
+        notas:         input.notas || null,
+        subtotal:      subtotal.toFixed(2),
+        descuento:     descuento.toFixed(2),
+        total:         total.toFixed(2),
+      })
+      .returning({ id: presupuestos.id });
 
-  if (!creado) throw new Error('Error al crear presupuesto');
+    if (!inserted) throw new Error('Error al crear presupuesto');
 
-  if (input.lineas.length > 0) {
-    await db.insert(presupuestosLineas).values(
-      input.lineas.map((l) => ({
-        presupuestoId:  creado.id,
-        productoId:     l.productoId || null,
-        descripcion:    l.descripcion,
-        cantidad:       l.cantidad,
-        precioUnitario: l.precioUnitario,
-        subtotal:       l.subtotal,
-      })),
-    );
-  }
+    if (input.lineas.length > 0) {
+      await tx.insert(presupuestosLineas).values(
+        input.lineas.map((l) => ({
+          presupuestoId:  inserted.id,
+          productoId:     l.productoId || null,
+          descripcion:    l.descripcion,
+          cantidad:       l.cantidad,
+          precioUnitario: l.precioUnitario,
+          subtotal:       l.subtotal,
+        })),
+      );
+    }
+
+    return inserted;
+  });
 
   revalidatePath('/dashboard/presupuestos');
   return creado;

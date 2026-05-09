@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ChevronDown, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -46,9 +46,13 @@ export function PresupuestoAcciones({ id, estadoActual }: Props) {
   function handleEliminar() {
     if (!confirm('¿Eliminar este presupuesto? Esta acción no se puede deshacer.')) return;
     startTransition(async () => {
-      await eliminarPresupuesto(id);
-      toast.success('Presupuesto eliminado');
-      router.push('/dashboard/presupuestos');
+      try {
+        await eliminarPresupuesto(id);
+        toast.success('Presupuesto eliminado');
+        router.push('/dashboard/presupuestos');
+      } catch {
+        toast.error('Error al eliminar el presupuesto');
+      }
     });
   }
 

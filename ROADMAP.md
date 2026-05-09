@@ -1,6 +1,6 @@
 # Mapa Conceptual — Faro Sistemas
 
-> Actualizado 2026-05-09 (v5).
+> Actualizado 2026-05-09 (v6).
 
 ```mermaid
 mindmap
@@ -75,6 +75,13 @@ mindmap
       ✅ Detalle de presupuesto
       ✅ Cambiar estado (borrador/enviado/aprobado/rechazado)
       ✅ Exportar PDF descargable
+      ✅ Numeración atómica (db.transaction)
+    Calidad y Bugs
+      ✅ Stock se descuenta al cerrar venta
+      ✅ METODO_LABEL centralizado en constants.ts
+      ✅ Route handlers PDF con auth explícita y error handling
+      ✅ Race condition numeración presupuestos corregida
+      ✅ presupuesto-acciones: try/catch + dead import removido
     Configuración
       ✅ Datos del tenant nombre + CUIT
       ✅ Habilitar mayorista / minorista
@@ -104,13 +111,15 @@ mindmap
 | Módulo | Estado | Detalle |
 |---|---|---|
 | Infraestructura | ✅ Completo | Stack full, fonts, animations, palette |
-| Base de datos | ✅ Completo | 9 tablas, migración aplicada |
+| Base de datos | ✅ Completo | 10 tablas (+ presupuestos), migración aplicada |
 | Auth | ✅ Completo | Login, signup, onboarding, reset, callback PKCE |
 | Productos | ✅ Completo | Listado, CRUD, stock, ajuste |
 | Clientes | ✅ Completo | Listado, CRUD, ficha CC |
-| Ventas | ✅ Completo | POS, comprobantes, historial, barcode scanner |
+| Ventas | ✅ Completo | POS, comprobantes, historial, barcode scanner, stock descuenta al vender |
 | Cuenta Corriente | ✅ Completo | Movimientos, pagos, saldo |
 | Reportes | ✅ Completo | KPIs, ranking, métodos de pago, desglose diario, export CSV |
+| Presupuestos | ✅ Completo | CRUD, PDF, estados, numeración atómica |
+| Calidad código | ✅ Completo | Bugs críticos corregidos, constantes centralizadas, error handling robusto |
 | Config negocio | 🔄 85% | Equipo listo, falta precios por cliente |
 | UX / Diseño | 🔄 90% | Falta PWA |
 | Negocio SaaS | ⬜ Pendiente | Todo el monetization layer |
