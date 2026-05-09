@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { obtenerPresupuesto } from '@/server/actions/presupuestos';
-import { obtenerTenant } from '@/server/actions/config';
 import { formatARS } from '@/lib/utils';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -23,10 +22,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function DetallePresupuestoPage({ params }: Props) {
   const { id } = await params;
 
-  const [data, tenant] = await Promise.all([
-    obtenerPresupuesto(id),
-    obtenerTenant(),
-  ]);
+  const data = await obtenerPresupuesto(id);
 
   if (!data) notFound();
 
@@ -34,7 +30,6 @@ export default async function DetallePresupuestoPage({ params }: Props) {
   const badge = ESTADO_BADGE[pres.estado] ?? ESTADO_BADGE.borrador!;
 
   const vencimiento = new Date(new Date(pres.fecha).getTime() + pres.validezDias * 86_400_000);
-  const negocioNombre = tenant?.nombre ?? 'Mi negocio';
 
   return (
     <div className="px-6 lg:px-10 py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">
@@ -51,25 +46,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
 
         <div className="flex items-center gap-2">
           <PresupuestoAcciones id={pres.id} estadoActual={pres.estado} />
-          <PresupuestoPDFButton
-            numero={pres.numero}
-            fecha={pres.fecha}
-            clienteNombre={clienteDisplay}
-            lineas={lineas.map((l) => ({
-              descripcion:    l.descripcion,
-              cantidad:       l.cantidad,
-              precioUnitario: l.precioUnitario,
-              subtotal:       l.subtotal,
-            }))}
-            subtotal={pres.subtotal}
-            descuento={pres.descuento}
-            total={pres.total}
-            notas={pres.notas}
-            negocioNombre={negocioNombre}
-            negocioCuit={tenant?.cuit}
-            validezDias={pres.validezDias}
-            estado={pres.estado}
-          />
+          <PresupuestoPDFButton presupuestoId={pres.id} />
         </div>
       </div>
 
@@ -108,7 +85,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">Negocio</p>
-          <p className="text-[13px] font-medium">{negocioNombre}</p>
+          <p className="text-[13px] font-medium">Ver en configuración</p>
         </div>
       </div>
 

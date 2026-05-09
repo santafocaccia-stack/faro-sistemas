@@ -48,24 +48,7 @@ export default async function DetalleVentaPage({ params }: Props) {
           </Link>
           <div className="flex items-center gap-2">
             {venta.canal === 'mayorista' && (
-              <RemitoPDFButton
-                numero={venta.numero}
-                fecha={venta.fecha}
-                clienteNombre={clienteNombre ?? 'Sin cliente'}
-                lineas={lineas.map((l) => ({
-                  descripcion:    l.descripcion,
-                  cantidad:       l.cantidad,
-                  precioUnitario: l.precioUnitario,
-                  subtotal:       l.subtotal,
-                }))}
-                subtotal={venta.subtotal}
-                descuento={venta.descuento}
-                total={venta.total}
-                notas={venta.notas}
-                negocioNombre={tenant?.nombre ?? 'Mi negocio'}
-                negocioCuit={tenant?.cuit}
-                metodoPago={metodoPago}
-              />
+              <RemitoPDFButton ventaId={venta.id} />
             )}
             <PrintButton canal={venta.canal} />
           </div>
