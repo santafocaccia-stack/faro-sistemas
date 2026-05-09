@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Tag, Boxes, DollarSign } from 'lucide-react';
+import { Tag, Boxes, DollarSign, ScanBarcode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,8 @@ export function ProductoForm({ producto }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!producto;
+  const [codigoFocused, setCodigoFocused] = useState(false);
+  const codigoRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<ProductoInput>({
     codigo: producto?.codigo ?? '',
@@ -89,14 +91,42 @@ export function ProductoForm({ producto }: Props) {
               className={inputCls}
             />
           </Field>
-          <Field label="Código" htmlFor="codigo" hint="opcional">
-            <Input
-              id="codigo"
-              value={form.codigo ?? ''}
-              onChange={(e) => update('codigo', e.target.value)}
-              placeholder="Interno o de barras"
-              className={`${inputCls} font-mono`}
-            />
+          <Field label="Código de barras" htmlFor="codigo" hint="opcional">
+            <div className="relative">
+              <ScanBarcode
+                className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${
+                  codigoFocused ? 'text-primary' : 'text-muted-foreground/50'
+                }`}
+                strokeWidth={1.75}
+              />
+              <Input
+                ref={codigoRef}
+                id="codigo"
+                value={form.codigo ?? ''}
+                onChange={(e) => update('codigo', e.target.value)}
+                onFocus={() => setCodigoFocused(true)}
+                onBlur={() => setCodigoFocused(false)}
+                onKeyDown={(e) => {
+                  // Evitar que Enter envíe el form cuando se escanea
+                  if (e.key === 'Enter') e.preventDefault();
+                }}
+                placeholder="Escaneá el producto o ingresá el código"
+                className={`${inputCls} pl-8 font-mono transition-all ${
+                  codigoFocused ? 'border-primary/40 shadow-[0_0_0_2px_oklch(0.78_0.16_52_/_12%)]' : ''
+                }`}
+              />
+              {codigoFocused && (
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-primary/70 font-medium animate-pulse pointer-events-none">
+                  Listo
+                </span>
+              )}
+            </div>
+            {codigoFocused && (
+              <p className="text-[10px] text-muted-foreground/60 mt-1 flex items-center gap-1">
+                <ScanBarcode className="h-3 w-3" />
+                Apuntá el lector al código de barras del producto
+              </p>
+            )}
           </Field>
         </div>
 

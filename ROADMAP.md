@@ -1,6 +1,6 @@
 # Mapa Conceptual — Faro Sistemas
 
-> Actualizado 2026-05-09 (v3).
+> Actualizado 2026-05-09 (v4).
 
 ```mermaid
 mindmap
@@ -54,7 +54,7 @@ mindmap
       ✅ Skeleton loaders
       ✅ Boleta ticket imprimible 80mm
       ✅ Remito mayorista A4 imprimible
-      ⬜ Lectura de código de barras
+      ✅ Lectura de código de barras (HID/USB)
     Cuenta Corriente
       ✅ Listado clientes con deuda
       ✅ Estado de cuenta por cliente
@@ -101,7 +101,7 @@ mindmap
 | Auth | ✅ Completo | Login, signup, onboarding, reset, callback PKCE |
 | Productos | ✅ Completo | Listado, CRUD, stock, ajuste |
 | Clientes | ✅ Completo | Listado, CRUD, ficha CC |
-| Ventas | 🔄 95% | Falta barcode scanner |
+| Ventas | ✅ Completo | POS, comprobantes, historial, barcode scanner |
 | Cuenta Corriente | ✅ Completo | Movimientos, pagos, saldo |
 | Reportes | ✅ Completo | KPIs, ranking, métodos de pago, desglose diario, export CSV |
 | Config negocio | 🔄 85% | Equipo listo, falta precios por cliente |
@@ -127,7 +127,7 @@ mindmap
 | 4 | **Exportar reportes a CSV** | ✅ Implementado — descarga CSV con resumen, ventas por día, métodos de pago y top productos |
 | 5 | **Precios especiales por cliente** | Mayoristas con acuerdos puntuales tienen precios distintos al general. |
 | 6 | **PWA / mobile POS** | Usar desde tablet en mostrador sin instalar nada. |
-| 7 | **Lectura de código de barras** | Acelera 10× el ingreso de productos en caja. |
+| 7 | **Lectura de código de barras** | ✅ Implementado — listener HID en POS + UX "listo para escanear" en form de producto |
 
 ### 🟢 Largo plazo (monetization y escala)
 

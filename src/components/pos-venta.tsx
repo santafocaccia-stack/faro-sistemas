@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, Trash2, ShoppingCart, Check, Package } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, Check, Package, ScanBarcode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -77,14 +77,80 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
     setMetodoPago(nuevoCanal === 'mayorista' ? 'transferencia' : 'efectivo');
   }
 
-  function agregarAlCarrito(producto: Producto) {
+  const agregarAlCarrito = useCallback((producto: Producto) => {
     const precio = esMayorista ? Number(producto.precioMayorista) : Number(producto.precioMinorista);
     setCart((prev) => {
       const existente = prev.find((i) => i.producto.id === producto.id);
       if (existente) return prev.map((i) => i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i);
       return [...prev, { producto, cantidad: 1, precioUnitario: precio }];
     });
-  }
+  }, [esMayorista]);
+
+  // ── Listener global de lector de código de barras ────────────────────────
+  useEffect(() => {
+    let buffer = '';
+    let bufferTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Los lectores físicos envían cada char en < 50ms y terminan con Enter.
+    // Un humano tarda > 150ms entre teclas. Usamos 80ms como umbral.
+    const BUFFER_TIMEOUT_MS = 80;
+    const MIN_CODE_LENGTH = 3; // EAN-8 tiene 8 dígitos, pero permitimos códigos cortos
+
+    function procesarScan(codigo: string) {
+      const trimmed = codigo.trim();
+      if (!trimmed || trimmed.length < MIN_CODE_LENGTH) return;
+
+      const encontrado = productos.find(
+        (p) => p.activo && p.codigo && p.codigo.trim().toLowerCase() === trimmed.toLowerCase()
+      );
+
+      if (encontrado) {
+        agregarAlCarrito(encontrado);
+        setBusqueda('');
+        toast.success(`${encontrado.nombre} agregado al carrito`, {
+          duration: 1500,
+          icon: '✓',
+        });
+      } else {
+        toast.error(`Código "${trimmed}" no encontrado`, {
+          description: 'Verificá que el producto tenga el código registrado.',
+          duration: 3000,
+        });
+      }
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+
+      // Si el foco está en un input que NO es la búsqueda del POS, no interferir
+      const isFocusedOtherInput =
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) &&
+        target.id !== 'pos-busqueda';
+
+      if (isFocusedOtherInput) return;
+
+      if (e.key === 'Enter') {
+        if (bufferTimer) clearTimeout(bufferTimer);
+        const codigo = buffer;
+        buffer = '';
+        if (codigo.length >= MIN_CODE_LENGTH) {
+          e.preventDefault();
+          procesarScan(codigo);
+        }
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        buffer += e.key;
+        // Reset buffer si el próximo char tarda demasiado (tipeo humano)
+        if (bufferTimer) clearTimeout(bufferTimer);
+        bufferTimer = setTimeout(() => { buffer = ''; }, BUFFER_TIMEOUT_MS);
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      if (bufferTimer) clearTimeout(bufferTimer);
+    };
+  }, [productos, agregarAlCarrito]);
 
   function cambiarCantidad(productoId: string, delta: number) {
     setCart((prev) =>
@@ -153,16 +219,21 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
             ))}
           </div>
 
-          {/* Búsqueda */}
+          {/* Búsqueda + indicador scanner */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              className="pl-9 bg-background border-border/60 focus-visible:border-primary/50"
-              placeholder="Buscar producto por nombre o código..."
+              id="pos-busqueda"
+              className="pl-9 pr-24 bg-background border-border/60 focus-visible:border-primary/50"
+              placeholder="Buscar o escanear código de barras..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               autoFocus
             />
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-muted-foreground/50 pointer-events-none select-none">
+              <ScanBarcode className="h-3.5 w-3.5" />
+              scanner activo
+            </span>
           </div>
         </div>
 
