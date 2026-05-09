@@ -41,6 +41,7 @@ export async function GET(
           cantidad:       l.cantidad,
           precioUnitario: l.precioUnitario,
           subtotal:       l.subtotal,
+          esServicio:     !l.productoId,
         }))}
         subtotal={pres.subtotal}
         descuento={pres.descuento}

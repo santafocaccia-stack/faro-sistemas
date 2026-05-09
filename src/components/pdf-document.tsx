@@ -149,6 +149,7 @@ type Linea = {
   cantidad: string | number;
   precioUnitario: string | number;
   subtotal: string | number;
+  esServicio?: boolean;        // true para líneas sin productoId
 };
 
 type PdfBaseProps = {
@@ -342,8 +343,19 @@ export function PresupuestoPDF({
         </View>
 
         {lineas.map((l, i) => (
-          <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
-            <Text style={[styles.cellText, styles.colDesc]}>{l.descripcion}</Text>
+          <View key={i} style={[
+            styles.tableRow,
+            i % 2 === 1 && !l.esServicio ? styles.tableRowAlt : {},
+            l.esServicio ? { backgroundColor: '#fffbeb', borderLeftWidth: 2, borderLeftColor: '#f59e0b' } : {},
+          ]}>
+            <View style={[styles.colDesc, { flexDirection: 'column' }]}>
+              {l.esServicio && (
+                <Text style={{ fontSize: 6, color: '#b45309', fontFamily: 'Helvetica-Bold', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 }}>
+                  Servicio
+                </Text>
+              )}
+              <Text style={styles.cellText}>{l.descripcion}</Text>
+            </View>
             <Text style={[styles.cellNum, styles.colCant]}>{Number(l.cantidad)}</Text>
             <Text style={[styles.cellNum, styles.colPrice]}>{ars(l.precioUnitario)}</Text>
             <Text style={[styles.cellNum, styles.colSub]}>{ars(l.subtotal)}</Text>
