@@ -56,7 +56,7 @@ export async function GET(
 
     const filename = `presupuesto-${String(pres.numero).padStart(5, '0')}.pdf`;
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
