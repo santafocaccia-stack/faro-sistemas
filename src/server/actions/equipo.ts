@@ -66,7 +66,8 @@ export async function invitarMiembro(input: InviteInput) {
 
   // Usar Admin API para enviar la invitación
   const admin = createAdminClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) throw new Error('NEXT_PUBLIC_APP_URL no está configurada — los emails de invitación no pueden enviarse sin la URL de la app');
 
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${appUrl}/auth/callback?next=/dashboard`,
