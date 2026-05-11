@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Pencil } from 'lucide-react';
 import { obtenerPresupuesto } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
 import {
@@ -46,6 +46,13 @@ export default async function DetallePresupuestoPage({ params }: Props) {
 
         <div className="flex items-center gap-2">
           <PresupuestoAcciones id={pres.id} estadoActual={pres.estado} />
+          <Link
+            href={`/dashboard/presupuestos/${pres.id}/editar`}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium border border-border/60 bg-background hover:border-border hover:bg-muted transition-colors"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Editar
+          </Link>
           <PresupuestoPDFButton presupuestoId={pres.id} />
         </div>
       </div>

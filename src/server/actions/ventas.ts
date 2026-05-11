@@ -147,6 +147,77 @@ export async function listarVentas(canal: CanalVenta) {
   return rows;
 }
 
+export async function anularVenta(id: string) {
+  const session = await requireSession();
+
+  await db.transaction(async (tx) => {
+    // Traer la venta
+    const result = await tx
+      .select()
+      .from(ventas)
+      .where(and(byTenant(session.tenantId, ventas), eq(ventas.id, id)))
+      .limit(1);
+
+    const venta = result[0];
+    if (!venta) throw new Error('Venta no encontrada');
+    if (venta.estado === 'anulada') throw new Error('La venta ya está anulada');
+
+    const lineas = await tx
+      .select()
+      .from(ventasLineas)
+      .where(eq(ventasLineas.ventaId, id));
+
+    // 1. Marcar anulada
+    await tx
+      .update(ventas)
+      .set({ estado: 'anulada', anuladaAt: new Date() })
+      .where(eq(ventas.id, id));
+
+    // 2. Revertir stock (sumar cantidad de vuelta)
+    for (const l of lineas) {
+      if (!l.productoId) continue;
+      await tx
+        .update(productos)
+        .set({ stockActual: sql`${productos.stockActual} + ${l.cantidad}::numeric` })
+        .where(and(byTenant(session.tenantId, productos), eq(productos.id, l.productoId)));
+    }
+
+    // 3. Si era cuenta corriente, emitir nota de crédito en el libro mayor
+    if (venta.tipoPago === 'cuenta_corriente') {
+      const saldoResult = await tx
+        .select({ saldo: clientes.saldoActual })
+        .from(clientes)
+        .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, venta.clienteId)))
+        .limit(1);
+
+      const saldoAnterior = Number(saldoResult[0]?.saldo ?? 0);
+      const saldoPosterior = saldoAnterior - Number(venta.total);
+
+      await tx.insert(movimientosCuentaCorriente).values({
+        tenantId:       session.tenantId,
+        clienteId:      venta.clienteId,
+        tipo:           'nota_credito',
+        ventaId:        venta.id,
+        usuarioId:      session.userId,
+        debe:           '0',
+        haber:          venta.total,
+        saldoPosterior: saldoPosterior.toFixed(2),
+        descripcion:    `Anulación venta ${venta.canal} #${venta.numero}`,
+      });
+
+      await tx
+        .update(clientes)
+        .set({ saldoActual: saldoPosterior.toFixed(2) })
+        .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, venta.clienteId)));
+    }
+  });
+
+  revalidatePath(`/dashboard/ventas/historial/${id}`);
+  revalidatePath('/dashboard/ventas/historial');
+  revalidatePath('/dashboard/clientes');
+  revalidatePath('/dashboard');
+}
+
 export async function obtenerVenta(id: string) {
   const session = await requireSession();
   const [row] = await db

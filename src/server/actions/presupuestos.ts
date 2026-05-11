@@ -143,6 +143,62 @@ export async function crearPresupuesto(input: PresupuestoInput) {
   return creado;
 }
 
+// ── Editar ────────────────────────────────────────────────────────────────────
+
+export async function editarPresupuesto(id: string, input: PresupuestoInput) {
+  const session = await requireSession();
+  const { tenantId } = session;
+
+  const subtotal  = input.lineas.reduce((acc, l) => acc + Number(l.subtotal), 0);
+  const descuento = Number(input.descuento ?? 0);
+  const total     = subtotal - descuento;
+
+  await db.transaction(async (tx) => {
+    // Verificar que pertenece al tenant
+    const check = await tx
+      .select({ id: presupuestos.id })
+      .from(presupuestos)
+      .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.id, id)))
+      .limit(1);
+
+    if (!check[0]) throw new Error('Presupuesto no encontrado');
+
+    // Actualizar cabecera
+    await tx
+      .update(presupuestos)
+      .set({
+        clienteId:     input.clienteId    || null,
+        clienteNombre: input.clienteNombre || null,
+        validezDias:   input.validezDias,
+        notas:         input.notas || null,
+        subtotal:      subtotal.toFixed(2),
+        descuento:     descuento.toFixed(2),
+        total:         total.toFixed(2),
+      })
+      .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.id, id)));
+
+    // Reemplazar líneas
+    await tx.delete(presupuestosLineas).where(eq(presupuestosLineas.presupuestoId, id));
+
+    if (input.lineas.length > 0) {
+      await tx.insert(presupuestosLineas).values(
+        input.lineas.map((l) => ({
+          presupuestoId:  id,
+          productoId:     l.productoId || null,
+          descripcion:    l.descripcion,
+          cantidad:       l.cantidad,
+          precioUnitario: l.precioUnitario,
+          subtotal:       l.subtotal,
+        })),
+      );
+    }
+  });
+
+  revalidatePath('/dashboard/presupuestos');
+  revalidatePath(`/dashboard/presupuestos/${id}`);
+  return { id };
+}
+
 // ── Cambiar estado ────────────────────────────────────────────────────────────
 
 export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEstado) {

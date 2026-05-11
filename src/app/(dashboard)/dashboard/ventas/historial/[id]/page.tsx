@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { BoletaImprimible, PrintButton } from '@/components/boleta-imprimible';
 import { RemitoPDFButton } from '@/components/pdf-download-button';
+import { VentaAnularButton } from '@/components/venta-anular-button';
 
 const estadoBadge: Record<string, { label: string; className: string }> = {
   pagada:    { label: 'Pagada',    className: 'bg-success/15 text-success border-success/20' },
@@ -47,6 +48,7 @@ export default async function DetalleVentaPage({ params }: Props) {
             Volver al historial
           </Link>
           <div className="flex items-center gap-2">
+            <VentaAnularButton ventaId={venta.id} estado={venta.estado} />
             {venta.canal === 'mayorista' && (
               <RemitoPDFButton ventaId={venta.id} />
             )}

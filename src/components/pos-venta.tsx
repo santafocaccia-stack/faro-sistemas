@@ -67,7 +67,10 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
 
   const clienteSeleccionado = clientes.find((c) => c.id === clienteId);
   const puedeUsarCC = clienteSeleccionado?.habilitaCuentaCorriente ?? false;
+  const descuentoPct = Number(clienteSeleccionado?.descuentoPorcentaje ?? 0);
   const subtotal = cart.reduce((a, i) => a + i.cantidad * i.precioUnitario, 0);
+  const descuentoMonto = descuentoPct > 0 ? Math.round(subtotal * descuentoPct) / 100 : 0;
+  const total = subtotal - descuentoMonto;
 
   function switchCanal(nuevoCanal: CanalVenta) {
     setCanal(nuevoCanal);
@@ -180,7 +183,14 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
 
     startTransition(async () => {
       try {
-        await crearVenta({ canal, clienteId, tipoPago, metodoPago: tipoPago === 'contado' ? metodoPago : undefined, lineas });
+        await crearVenta({
+          canal,
+          clienteId,
+          tipoPago,
+          metodoPago: tipoPago === 'contado' ? metodoPago : undefined,
+          lineas,
+          descuento: descuentoMonto > 0 ? descuentoMonto.toFixed(2) : undefined,
+        });
         setCart([]);
         setBusqueda('');
         setClienteId(esMayorista ? '' : (consumidorFinalId ?? ''));
@@ -368,17 +378,31 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
         {/* Panel de cobro */}
         <div className="border-t p-4 space-y-3 bg-card">
 
-          {/* Total */}
+          {/* Subtotal + descuento + total */}
+          {descuentoMonto > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs text-muted-foreground">Subtotal</span>
+                <span className="text-sm tabular-nums text-muted-foreground">{formatARS(subtotal)}</span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs text-emerald-400 flex items-center gap-1">
+                  Descuento {descuentoPct}%
+                </span>
+                <span className="text-sm tabular-nums text-emerald-400">− {formatARS(descuentoMonto)}</span>
+              </div>
+            </div>
+          )}
           <div className="flex items-baseline justify-between">
             <span className="text-sm text-muted-foreground">Total</span>
             <motion.span
-              key={subtotal}
+              key={total}
               initial={{ opacity: 0.6, scale: 1.04 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 500, damping: 28 }}
               className="text-2xl font-bold tracking-tight tabular-nums"
             >
-              {formatARS(subtotal)}
+              {formatARS(total)}
             </motion.span>
           </div>
 
@@ -452,7 +476,7 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
             ) : isPending ? (
               'Registrando...'
             ) : (
-              `Cobrar ${formatARS(subtotal)}`
+              `Cobrar ${formatARS(total)}`
             )}
           </Button>
         </div>

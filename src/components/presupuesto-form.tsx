@@ -3,14 +3,14 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Search, Plus, Trash2, Package, Wrench, ChevronDown } from 'lucide-react';
+import { Search, Plus, Trash2, Package, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { crearPresupuesto } from '@/server/actions/presupuestos';
+import { crearPresupuesto, editarPresupuesto } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
 import type { Producto, Cliente } from '@/server/db/schema';
 
@@ -25,22 +25,48 @@ type LineaEdit = {
   precioUnitario: number;
 };
 
+type InitialData = {
+  id: string;
+  clienteId?: string | null;
+  clienteNombre?: string | null;
+  validezDias: number;
+  notas?: string | null;
+  descuento: number;
+  lineas: {
+    productoId?: string | null;
+    descripcion: string;
+    cantidad: number;
+    precioUnitario: number;
+  }[];
+};
+
 type Props = {
   productos: Producto[];
   clientes: Cliente[];
+  initialData?: InitialData;
 };
 
-export function PresupuestoForm({ productos, clientes }: Props) {
+export function PresupuestoForm({ productos, clientes, initialData }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const isEdit = !!initialData;
 
   const [busqueda, setBusqueda] = useState('');
-  const [lineas, setLineas] = useState<LineaEdit[]>([]);
-  const [clienteId, setClienteId] = useState<string>('');
-  const [clienteLibre, setClienteLibre] = useState('');
-  const [validezDias, setValidezDias] = useState(15);
-  const [descuento, setDescuento] = useState(0);
-  const [notas, setNotas] = useState('');
+  const [lineas, setLineas] = useState<LineaEdit[]>(() =>
+    initialData?.lineas.map((l) => ({
+      key: crypto.randomUUID(),
+      tipo: l.productoId ? 'producto' : 'servicio' as TipoLinea,
+      productoId: l.productoId ?? null,
+      descripcion: l.descripcion,
+      cantidad: l.cantidad,
+      precioUnitario: l.precioUnitario,
+    })) ?? []
+  );
+  const [clienteId, setClienteId] = useState<string>(initialData?.clienteId ?? '');
+  const [clienteLibre, setClienteLibre] = useState(initialData?.clienteNombre ?? '');
+  const [validezDias, setValidezDias] = useState(initialData?.validezDias ?? 15);
+  const [descuento, setDescuento] = useState(initialData?.descuento ?? 0);
+  const [notas, setNotas] = useState(initialData?.notas ?? '');
 
   const productosFiltrados = productos.filter(
     (p) =>
@@ -54,9 +80,7 @@ export function PresupuestoForm({ productos, clientes }: Props) {
   function agregarProducto(p: Producto) {
     setLineas((prev) => {
       const existe = prev.find((l) => l.productoId === p.id);
-      if (existe) {
-        return prev.map((l) => l.productoId === p.id ? { ...l, cantidad: l.cantidad + 1 } : l);
-      }
+      if (existe) return prev.map((l) => l.productoId === p.id ? { ...l, cantidad: l.cantidad + 1 } : l);
       return [...prev, {
         key: crypto.randomUUID(),
         tipo: 'producto',
@@ -70,17 +94,14 @@ export function PresupuestoForm({ productos, clientes }: Props) {
   }
 
   function agregarServicio() {
-    setLineas((prev) => [
-      ...prev,
-      {
-        key: crypto.randomUUID(),
-        tipo: 'servicio',
-        productoId: null,
-        descripcion: '',
-        cantidad: 1,
-        precioUnitario: 0,
-      },
-    ]);
+    setLineas((prev) => [...prev, {
+      key: crypto.randomUUID(),
+      tipo: 'servicio',
+      productoId: null,
+      descripcion: '',
+      cantidad: 1,
+      precioUnitario: 0,
+    }]);
   }
 
   function actualizarLinea(key: string, campo: keyof LineaEdit, valor: string | number) {
@@ -98,24 +119,32 @@ export function PresupuestoForm({ productos, clientes }: Props) {
       : clienteLibre;
     if (!nombreCliente.trim()) { toast.error('Indicá un cliente'); return; }
 
+    const payload = {
+      clienteId: clienteId || null,
+      clienteNombre: clienteId ? null : clienteLibre.trim(),
+      validezDias,
+      notas: notas.trim() || null,
+      descuento: descuento.toFixed(2),
+      lineas: lineas.map((l) => ({
+        productoId: l.productoId,
+        descripcion: l.descripcion,
+        cantidad: l.cantidad.toString(),
+        precioUnitario: l.precioUnitario.toFixed(2),
+        subtotal: (l.cantidad * l.precioUnitario).toFixed(2),
+      })),
+    };
+
     startTransition(async () => {
       try {
-        const { id } = await crearPresupuesto({
-          clienteId: clienteId || null,
-          clienteNombre: clienteId ? null : clienteLibre.trim(),
-          validezDias,
-          notas: notas.trim() || null,
-          descuento: descuento.toFixed(2),
-          lineas: lineas.map((l) => ({
-            productoId: l.productoId,
-            descripcion: l.descripcion,
-            cantidad: l.cantidad.toString(),
-            precioUnitario: l.precioUnitario.toFixed(2),
-            subtotal: (l.cantidad * l.precioUnitario).toFixed(2),
-          })),
-        });
-        toast.success('Presupuesto creado');
-        router.push(`/dashboard/presupuestos/${id}`);
+        if (isEdit) {
+          await editarPresupuesto(initialData.id, payload);
+          toast.success('Presupuesto actualizado');
+          router.push(`/dashboard/presupuestos/${initialData.id}`);
+        } else {
+          const { id } = await crearPresupuesto(payload);
+          toast.success('Presupuesto creado');
+          router.push(`/dashboard/presupuestos/${id}`);
+        }
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Error al guardar');
       }
@@ -160,10 +189,7 @@ export function PresupuestoForm({ productos, clientes }: Props) {
 
           <div className="space-y-1.5">
             <label className={labelCls}>Validez (días)</label>
-            <Select
-              value={String(validezDias)}
-              onValueChange={(v) => setValidezDias(Number(v))}
-            >
+            <Select value={String(validezDias)} onValueChange={(v) => setValidezDias(Number(v))}>
               <SelectTrigger className={inputCls}>
                 <SelectValue />
               </SelectTrigger>
@@ -191,11 +217,8 @@ export function PresupuestoForm({ productos, clientes }: Props) {
       {/* ── Agregar ítems ─────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
         <h2 className="text-sm font-semibold tracking-tight">Ítems del presupuesto</h2>
-
-        {/* Dos acciones en paralelo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-          {/* Buscador de productos del catálogo */}
           <div className="space-y-2">
             <p className={labelCls + ' flex items-center gap-1.5'}>
               <Package className="h-3 w-3" /> Producto del catálogo
@@ -234,7 +257,6 @@ export function PresupuestoForm({ productos, clientes }: Props) {
             )}
           </div>
 
-          {/* Agregar servicio / tarea */}
           <div className="space-y-2">
             <p className={labelCls + ' flex items-center gap-1.5'}>
               <Wrench className="h-3 w-3" /> Servicio o tarea a medida
@@ -247,7 +269,7 @@ export function PresupuestoForm({ productos, clientes }: Props) {
               Agregar servicio / tarea
             </button>
             <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-              Escribís la descripción y el precio manualmente — ideal para mano de obra, honorarios, trabajos por hora, etc.
+              Describís la tarea y ponés el precio manualmente — ideal para mano de obra, honorarios, trabajos por hora, etc.
             </p>
           </div>
         </div>
@@ -269,7 +291,6 @@ export function PresupuestoForm({ productos, clientes }: Props) {
           </div>
         ) : (
           <>
-            {/* Encabezado */}
             <div className="grid grid-cols-[28px_1fr_72px_112px_92px_32px] gap-2 px-4 py-2 bg-muted/30 border-b border-border/60">
               {['', 'Descripción', 'Cant.', 'P. unit.', 'Subtotal', ''].map((h, i) => (
                 <p key={i} className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">{h}</p>
@@ -284,7 +305,6 @@ export function PresupuestoForm({ productos, clientes }: Props) {
                   key={l.key}
                   className={`grid grid-cols-[28px_1fr_72px_112px_92px_32px] gap-2 px-4 py-2.5 border-b border-border/40 last:border-0 items-center ${esServicio ? 'bg-amber-500/[0.03]' : ''}`}
                 >
-                  {/* Ícono tipo */}
                   <div className="flex items-center justify-center">
                     {esServicio
                       ? <Wrench className="h-3.5 w-3.5 text-amber-500/70" />
@@ -292,7 +312,6 @@ export function PresupuestoForm({ productos, clientes }: Props) {
                     }
                   </div>
 
-                  {/* Descripción — textarea para servicios, input para productos */}
                   {esServicio ? (
                     <Textarea
                       value={l.descripcion}
@@ -311,17 +330,13 @@ export function PresupuestoForm({ productos, clientes }: Props) {
                   )}
 
                   <Input
-                    type="number"
-                    min="0.001"
-                    step="0.001"
+                    type="number" min="0.001" step="0.001"
                     value={l.cantidad}
                     onChange={(e) => actualizarLinea(l.key, 'cantidad', Number(e.target.value))}
                     className="h-8 bg-background/40 border-border/60 text-sm font-mono text-right"
                   />
                   <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="number" min="0" step="0.01"
                     value={l.precioUnitario}
                     onChange={(e) => actualizarLinea(l.key, 'precioUnitario', Number(e.target.value))}
                     className="h-8 bg-background/40 border-border/60 text-sm font-mono text-right"
@@ -337,7 +352,6 @@ export function PresupuestoForm({ productos, clientes }: Props) {
               );
             })}
 
-            {/* Botones para agregar más ítems dentro de la tabla */}
             <div className="px-4 py-2.5 border-t border-border/60 flex items-center gap-3">
               <button
                 onClick={agregarServicio}
@@ -348,10 +362,7 @@ export function PresupuestoForm({ productos, clientes }: Props) {
               </button>
               <span className="text-border/60">·</span>
               <button
-                onClick={() => setLineas((prev) => [
-                  ...prev,
-                  { key: crypto.randomUUID(), tipo: 'producto', productoId: null, descripcion: '', cantidad: 1, precioUnitario: 0 },
-                ])}
+                onClick={() => setLineas((prev) => [...prev, { key: crypto.randomUUID(), tipo: 'producto', productoId: null, descripcion: '', cantidad: 1, precioUnitario: 0 }])}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -367,7 +378,6 @@ export function PresupuestoForm({ productos, clientes }: Props) {
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex flex-col items-end gap-3">
             <div className="w-full max-w-xs space-y-2">
-              {/* Resumen por tipo */}
               {lineas.some((l) => l.tipo === 'producto') && lineas.some((l) => l.tipo === 'servicio') && (
                 <>
                   <div className="flex justify-between text-xs text-muted-foreground">
@@ -393,9 +403,7 @@ export function PresupuestoForm({ productos, clientes }: Props) {
               <div className="flex items-center justify-between gap-4">
                 <span className="text-sm text-muted-foreground shrink-0">Descuento $</span>
                 <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="number" min="0" step="0.01"
                   value={descuento}
                   onChange={(e) => setDescuento(Number(e.target.value))}
                   className="h-7 w-28 bg-background/40 border-border/60 text-sm font-mono text-right"
@@ -417,7 +425,10 @@ export function PresupuestoForm({ productos, clientes }: Props) {
           Cancelar
         </Button>
         <Button onClick={handleGuardar} disabled={isPending || lineas.length === 0} className="glow-primary">
-          {isPending ? 'Guardando...' : 'Crear presupuesto'}
+          {isPending
+            ? (isEdit ? 'Guardando...' : 'Creando...')
+            : (isEdit ? 'Guardar cambios' : 'Crear presupuesto')
+          }
         </Button>
       </div>
     </div>
