@@ -241,10 +241,21 @@ export async function obtenerVenta(id: string) {
     .limit(1);
   if (!row) return null;
 
-  const [lineas, pagoRow] = await Promise.all([
-    db.select().from(ventasLineas).where(eq(ventasLineas.ventaId, id)),
-    db.select({ metodo: pagos.metodo }).from(pagos).where(eq(pagos.ventaId, id)).limit(1),
+  // Traer líneas y pago verificando tenant via join con la venta ya validada
+  const [lineasRows, pagoRow] = await Promise.all([
+    db
+      .select({ l: ventasLineas })
+      .from(ventasLineas)
+      .innerJoin(ventas, and(eq(ventasLineas.ventaId, ventas.id), byTenant(session.tenantId, ventas)))
+      .where(eq(ventasLineas.ventaId, id)),
+    db
+      .select({ metodo: pagos.metodo })
+      .from(pagos)
+      .innerJoin(ventas, and(eq(pagos.ventaId, ventas.id), byTenant(session.tenantId, ventas)))
+      .where(eq(pagos.ventaId, id))
+      .limit(1),
   ]);
+  const lineas = lineasRows.map((r) => r.l);
 
   const metodoPago = pagoRow[0]?.metodo ?? null;
 

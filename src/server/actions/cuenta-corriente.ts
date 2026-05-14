@@ -12,6 +12,15 @@ import { revalidatePath } from 'next/cache';
 
 export async function listarMovimientosCliente(clienteId: string) {
   const session = await requireSession();
+
+  // Verificar que el cliente pertenece a este tenant antes de retornar sus movimientos
+  const [clienteExiste] = await db
+    .select({ id: clientes.id })
+    .from(clientes)
+    .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, clienteId)))
+    .limit(1);
+  if (!clienteExiste) throw new Error('Cliente no encontrado');
+
   const rows = await db
     .select()
     .from(movimientosCuentaCorriente)

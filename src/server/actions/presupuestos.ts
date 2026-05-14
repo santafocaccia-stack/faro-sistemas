@@ -67,18 +67,24 @@ export async function obtenerPresupuesto(id: string) {
 
   if (!pres) return null;
 
-  const lineas = await db
-    .select()
+  // Líneas: inner join con el presupuesto ya validado para garantizar tenant
+  const lineasRows = await db
+    .select({ l: presupuestosLineas })
     .from(presupuestosLineas)
+    .innerJoin(
+      presupuestos,
+      and(eq(presupuestosLineas.presupuestoId, presupuestos.id), byTenant(tenantId, presupuestos))
+    )
     .where(eq(presupuestosLineas.presupuestoId, id));
+  const lineas = lineasRows.map((r) => r.l);
 
-  // Nombre del cliente
+  // Nombre del cliente — filtrar también por tenant para no cruzar datos
   let clienteDisplay = pres.clienteNombre ?? 'Sin cliente';
   if (pres.clienteId) {
     const [c] = await db
       .select({ razonSocial: clientes.razonSocial })
       .from(clientes)
-      .where(eq(clientes.id, pres.clienteId))
+      .where(and(byTenant(tenantId, clientes), eq(clientes.id, pres.clienteId)))
       .limit(1);
     if (c) clienteDisplay = c.razonSocial;
   }
@@ -203,10 +209,12 @@ export async function editarPresupuesto(id: string, input: PresupuestoInput) {
 
 export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEstado) {
   const session = await requireSession();
-  await db
+  const result = await db
     .update(presupuestos)
     .set({ estado })
-    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)));
+    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+    .returning({ id: presupuestos.id });
+  if (result.length === 0) throw new Error('Presupuesto no encontrado');
   revalidatePath('/dashboard/presupuestos');
   revalidatePath(`/dashboard/presupuestos/${id}`);
 }
@@ -215,8 +223,10 @@ export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEs
 
 export async function eliminarPresupuesto(id: string) {
   const session = await requireSession();
-  await db
+  const result = await db
     .delete(presupuestos)
-    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)));
+    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+    .returning({ id: presupuestos.id });
+  if (result.length === 0) throw new Error('Presupuesto no encontrado');
   revalidatePath('/dashboard/presupuestos');
 }
