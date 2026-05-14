@@ -74,12 +74,9 @@ export function MobileNav({ email }: { email: string }) {
         {/* Logo — centro */}
         <Link href="/dashboard" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
           <div className="h-7 w-7 rounded-[7px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_4px_12px_oklch(0.68_0.19_38_/_0.35)]">
-            <span className="text-primary-foreground font-bold text-[13px] leading-none tracking-tight">F</span>
+            <span className="text-primary-foreground font-bold text-[13px] leading-none tracking-tight">G</span>
           </div>
-          <div className="leading-tight">
-            <p className="font-semibold text-[13px] text-sidebar-foreground tracking-tight">Faro</p>
-            <p className="text-[10px] text-muted-foreground -mt-0.5">Sistemas</p>
-          </div>
+          <p className="font-semibold text-[13px] text-sidebar-foreground tracking-tight">Gesto</p>
         </Link>
 
         {/* Espacio derecho para balance visual */}
@@ -107,10 +104,10 @@ export function MobileNav({ email }: { email: string }) {
         <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="h-7 w-7 rounded-[7px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-[13px] leading-none">F</span>
+              <span className="text-primary-foreground font-bold text-[13px] leading-none">G</span>
             </div>
             <div className="leading-tight">
-              <p className="font-semibold text-[13px] tracking-tight">Faro Sistemas</p>
+              <p className="font-semibold text-[13px] tracking-tight">Gesto</p>
               <p className="text-[10px] text-muted-foreground -mt-0.5">{email}</p>
             </div>
           </div>

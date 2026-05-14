@@ -4,8 +4,8 @@ import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Faro Sistemas',
-  description: 'Gestión comercial premium para PyMEs argentinas',
+  title: 'Gesto',
+  description: 'Gestión comercial para PyMEs argentinas',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

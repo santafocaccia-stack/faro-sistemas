@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { formatARS } from '@/lib/utils';
 
@@ -172,7 +172,7 @@ function TicketMinorista({
       {/* Pie */}
       <div style={{ textAlign: 'center', marginTop: '3mm', fontSize: '10px', color: '#555' }}>
         <div>¡Gracias por su compra!</div>
-        <div style={{ marginTop: '1mm' }}>Faro Sistemas</div>
+        <div style={{ marginTop: '1mm' }}>Gesto</div>
       </div>
     </div>
   );
@@ -334,7 +334,7 @@ function RemitoMayorista({
           </div>
         </div>
         <div style={{ textAlign: 'center', fontSize: '10px', color: '#aaa' }}>
-          Faro Sistemas
+          Gesto
         </div>
         <div style={{ textAlign: 'center', width: '60mm' }}>
           <div style={{ borderTop: '1px solid #111', paddingTop: '2mm', fontSize: '10px', color: '#555' }}>

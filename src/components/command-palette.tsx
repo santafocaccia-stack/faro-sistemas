@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -166,7 +166,7 @@ export function CommandPalette({ open, onOpenChange, productos, clientes }: Prop
                 seleccionar
               </span>
             </span>
-            <span>Faro Sistemas</span>
+            <span>Gesto</span>
           </div>
         </Command>
       </div>
