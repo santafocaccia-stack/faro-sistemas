@@ -12,7 +12,9 @@ export async function obtenerKpisDashboard() {
 
   const hoy = sql`(NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date`;
 
-  const [ventasHoy, pendienteCC, stockBajo, ultimasVentas] = await Promise.all([
+  const inicioSemana = sql`date_trunc('week', NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')`;
+
+  const [ventasHoy, ventasSemana, pendienteCC, stockBajo, ultimasVentas] = await Promise.all([
     // Ventas del día agrupadas por canal
     db
       .select({
@@ -29,6 +31,21 @@ export async function obtenerKpisDashboard() {
         )
       )
       .groupBy(ventas.canal),
+
+    // Ventas de la semana actual
+    db
+      .select({
+        cantidad: sql<number>`count(*)::int`,
+        total: sql<number>`coalesce(sum(${ventas.total}), 0)::numeric`,
+      })
+      .from(ventas)
+      .where(
+        and(
+          byTenant(tenantId, ventas),
+          sql`${ventas.fecha} >= ${inicioSemana}`,
+          sql`${ventas.estado} != 'anulada'`,
+        )
+      ),
 
     // Clientes con saldo en cuenta corriente
     db
@@ -83,6 +100,10 @@ export async function obtenerKpisDashboard() {
     ventasHoy: {
       minorista: { cantidad: minorista?.cantidad ?? 0, total: Number(minorista?.total ?? 0) },
       mayorista: { cantidad: mayorista?.cantidad ?? 0, total: Number(mayorista?.total ?? 0) },
+    },
+    ventasSemana: {
+      cantidad: ventasSemana[0]?.cantidad ?? 0,
+      total: Number(ventasSemana[0]?.total ?? 0),
     },
     pendienteCC: {
       cantidad: pendienteCC[0]?.cantidad ?? 0,
