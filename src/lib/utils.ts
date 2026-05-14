@@ -33,8 +33,9 @@ export function formatUSD(amount: number): string {
 }
 
 /**
- * Formatea peso (kg) con coma decimal argentina.
+ * Formatea peso en kg con coma decimal argentina.
+ * Ej: 8.5 → "8,500 kg"
  */
-export function formatKg(grams: number): string {
-  return `${(grams / 1000).toLocaleString('es-AR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg`;
+export function formatKg(kg: number): string {
+  return `${kg.toLocaleString('es-AR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg`;
 }

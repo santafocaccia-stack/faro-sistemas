@@ -52,7 +52,18 @@ async function main() {
   const sql = postgres(DATABASE_URL, { prepare: false });
   const db = drizzle(sql);
 
-  // ── 3. Crear tenant ──────────────────────────────────────
+  // ── 3. Limpiar registros anteriores en DB ───────────────
+  // Borra en cascada: users → users_tenants → (tenant queda huérfano, limpiamos también)
+  await sql`
+    DELETE FROM users_tenants
+    WHERE user_id IN (SELECT id FROM users WHERE email = ${DEMO_EMAIL})
+  `;
+  await sql`DELETE FROM users WHERE email = ${DEMO_EMAIL}`;
+
+  // ── 4. Crear usuario en tabla propia ─────────────────────
+  await sql`INSERT INTO users (id, email) VALUES (${userId}, ${DEMO_EMAIL})`;
+  console.log('  ✅ Usuario en tabla users creado');
+
   await db.transaction(async (tx) => {
     const [tenant] = await tx.insert(tenants).values({
       nombre: 'La Demo Carnicería',
@@ -63,9 +74,6 @@ async function main() {
 
     if (!tenant) throw new Error('Error al crear tenant');
     const tenantId = tenant.id;
-
-    // Usuario en tabla propia
-    await tx.insert(users).values({ id: userId, email: DEMO_EMAIL }).onConflictDoNothing();
 
     // Vincularlo como owner
     await tx.insert(usersTenants).values({ userId, tenantId, rol: 'owner' });
@@ -105,15 +113,15 @@ async function main() {
       },
     ]);
 
-    // Productos demo
+    // Productos demo — stock en kg (ej: 8.500 = 8 kg 500 g)
     await tx.insert(productos).values([
       {
         tenantId,
         nombre: 'Bola de lomo',
         categoria: 'Vacuno',
         tipoUnidad: 'por_kg',
-        stockActual: '45.500',
-        stockMinimo: '10',
+        stockActual: '8.500',
+        stockMinimo: '2.000',
         costoPromedio: '3800',
         precioMayorista: '5200',
         precioMinorista: '6800',
@@ -124,8 +132,8 @@ async function main() {
         nombre: 'Nalga',
         categoria: 'Vacuno',
         tipoUnidad: 'por_kg',
-        stockActual: '32.000',
-        stockMinimo: '8',
+        stockActual: '11.200',
+        stockMinimo: '2.000',
         costoPromedio: '3500',
         precioMayorista: '4800',
         precioMinorista: '6200',
@@ -136,8 +144,8 @@ async function main() {
         nombre: 'Vacío',
         categoria: 'Vacuno',
         tipoUnidad: 'por_kg',
-        stockActual: '28.750',
-        stockMinimo: '5',
+        stockActual: '9.800',
+        stockMinimo: '2.000',
         costoPromedio: '3200',
         precioMayorista: '4500',
         precioMinorista: '5900',
@@ -148,8 +156,8 @@ async function main() {
         nombre: 'Asado de tira',
         categoria: 'Vacuno',
         tipoUnidad: 'por_kg',
-        stockActual: '60.000',
-        stockMinimo: '15',
+        stockActual: '14.600',
+        stockMinimo: '3.000',
         costoPromedio: '2900',
         precioMayorista: '4200',
         precioMinorista: '5500',
@@ -160,8 +168,8 @@ async function main() {
         nombre: 'Pechuga de pollo',
         categoria: 'Pollo',
         tipoUnidad: 'por_kg',
-        stockActual: '25.000',
-        stockMinimo: '10',
+        stockActual: '7.400',
+        stockMinimo: '2.000',
         costoPromedio: '2100',
         precioMayorista: '3000',
         precioMinorista: '3800',
@@ -172,8 +180,8 @@ async function main() {
         nombre: 'Pollo entero',
         categoria: 'Pollo',
         tipoUnidad: 'por_kg',
-        stockActual: '40.000',
-        stockMinimo: '10',
+        stockActual: '12.000',
+        stockMinimo: '3.000',
         costoPromedio: '1800',
         precioMayorista: '2600',
         precioMinorista: '3200',
@@ -184,8 +192,8 @@ async function main() {
         nombre: 'Bondiola de cerdo',
         categoria: 'Cerdo',
         tipoUnidad: 'por_kg',
-        stockActual: '18.000',
-        stockMinimo: '5',
+        stockActual: '8.200',
+        stockMinimo: '2.000',
         costoPromedio: '3100',
         precioMayorista: '4400',
         precioMinorista: '5700',
@@ -196,8 +204,8 @@ async function main() {
         nombre: 'Chorizo parrillero',
         categoria: 'Embutidos',
         tipoUnidad: 'por_unidad',
-        stockActual: '120',
-        stockMinimo: '30',
+        stockActual: '48',
+        stockMinimo: '12',
         costoPromedio: '650',
         precioMayorista: '900',
         precioMinorista: '1100',
@@ -208,8 +216,8 @@ async function main() {
         nombre: 'Morcilla',
         categoria: 'Embutidos',
         tipoUnidad: 'por_unidad',
-        stockActual: '80',
-        stockMinimo: '20',
+        stockActual: '36',
+        stockMinimo: '10',
         costoPromedio: '550',
         precioMayorista: '780',
         precioMinorista: '950',
