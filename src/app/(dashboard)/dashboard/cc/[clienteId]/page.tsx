@@ -87,10 +87,10 @@ export default async function DetalleCCPage({ params }: Props) {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-b border-border/60">
-                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 pl-4 w-24">Fecha</TableHead>
+                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 pl-4 w-20">Fecha</TableHead>
                   <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Descripción</TableHead>
-                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Debe</TableHead>
-                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Haber</TableHead>
+                  <TableHead className="hidden sm:table-cell h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Debe</TableHead>
+                  <TableHead className="hidden sm:table-cell h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Haber</TableHead>
                   <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right pr-4">Saldo</TableHead>
                 </TableRow>
               </TableHeader>
@@ -112,12 +112,12 @@ export default async function DetalleCCPage({ params }: Props) {
                           <span className="text-[13px] font-medium">{m.descripcion}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-2.5 text-right font-mono tabular-nums text-[13px]">
+                      <TableCell className="hidden sm:table-cell py-2.5 text-right font-mono tabular-nums text-[13px]">
                         {Number(m.debe) > 0
                           ? <span className="text-foreground">{formatARS(Number(m.debe))}</span>
                           : <span className="text-muted-foreground/40">—</span>}
                       </TableCell>
-                      <TableCell className="py-2.5 text-right font-mono tabular-nums text-[13px]">
+                      <TableCell className="hidden sm:table-cell py-2.5 text-right font-mono tabular-nums text-[13px]">
                         {Number(m.haber) > 0
                           ? <span className="text-success">{formatARS(Number(m.haber))}</span>
                           : <span className="text-muted-foreground/40">—</span>}

@@ -73,7 +73,7 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
 
       {/* Datos principales */}
       <FormSection icon={User} title="Datos del cliente" subtitle="Información comercial y fiscal">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Tipo" htmlFor="tipo" labelCls={labelCls}>
             <Select value={form.tipo} onValueChange={(v) => set('tipo', v as ClienteInput['tipo'])}>
               <SelectTrigger id="tipo" className={inputCls}><SelectValue /></SelectTrigger>
@@ -97,7 +97,7 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
             </Select>
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Razón social *" htmlFor="razonSocial" labelCls={labelCls}>
             <Input id="razonSocial" required value={form.razonSocial}
               onChange={(e) => set('razonSocial', e.target.value)} placeholder="Nombre o empresa" className={inputCls} />
@@ -115,7 +115,7 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
 
       {/* Contacto */}
       <FormSection icon={Phone} title="Contacto y dirección">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Teléfono" htmlFor="telefono" labelCls={labelCls}>
             <Input id="telefono" value={form.telefono ?? ''}
               onChange={(e) => set('telefono', e.target.value)} placeholder="11 1234-5678" className={`${inputCls} font-mono`} />
@@ -125,7 +125,7 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
               onChange={(e) => set('email', e.target.value)} className={inputCls} />
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Dirección" htmlFor="direccion" labelCls={labelCls}>
             <Input id="direccion" value={form.direccion ?? ''}
               onChange={(e) => set('direccion', e.target.value)} className={inputCls} />
@@ -151,7 +151,7 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
           />
         </div>
         {form.habilitaCuentaCorriente && (
-          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-border/40">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-border/40">
             <Field label="Límite de crédito" htmlFor="limiteCredito" labelCls={labelCls} hint="opcional">
               <Input id="limiteCredito" type="number" step="0.01"
                 value={form.limiteCredito ?? ''}
@@ -183,23 +183,23 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
       </FormSection>
 
       {/* Acciones */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
         {isEdit ? (
           <Button
             type="button"
             variant="ghost"
             onClick={handleDesactivar}
             disabled={isPending}
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 order-last sm:order-first"
           >
             Desactivar cliente
           </Button>
-        ) : <div />}
+        ) : <div className="hidden sm:block" />}
         <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending} className="flex-1 sm:flex-none">
             Cancelar
           </Button>
-          <Button type="submit" disabled={isPending} className="glow-primary">
+          <Button type="submit" disabled={isPending} className="glow-primary flex-1 sm:flex-none">
             {isPending ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear cliente'}
           </Button>
         </div>

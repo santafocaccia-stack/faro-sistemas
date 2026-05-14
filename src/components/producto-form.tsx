@@ -80,7 +80,7 @@ export function ProductoForm({ producto }: Props) {
 
       {/* Identificación */}
       <FormSection icon={Tag} title="Identificación" subtitle="Datos básicos del producto">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nombre *" htmlFor="nombre">
             <Input
               id="nombre"
@@ -153,8 +153,8 @@ export function ProductoForm({ producto }: Props) {
 
       {/* Unidad y stock */}
       <FormSection icon={Boxes} title="Unidad y stock" subtitle="Cómo se mide y cuánto hay disponible">
-        <div className="grid grid-cols-3 gap-4">
-          <Field label="Tipo de unidad" htmlFor="tipoUnidad">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <Field label="Tipo de unidad" htmlFor="tipoUnidad" className="col-span-2 sm:col-span-1">
             <Select
               value={form.tipoUnidad}
               onValueChange={(v) => update('tipoUnidad', v as 'por_kg' | 'por_unidad')}
@@ -194,7 +194,7 @@ export function ProductoForm({ producto }: Props) {
 
       {/* Precios */}
       <FormSection icon={DollarSign} title="Precios" subtitle="Costo y precio de venta por canal">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label={`Costo promedio ($/${unidad})`} htmlFor="costoPromedio">
             <Input
               id="costoPromedio"
@@ -248,24 +248,24 @@ export function ProductoForm({ producto }: Props) {
       </div>
 
       {/* Acciones */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
         {isEdit ? (
           <Button
             type="button"
             variant="ghost"
             onClick={handleDesactivar}
             disabled={isPending}
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 order-last sm:order-first"
           >
             Desactivar producto
           </Button>
-        ) : <div />}
+        ) : <div className="hidden sm:block" />}
 
         <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending} className="flex-1 sm:flex-none">
             Cancelar
           </Button>
-          <Button type="submit" disabled={isPending} className="glow-primary">
+          <Button type="submit" disabled={isPending} className="glow-primary flex-1 sm:flex-none">
             {isPending ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear producto'}
           </Button>
         </div>
@@ -273,9 +273,9 @@ export function ProductoForm({ producto }: Props) {
     </form>
   );
 
-  function Field({ label, htmlFor, hint, children }: { label: string; htmlFor: string; hint?: string; children: React.ReactNode }) {
+  function Field({ label, htmlFor, hint, className, children }: { label: string; htmlFor: string; hint?: string; className?: string; children: React.ReactNode }) {
     return (
-      <div className="space-y-1.5">
+      <div className={`space-y-1.5 ${className ?? ''}`}>
         <label htmlFor={htmlFor} className={labelCls}>
           {label}{hint && <span className="ml-1 normal-case text-muted-foreground/40">({hint})</span>}
         </label>

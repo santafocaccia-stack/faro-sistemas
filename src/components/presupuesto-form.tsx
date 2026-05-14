@@ -291,7 +291,8 @@ export function PresupuestoForm({ productos, clientes, initialData }: Props) {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-[28px_1fr_72px_112px_92px_32px] gap-2 px-4 py-2 bg-muted/30 border-b border-border/60">
+            {/* Header — solo desktop */}
+            <div className="hidden sm:grid sm:grid-cols-[28px_1fr_72px_112px_92px_32px] gap-2 px-4 py-2 bg-muted/30 border-b border-border/60">
               {['', 'Descripción', 'Cant.', 'P. unit.', 'Subtotal', ''].map((h, i) => (
                 <p key={i} className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">{h}</p>
               ))}
@@ -303,51 +304,117 @@ export function PresupuestoForm({ productos, clientes, initialData }: Props) {
               return (
                 <div
                   key={l.key}
-                  className={`grid grid-cols-[28px_1fr_72px_112px_92px_32px] gap-2 px-4 py-2.5 border-b border-border/40 last:border-0 items-center ${esServicio ? 'bg-amber-500/[0.03]' : ''}`}
+                  className={`border-b border-border/40 last:border-0 ${esServicio ? 'bg-amber-500/[0.03]' : ''}`}
                 >
-                  <div className="flex items-center justify-center">
-                    {esServicio
-                      ? <Wrench className="h-3.5 w-3.5 text-amber-500/70" />
-                      : <Package className="h-3.5 w-3.5 text-muted-foreground/50" />
-                    }
+                  {/* ── Desktop row ── */}
+                  <div className="hidden sm:grid sm:grid-cols-[28px_1fr_72px_112px_92px_32px] gap-2 px-4 py-2.5 items-center">
+                    <div className="flex items-center justify-center">
+                      {esServicio
+                        ? <Wrench className="h-3.5 w-3.5 text-amber-500/70" />
+                        : <Package className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      }
+                    </div>
+                    {esServicio ? (
+                      <Textarea
+                        value={l.descripcion}
+                        onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
+                        className="min-h-[32px] max-h-24 bg-background/40 border-border/60 text-sm resize-none py-1.5"
+                        placeholder="Ej: Colocación de cielorraso, mano de obra..."
+                        rows={1}
+                      />
+                    ) : (
+                      <Input
+                        value={l.descripcion}
+                        onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
+                        className="h-8 bg-background/40 border-border/60 text-sm"
+                        placeholder="Descripción..."
+                      />
+                    )}
+                    <Input
+                      type="number" min="0.001" step="0.001"
+                      value={l.cantidad}
+                      onChange={(e) => actualizarLinea(l.key, 'cantidad', Number(e.target.value))}
+                      className="h-8 bg-background/40 border-border/60 text-sm font-mono text-right"
+                    />
+                    <Input
+                      type="number" min="0" step="0.01"
+                      value={l.precioUnitario}
+                      onChange={(e) => actualizarLinea(l.key, 'precioUnitario', Number(e.target.value))}
+                      className="h-8 bg-background/40 border-border/60 text-sm font-mono text-right"
+                    />
+                    <p className="text-sm font-semibold tabular-nums text-right font-mono">{formatARS(sub)}</p>
+                    <button
+                      onClick={() => eliminarLinea(l.key)}
+                      className="text-muted-foreground hover:text-destructive transition-colors flex items-center justify-center"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
 
-                  {esServicio ? (
-                    <Textarea
-                      value={l.descripcion}
-                      onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
-                      className="min-h-[32px] max-h-24 bg-background/40 border-border/60 text-sm resize-none py-1.5"
-                      placeholder="Ej: Colocación de cielorraso, mano de obra..."
-                      rows={1}
-                    />
-                  ) : (
-                    <Input
-                      value={l.descripcion}
-                      onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
-                      className="h-8 bg-background/40 border-border/60 text-sm"
-                      placeholder="Descripción..."
-                    />
-                  )}
+                  {/* ── Mobile card ── */}
+                  <div className="sm:hidden px-3 py-3 space-y-2">
+                    {/* Fila 1: icono + descripción + eliminar */}
+                    <div className="flex items-start gap-2">
+                      <div className="h-7 w-7 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 mt-0.5">
+                        {esServicio
+                          ? <Wrench className="h-3.5 w-3.5 text-amber-500/80" />
+                          : <Package className="h-3.5 w-3.5 text-muted-foreground/60" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {esServicio ? (
+                          <Textarea
+                            value={l.descripcion}
+                            onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
+                            className="min-h-[36px] max-h-24 bg-background/40 border-border/60 text-sm resize-none py-1.5"
+                            placeholder="Describí el servicio o tarea..."
+                            rows={1}
+                          />
+                        ) : (
+                          <Input
+                            value={l.descripcion}
+                            onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
+                            className="h-9 bg-background/40 border-border/60 text-sm"
+                            placeholder="Descripción..."
+                          />
+                        )}
+                      </div>
+                      <button
+                        onClick={() => eliminarLinea(l.key)}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 mt-0.5"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
 
-                  <Input
-                    type="number" min="0.001" step="0.001"
-                    value={l.cantidad}
-                    onChange={(e) => actualizarLinea(l.key, 'cantidad', Number(e.target.value))}
-                    className="h-8 bg-background/40 border-border/60 text-sm font-mono text-right"
-                  />
-                  <Input
-                    type="number" min="0" step="0.01"
-                    value={l.precioUnitario}
-                    onChange={(e) => actualizarLinea(l.key, 'precioUnitario', Number(e.target.value))}
-                    className="h-8 bg-background/40 border-border/60 text-sm font-mono text-right"
-                  />
-                  <p className="text-sm font-semibold tabular-nums text-right font-mono">{formatARS(sub)}</p>
-                  <button
-                    onClick={() => eliminarLinea(l.key)}
-                    className="text-muted-foreground hover:text-destructive transition-colors flex items-center justify-center"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                    {/* Fila 2: cantidad + precio + subtotal */}
+                    <div className="flex items-center gap-2 pl-9">
+                      <div className="flex flex-col gap-0.5 w-20">
+                        <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50">Cant.</span>
+                        <Input
+                          type="number" min="0.001" step="0.001"
+                          value={l.cantidad}
+                          onChange={(e) => actualizarLinea(l.key, 'cantidad', Number(e.target.value))}
+                          className="h-8 bg-background/40 border-border/60 text-sm font-mono text-right px-2"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-0.5 flex-1">
+                        <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50">P. unit.</span>
+                        <Input
+                          type="number" min="0" step="0.01"
+                          value={l.precioUnitario}
+                          onChange={(e) => actualizarLinea(l.key, 'precioUnitario', Number(e.target.value))}
+                          className="h-8 bg-background/40 border-border/60 text-sm font-mono text-right px-2"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-0.5 items-end shrink-0">
+                        <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50">Subtotal</span>
+                        <p className="h-8 flex items-center text-sm font-semibold tabular-nums font-mono text-primary/90">
+                          {formatARS(sub)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -376,8 +443,8 @@ export function PresupuestoForm({ productos, clientes, initialData }: Props) {
       {/* ── Totales + descuento ──────────────────────────────────────── */}
       {lineas.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex flex-col items-end gap-3">
-            <div className="w-full max-w-xs space-y-2">
+          <div className="flex flex-col sm:items-end gap-3">
+            <div className="w-full sm:max-w-xs space-y-2">
               {lineas.some((l) => l.tipo === 'producto') && lineas.some((l) => l.tipo === 'servicio') && (
                 <>
                   <div className="flex justify-between text-xs text-muted-foreground">
@@ -420,11 +487,11 @@ export function PresupuestoForm({ productos, clientes, initialData }: Props) {
       )}
 
       {/* ── Acciones ─────────────────────────────────────────────────── */}
-      <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-2">
+        <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending} className="w-full sm:w-auto">
           Cancelar
         </Button>
-        <Button onClick={handleGuardar} disabled={isPending || lineas.length === 0} className="glow-primary">
+        <Button onClick={handleGuardar} disabled={isPending || lineas.length === 0} className="glow-primary w-full sm:w-auto">
           {isPending
             ? (isEdit ? 'Guardando...' : 'Creando...')
             : (isEdit ? 'Guardar cambios' : 'Crear presupuesto')

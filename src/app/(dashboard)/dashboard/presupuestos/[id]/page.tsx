@@ -103,7 +103,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
             <TableRow className="hover:bg-transparent border-b border-border/60">
               <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 pl-4">Descripción</TableHead>
               <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Cant.</TableHead>
-              <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">P. unit.</TableHead>
+              <TableHead className="hidden sm:table-cell h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">P. unit.</TableHead>
               <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right pr-4">Subtotal</TableHead>
             </TableRow>
           </TableHeader>
@@ -112,7 +112,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
               <TableRow key={l.id} className="hover:bg-white/[0.02] border-b border-border/40 last:border-0">
                 <TableCell className="pl-4 py-2.5 text-[13px] font-medium">{l.descripcion}</TableCell>
                 <TableCell className="text-right py-2.5 font-mono tabular-nums text-[13px] text-muted-foreground">{Number(l.cantidad)}</TableCell>
-                <TableCell className="text-right py-2.5 font-mono tabular-nums text-[13px] text-muted-foreground">{formatARS(Number(l.precioUnitario))}</TableCell>
+                <TableCell className="hidden sm:table-cell text-right py-2.5 font-mono tabular-nums text-[13px] text-muted-foreground">{formatARS(Number(l.precioUnitario))}</TableCell>
                 <TableCell className="text-right pr-4 py-2.5 font-mono tabular-nums text-[13px] font-semibold">{formatARS(Number(l.subtotal))}</TableCell>
               </TableRow>
             ))}
@@ -122,19 +122,19 @@ export default async function DetallePresupuestoPage({ params }: Props) {
 
       {/* Totales */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex flex-col items-end gap-2 text-sm">
-          <div className="flex justify-between w-full max-w-xs text-muted-foreground">
+        <div className="flex flex-col sm:items-end gap-2 text-sm">
+          <div className="flex justify-between w-full sm:max-w-xs text-muted-foreground">
             <span>Subtotal</span>
             <span className="font-mono tabular-nums">{formatARS(Number(pres.subtotal))}</span>
           </div>
           {Number(pres.descuento) > 0 && (
-            <div className="flex justify-between w-full max-w-xs text-success">
+            <div className="flex justify-between w-full sm:max-w-xs text-success">
               <span>Descuento</span>
               <span className="font-mono tabular-nums">− {formatARS(Number(pres.descuento))}</span>
             </div>
           )}
-          <div className="h-px bg-border/60 w-full max-w-xs my-1" />
-          <div className="flex justify-between w-full max-w-xs text-base font-semibold">
+          <div className="h-px bg-border/60 w-full sm:max-w-xs my-1" />
+          <div className="flex justify-between w-full sm:max-w-xs text-base font-semibold">
             <span>Total</span>
             <span className="font-mono tabular-nums">{formatARS(Number(pres.total))}</span>
           </div>

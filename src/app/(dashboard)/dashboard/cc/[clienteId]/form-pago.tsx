@@ -48,9 +48,9 @@ export function FormPago({ clienteId, saldoActual }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap gap-3 items-end">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_2fr_auto] gap-3 items-end">
 
-      <div className="space-y-1.5 min-w-[160px]">
+      <div className="space-y-1.5">
         <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">Monto</label>
         <Input
           type="number"
@@ -63,7 +63,7 @@ export function FormPago({ clienteId, saldoActual }: Props) {
         />
       </div>
 
-      <div className="space-y-1.5 min-w-[160px]">
+      <div className="space-y-1.5">
         <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">Método</label>
         <Select value={metodo} onValueChange={(v) => setMetodo(v as MetodoPago)}>
           <SelectTrigger className="h-9 bg-background/40 border-border/60 text-sm">
@@ -77,7 +77,7 @@ export function FormPago({ clienteId, saldoActual }: Props) {
         </Select>
       </div>
 
-      <div className="space-y-1.5 min-w-[200px] flex-1">
+      <div className="space-y-1.5">
         <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">Referencia <span className="text-muted-foreground/40 normal-case">(opcional)</span></label>
         <Input
           placeholder="Nro. cheque, transferencia, etc."
@@ -87,7 +87,7 @@ export function FormPago({ clienteId, saldoActual }: Props) {
         />
       </div>
 
-      <Button type="submit" disabled={isPending} className="h-9 px-4 glow-primary">
+      <Button type="submit" disabled={isPending} className="h-9 px-4 glow-primary w-full sm:w-auto">
         {isPending ? 'Registrando...' : 'Registrar pago'}
       </Button>
     </form>

@@ -62,8 +62,17 @@ export function MobileNav({ email }: { email: string }) {
     <>
       {/* ── Header mobile ─────────────────────────────── */}
       <header className="md:hidden fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-4 bg-sidebar border-b border-sidebar-border">
-        {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+        {/* Hamburger — izquierda */}
+        <button
+          onClick={() => setOpen(true)}
+          className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+          aria-label="Abrir menú"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        {/* Logo — centro */}
+        <Link href="/dashboard" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
           <div className="h-7 w-7 rounded-[7px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_4px_12px_oklch(0.68_0.19_38_/_0.35)]">
             <span className="text-primary-foreground font-bold text-[13px] leading-none tracking-tight">F</span>
           </div>
@@ -73,14 +82,8 @@ export function MobileNav({ email }: { email: string }) {
           </div>
         </Link>
 
-        {/* Hamburger */}
-        <button
-          onClick={() => setOpen(true)}
-          className="h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
-          aria-label="Abrir menú"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        {/* Espacio derecho para balance visual */}
+        <div className="h-9 w-9" />
       </header>
 
       {/* ── Backdrop ──────────────────────────────────── */}
