@@ -1,15 +1,11 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const securityHeaders = [
-  // Evita que el browser adivine el content-type (MIME sniffing)
   { key: "X-Content-Type-Options", value: "nosniff" },
-  // Prohíbe embeber la app en iframes (clickjacking)
   { key: "X-Frame-Options", value: "DENY" },
-  // Fuerza HTTPS por 1 año, incluyendo subdominios
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-  // No enviar Referrer a sitios externos
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Deshabilita features de browser que no usamos
   {
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
@@ -27,4 +23,18 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Sube source maps solo si SENTRY_AUTH_TOKEN está configurado
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Oculta source maps del bundle final (no se sirven al cliente)
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+
+  // Reduce logs de Sentry durante el build
+  disableLogger: true,
+
+  // Monitoreo automático de deploys en Vercel
+  automaticVercelMonitors: true,
+});

@@ -9,6 +9,7 @@ import {
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
 import { revalidatePath } from 'next/cache';
+import { calcularTotalesVenta, validarLimiteCredito } from '@/lib/business-logic';
 
 export type LineaVenta = {
   productoId: string | null;
@@ -40,9 +41,10 @@ async function siguienteNumero(tenantId: string, canal: CanalVenta, tx: any): Pr
 export async function crearVenta(input: NuevaVentaInput) {
   const session = await requireSession();
 
-  const subtotal = input.lineas.reduce((a, l) => a + Number(l.subtotal), 0);
-  const descuento = Number(input.descuento ?? 0);
-  const total = subtotal - descuento;
+  const { subtotal, descuento, total } = calcularTotalesVenta(
+    input.lineas,
+    Number(input.descuento ?? 0),
+  );
 
   await db.transaction(async (tx) => {
     const numero = await siguienteNumero(session.tenantId, input.canal, tx);
@@ -110,12 +112,7 @@ export async function crearVenta(input: NuevaVentaInput) {
       const saldoPosterior = saldoAnterior + total;
 
       // Validar límite de crédito si está configurado
-      const limiteCredito = Number(cliente?.limiteCredito ?? 0);
-      if (limiteCredito > 0 && saldoPosterior > limiteCredito) {
-        throw new Error(
-          `Límite de crédito excedido. Límite: $${limiteCredito.toLocaleString('es-AR')} — Saldo actual: $${saldoAnterior.toLocaleString('es-AR')} — Esta venta sumaría: $${total.toLocaleString('es-AR')}`
-        );
-      }
+      validarLimiteCredito(saldoAnterior, total, Number(cliente?.limiteCredito ?? 0));
 
       await tx.insert(movimientosCuentaCorriente).values({
         tenantId: session.tenantId,
