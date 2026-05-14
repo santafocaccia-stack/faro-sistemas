@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, Trash2, ShoppingCart, Check, Package, ScanBarcode } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, Check, Package, ScanBarcode, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +50,7 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
   const [isPending, startTransition] = useTransition();
   const [confirmado, setConfirmado] = useState(false);
+  const [mobileView, setMobileView] = useState<'productos' | 'carrito'>('productos');
 
   const esMayorista = canal === 'mayorista';
   const metodos = esMayorista ? METODOS_MAYORISTA : METODOS_MINORISTA;
@@ -205,10 +206,10 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-[calc(100svh-3.5rem)] md:h-screen overflow-hidden">
 
       {/* ── Panel izquierdo: productos ── */}
-      <div className="flex-1 flex flex-col border-r overflow-hidden">
+      <div className={`flex-1 flex-col border-r overflow-hidden ${mobileView === 'carrito' ? 'hidden md:flex' : 'flex'}`}>
 
         {/* Header con canal + búsqueda */}
         <div className="p-4 border-b bg-card/50 space-y-3">
@@ -248,7 +249,7 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
         </div>
 
         {/* Grid de productos */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4">
           {productosFiltrados.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
@@ -299,10 +300,17 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
       </div>
 
       {/* ── Panel derecho: carrito ── */}
-      <div className="w-80 lg:w-96 flex flex-col bg-card border-l">
+      <div className={`flex-col bg-card border-l w-full md:w-80 lg:w-96 ${mobileView === 'productos' ? 'hidden md:flex' : 'flex'}`}>
 
         {/* Header carrito */}
-        <div className="h-14 flex items-center gap-2 px-4 border-b">
+        <div className="h-14 flex items-center gap-2 px-4 border-b shrink-0">
+          {/* Volver — solo mobile */}
+          <button
+            onClick={() => setMobileView('productos')}
+            className="md:hidden mr-1 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
           <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           <span className="font-semibold text-sm">Carrito</span>
           {cart.length > 0 && (
@@ -481,6 +489,29 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
           </Button>
         </div>
       </div>
+
+      {/* ── Botón flotante carrito (solo mobile, solo cuando hay items) ── */}
+      <AnimatePresence>
+        {mobileView === 'productos' && cart.length > 0 && (
+          <motion.button
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            onClick={() => setMobileView('carrito')}
+            className="md:hidden fixed bottom-6 left-4 right-4 z-30 h-14 flex items-center justify-between px-5 rounded-2xl bg-primary text-primary-foreground shadow-[0_8px_32px_oklch(0.68_0.19_38_/_40%)]"
+          >
+            <div className="flex items-center gap-2.5">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="font-semibold text-sm">Ver carrito</span>
+              <span className="h-5 w-5 bg-primary-foreground/20 rounded-full text-[11px] font-bold flex items-center justify-center">
+                {cart.reduce((a, i) => a + i.cantidad, 0)}
+              </span>
+            </div>
+            <span className="font-bold text-base tabular-nums">{formatARS(total)}</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
