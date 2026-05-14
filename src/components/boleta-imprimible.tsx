@@ -37,12 +37,14 @@ type Props = {
   // Datos del negocio
   negocioNombre: string;
   negocioCuit?: string | null;
+  negocioDireccion?: string | null;
+  negocioTelefono?: string | null;
 };
 
 export function BoletaImprimible({
   numero, fecha, canal, clienteNombre,
   tipoPago, metodoPago, subtotalVenta, descuento, total, montoPagado, notas,
-  lineas, negocioNombre, negocioCuit,
+  lineas, negocioNombre, negocioCuit, negocioDireccion, negocioTelefono,
 }: Props) {
   const fechaObj = new Date(fecha);
   const fechaStr = fechaObj.toLocaleDateString('es-AR', {
@@ -55,8 +57,8 @@ export function BoletaImprimible({
   return (
     <div className="print-only hidden">
       {canal === 'minorista'
-        ? <TicketMinorista {...{ numero, fechaStr, horaStr, clienteNombre, tipoPago, metodoPago, subtotalVenta, descuento, total, lineas, negocioNombre, negocioCuit }} />
-        : <RemitoMayorista {...{ numero, fechaStr, horaStr, clienteNombre, tipoPago, metodoPago, subtotalVenta, descuento, total, montoPagado, notas, lineas, negocioNombre, negocioCuit }} />
+        ? <TicketMinorista {...{ numero, fechaStr, horaStr, clienteNombre, tipoPago, metodoPago, subtotalVenta, descuento, total, lineas, negocioNombre, negocioCuit, negocioDireccion, negocioTelefono }} />
+        : <RemitoMayorista {...{ numero, fechaStr, horaStr, clienteNombre, tipoPago, metodoPago, subtotalVenta, descuento, total, montoPagado, notas, lineas, negocioNombre, negocioCuit, negocioDireccion, negocioTelefono }} />
       }
     </div>
   );
@@ -68,7 +70,7 @@ export function BoletaImprimible({
 function TicketMinorista({
   numero, fechaStr, horaStr, clienteNombre,
   metodoPago, subtotalVenta, descuento, total,
-  lineas, negocioNombre, negocioCuit,
+  lineas, negocioNombre, negocioCuit, negocioDireccion, negocioTelefono,
 }: {
   numero: number;
   fechaStr: string;
@@ -82,6 +84,8 @@ function TicketMinorista({
   lineas: Linea[];
   negocioNombre: string;
   negocioCuit?: string | null;
+  negocioDireccion?: string | null;
+  negocioTelefono?: string | null;
 }) {
   return (
     <div
@@ -103,6 +107,12 @@ function TicketMinorista({
         </div>
         {negocioCuit && (
           <div style={{ fontSize: '10px', marginTop: '1mm' }}>CUIT: {negocioCuit}</div>
+        )}
+        {negocioDireccion && (
+          <div style={{ fontSize: '10px', marginTop: '1mm' }}>{negocioDireccion}</div>
+        )}
+        {negocioTelefono && (
+          <div style={{ fontSize: '10px', marginTop: '0.5mm' }}>Tel: {negocioTelefono}</div>
         )}
       </div>
 
@@ -184,7 +194,7 @@ function TicketMinorista({
 function RemitoMayorista({
   numero, fechaStr, horaStr, clienteNombre,
   tipoPago, metodoPago, subtotalVenta, descuento, total, montoPagado, notas,
-  lineas, negocioNombre, negocioCuit,
+  lineas, negocioNombre, negocioCuit, negocioDireccion, negocioTelefono,
 }: {
   numero: number;
   fechaStr: string;
@@ -200,6 +210,8 @@ function RemitoMayorista({
   lineas: Linea[];
   negocioNombre: string;
   negocioCuit?: string | null;
+  negocioDireccion?: string | null;
+  negocioTelefono?: string | null;
 }) {
   return (
     <div
@@ -221,6 +233,16 @@ function RemitoMayorista({
           {negocioCuit && (
             <div style={{ fontSize: '11px', color: '#555', marginTop: '1mm' }}>
               CUIT: {negocioCuit}
+            </div>
+          )}
+          {negocioDireccion && (
+            <div style={{ fontSize: '11px', color: '#555', marginTop: '0.5mm' }}>
+              {negocioDireccion}
+            </div>
+          )}
+          {negocioTelefono && (
+            <div style={{ fontSize: '11px', color: '#555', marginTop: '0.5mm' }}>
+              Tel: {negocioTelefono}
             </div>
           )}
         </div>

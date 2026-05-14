@@ -40,6 +40,11 @@ export const tenants = pgTable('tenants', {
   habilitaMayorista: boolean('habilita_mayorista').notNull().default(true),
   habilitaMinorista: boolean('habilita_minorista').notNull().default(true),
 
+  // Datos de contacto (para boletas y remitos)
+  direccion: text('direccion'),                      // "Av. Corrientes 1234, CABA"
+  telefono: text('telefono'),                        // "011 4567-8901"
+  emailNegocio: text('email_negocio'),               // "info@carniceria.com"
+
   // Metadata
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })

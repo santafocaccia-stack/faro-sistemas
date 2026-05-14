@@ -166,6 +166,8 @@ export default async function DetalleVentaPage({ params }: Props) {
         lineas={lineas}
         negocioNombre={tenant?.nombre ?? 'Mi negocio'}
         negocioCuit={tenant?.cuit}
+        negocioDireccion={tenant?.direccion}
+        negocioTelefono={tenant?.telefono}
       />
     </>
   );

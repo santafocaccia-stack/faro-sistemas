@@ -99,15 +99,23 @@ export async function crearVenta(input: NuevaVentaInput) {
         metodo: input.metodoPago,
       });
     } else if (esCuentaCorriente) {
-      // Cuenta corriente — obtener saldo actual del cliente
+      // Cuenta corriente — obtener saldo actual y límite del cliente
       const [cliente] = await tx
-        .select({ saldo: clientes.saldoActual })
+        .select({ saldo: clientes.saldoActual, limiteCredito: clientes.limiteCredito })
         .from(clientes)
         .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, input.clienteId)))
         .limit(1);
 
       const saldoAnterior = Number(cliente?.saldo ?? 0);
       const saldoPosterior = saldoAnterior + total;
+
+      // Validar límite de crédito si está configurado
+      const limiteCredito = Number(cliente?.limiteCredito ?? 0);
+      if (limiteCredito > 0 && saldoPosterior > limiteCredito) {
+        throw new Error(
+          `Límite de crédito excedido. Límite: $${limiteCredito.toLocaleString('es-AR')} — Saldo actual: $${saldoAnterior.toLocaleString('es-AR')} — Esta venta sumaría: $${total.toLocaleString('es-AR')}`
+        );
+      }
 
       await tx.insert(movimientosCuentaCorriente).values({
         tenantId: session.tenantId,
@@ -132,7 +140,9 @@ export async function crearVenta(input: NuevaVentaInput) {
   revalidatePath('/dashboard/clientes');
 }
 
-export async function listarVentas(canal: CanalVenta) {
+const PAGE_SIZE = 30;
+
+export async function listarVentas(canal: CanalVenta, page = 0) {
   const session = await requireSession();
   const rows = await db
     .select({
@@ -143,8 +153,11 @@ export async function listarVentas(canal: CanalVenta) {
     .leftJoin(clientes, eq(ventas.clienteId, clientes.id))
     .where(and(byTenant(session.tenantId, ventas), eq(ventas.canal, canal)))
     .orderBy(sql`${ventas.fecha} desc`)
-    .limit(100);
-  return rows;
+    .limit(PAGE_SIZE + 1)
+    .offset(page * PAGE_SIZE);
+
+  const hayMas = rows.length > PAGE_SIZE;
+  return { rows: rows.slice(0, PAGE_SIZE), hayMas, page };
 }
 
 export async function anularVenta(id: string) {

@@ -28,6 +28,9 @@ const statusBadge: Record<string, { label: string; className: string }> = {
 export function ConfigForm({ tenant }: Props) {
   const [nombre, setNombre] = useState(tenant.nombre);
   const [cuit, setCuit] = useState(tenant.cuit ?? '');
+  const [direccion, setDireccion] = useState(tenant.direccion ?? '');
+  const [telefono, setTelefono] = useState(tenant.telefono ?? '');
+  const [emailNegocio, setEmailNegocio] = useState(tenant.emailNegocio ?? '');
   const [habilitaMayorista, setHabilitaMayorista] = useState(tenant.habilitaMayorista);
   const [habilitaMinorista, setHabilitaMinorista] = useState(tenant.habilitaMinorista);
   const [isPending, startTransition] = useTransition();
@@ -36,7 +39,15 @@ export function ConfigForm({ tenant }: Props) {
     e.preventDefault();
     startTransition(async () => {
       try {
-        await actualizarConfig({ nombre, cuit: cuit || null, habilitaMayorista, habilitaMinorista });
+        await actualizarConfig({
+          nombre,
+          cuit: cuit || null,
+          direccion: direccion || null,
+          telefono: telefono || null,
+          emailNegocio: emailNegocio || null,
+          habilitaMayorista,
+          habilitaMinorista,
+        });
         toast.success('Configuración guardada');
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Error al guardar');
@@ -75,6 +86,41 @@ export function ConfigForm({ tenant }: Props) {
             className={`${inputCls} font-mono tabular-nums`}
           />
           <p className="text-[11px] text-muted-foreground">Usado en comprobantes y documentación fiscal</p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="direccion" className={labelCls}>Dirección</label>
+          <Input
+            id="direccion"
+            value={direccion}
+            onChange={(e) => setDireccion(e.target.value)}
+            placeholder="Av. Corrientes 1234, CABA"
+            className={inputCls}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label htmlFor="telefono" className={labelCls}>Teléfono</label>
+            <Input
+              id="telefono"
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              placeholder="011 4567-8901"
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="emailNegocio" className={labelCls}>Email del negocio</label>
+            <Input
+              id="emailNegocio"
+              type="email"
+              value={emailNegocio}
+              onChange={(e) => setEmailNegocio(e.target.value)}
+              placeholder="info@negocio.com"
+              className={inputCls}
+            />
+          </div>
         </div>
       </FormSection>
 

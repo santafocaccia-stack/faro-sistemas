@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShoppingCart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { listarVentas } from '@/server/actions/ventas';
 import { formatARS } from '@/lib/utils';
 import {
@@ -15,13 +15,17 @@ const estadoBadge: Record<string, { label: string; className: string }> = {
 
 type Canal = 'minorista' | 'mayorista';
 
-type Props = { searchParams: Promise<{ canal?: string }> };
+type Props = { searchParams: Promise<{ canal?: string; page?: string }> };
 
 export default async function HistorialPage({ searchParams }: Props) {
-  const { canal: canalParam } = await searchParams;
+  const { canal: canalParam, page: pageParam } = await searchParams;
   const canal: Canal = canalParam === 'mayorista' ? 'mayorista' : 'minorista';
+  const page = Math.max(0, parseInt(pageParam ?? '0', 10) || 0);
 
-  const rows = await listarVentas(canal);
+  const { rows, hayMas } = await listarVentas(canal, page);
+
+  const buildHref = (p: number) =>
+    `/dashboard/ventas/historial?canal=${canal}&page=${p}`;
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl mx-auto space-y-8 animate-fade-up">
@@ -31,7 +35,7 @@ export default async function HistorialPage({ searchParams }: Props) {
         <div>
           <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Historial</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {rows.length} {rows.length === 1 ? 'venta' : 'ventas'} registradas
+            {rows.length === 0 ? 'Sin ventas' : `Página ${page + 1}`}
           </p>
         </div>
 
@@ -60,7 +64,7 @@ export default async function HistorialPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && page === 0 ? (
         <div className="rounded-xl border border-border bg-card p-14 text-center">
           <div className="h-14 w-14 rounded-2xl bg-primary/8 border border-primary/15 mx-auto mb-4 flex items-center justify-center">
             <ShoppingCart className="h-5 w-5 text-primary" strokeWidth={1.75} />
@@ -78,56 +82,89 @@ export default async function HistorialPage({ searchParams }: Props) {
           </Link>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent border-b border-border/60">
-                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 w-20 pl-4">Núm.</TableHead>
-                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Fecha</TableHead>
-                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Cliente</TableHead>
-                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Tipo pago</TableHead>
-                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Estado</TableHead>
-                <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right pr-4">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map(({ venta, clienteNombre }) => {
-                const badge = estadoBadge[venta.estado] ?? { label: venta.estado, className: 'bg-muted text-muted-foreground' };
-                return (
-                  <TableRow key={venta.id} className="hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer group">
-                    <TableCell className="pl-4 py-2.5">
-                      <Link href={`/dashboard/ventas/historial/${venta.id}`} className="block font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                        #{venta.numero}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="py-2.5 text-xs text-muted-foreground font-mono tabular-nums">
-                      {new Date(venta.fecha).toLocaleDateString('es-AR', {
-                        day: '2-digit', month: '2-digit', year: '2-digit',
-                        hour: '2-digit', minute: '2-digit',
-                      })}
-                    </TableCell>
-                    <TableCell className="py-2.5">
-                      <Link href={`/dashboard/ventas/historial/${venta.id}`} className="block text-[13px] font-medium">
-                        {clienteNombre ?? '—'}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="py-2.5 text-xs text-muted-foreground capitalize">
-                      {venta.tipoPago.replace('_', ' ')}
-                    </TableCell>
-                    <TableCell className="py-2.5">
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${badge.className}`}>
-                        {badge.label}
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-2.5 text-right font-mono tabular-nums text-[13px] font-semibold pr-4">
-                      {formatARS(Number(venta.total))}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-b border-border/60">
+                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 w-20 pl-4">Núm.</TableHead>
+                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Fecha</TableHead>
+                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Cliente</TableHead>
+                  <TableHead className="hidden sm:table-cell h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Tipo pago</TableHead>
+                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Estado</TableHead>
+                  <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right pr-4">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map(({ venta, clienteNombre }) => {
+                  const badge = estadoBadge[venta.estado] ?? { label: venta.estado, className: 'bg-muted text-muted-foreground' };
+                  return (
+                    <TableRow key={venta.id} className="hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer group">
+                      <TableCell className="pl-4 py-2.5">
+                        <Link href={`/dashboard/ventas/historial/${venta.id}`} className="block font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                          #{venta.numero}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="py-2.5 text-xs text-muted-foreground font-mono tabular-nums">
+                        {new Date(venta.fecha).toLocaleDateString('es-AR', {
+                          day: '2-digit', month: '2-digit', year: '2-digit',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </TableCell>
+                      <TableCell className="py-2.5">
+                        <Link href={`/dashboard/ventas/historial/${venta.id}`} className="block text-[13px] font-medium">
+                          {clienteNombre ?? '—'}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell py-2.5 text-xs text-muted-foreground capitalize">
+                        {venta.tipoPago.replace('_', ' ')}
+                      </TableCell>
+                      <TableCell className="py-2.5">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${badge.className}`}>
+                          {badge.label}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-2.5 text-right font-mono tabular-nums text-[13px] font-semibold pr-4">
+                        {formatARS(Number(venta.total))}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Paginación */}
+          {(page > 0 || hayMas) && (
+            <div className="flex items-center justify-between">
+              {page > 0 ? (
+                <Link
+                  href={buildHref(page - 1)}
+                  className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-lg border border-border bg-card text-[13px] font-medium hover:border-border/80 hover:bg-card/60 transition-all text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Anterior
+                </Link>
+              ) : (
+                <div />
+              )}
+              <span className="text-xs text-muted-foreground">
+                Página {page + 1}
+              </span>
+              {hayMas ? (
+                <Link
+                  href={buildHref(page + 1)}
+                  className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-lg border border-border bg-card text-[13px] font-medium hover:border-border/80 hover:bg-card/60 transition-all text-muted-foreground hover:text-foreground"
+                >
+                  Siguiente
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              ) : (
+                <div />
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

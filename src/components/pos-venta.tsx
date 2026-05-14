@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useTransition, useMemo, useEffect, useCallback } from 'react';
+import { useState, useTransition, useMemo, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, Trash2, ShoppingCart, Check, Package, ScanBarcode, ChevronLeft } from 'lucide-react';
+import {
+  Search, Plus, Minus, Trash2, ShoppingCart, Check,
+  Package, ScanBarcode, ChevronLeft, Scale, X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +17,7 @@ import type { Producto, Cliente, MetodoPago, CanalVenta } from '@/server/db/sche
 
 type CartItem = {
   producto: Producto;
-  cantidad: number;
+  cantidad: number;   // kg con decimales para por_kg, entero para por_unidad
   precioUnitario: number;
 };
 
@@ -52,6 +55,11 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
   const [confirmado, setConfirmado] = useState(false);
   const [mobileView, setMobileView] = useState<'productos' | 'carrito'>('productos');
 
+  // Modal para ingresar peso de productos por_kg
+  const [pesoModal, setPesoModal] = useState<Producto | null>(null);
+  const [pesoInput, setPesoInput] = useState('');
+  const pesoInputRef = useRef<HTMLInputElement>(null);
+
   const esMayorista = canal === 'mayorista';
   const metodos = esMayorista ? METODOS_MAYORISTA : METODOS_MINORISTA;
 
@@ -73,6 +81,13 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
   const descuentoMonto = descuentoPct > 0 ? Math.round(subtotal * descuentoPct) / 100 : 0;
   const total = subtotal - descuentoMonto;
 
+  // Foco automático en el input de peso cuando se abre el modal
+  useEffect(() => {
+    if (pesoModal) {
+      setTimeout(() => pesoInputRef.current?.focus(), 50);
+    }
+  }, [pesoModal]);
+
   function switchCanal(nuevoCanal: CanalVenta) {
     setCanal(nuevoCanal);
     setCart([]);
@@ -81,40 +96,72 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
     setMetodoPago(nuevoCanal === 'mayorista' ? 'transferencia' : 'efectivo');
   }
 
-  const agregarAlCarrito = useCallback((producto: Producto) => {
+  // Agrega con cantidad específica (kg decimales o unidades enteras)
+  const agregarConCantidad = useCallback((producto: Producto, cantidad: number) => {
     const precio = esMayorista ? Number(producto.precioMayorista) : Number(producto.precioMinorista);
     setCart((prev) => {
       const existente = prev.find((i) => i.producto.id === producto.id);
-      if (existente) return prev.map((i) => i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + 1 } : i);
-      return [...prev, { producto, cantidad: 1, precioUnitario: precio }];
+      if (existente) {
+        if (producto.tipoUnidad === 'por_unidad') {
+          // Unidades: sumar
+          return prev.map((i) =>
+            i.producto.id === producto.id ? { ...i, cantidad: i.cantidad + cantidad } : i
+          );
+        } else {
+          // Kg: reemplazar con nuevo peso
+          return prev.map((i) =>
+            i.producto.id === producto.id ? { ...i, cantidad: cantidad } : i
+          );
+        }
+      }
+      return [...prev, { producto, cantidad, precioUnitario: precio }];
     });
   }, [esMayorista]);
 
-  // ── Listener global de lector de código de barras ────────────────────────
+  // Click en producto del grid
+  function handleClickProducto(p: Producto) {
+    if (p.tipoUnidad === 'por_kg') {
+      // Ver si ya está en el carrito para pre-rellenar el peso
+      const enCarrito = cart.find((i) => i.producto.id === p.id);
+      setPesoModal(p);
+      setPesoInput(enCarrito ? String(enCarrito.cantidad) : '');
+    } else {
+      agregarConCantidad(p, 1);
+    }
+  }
+
+  // Confirmar peso del modal
+  function confirmarPeso() {
+    if (!pesoModal) return;
+    const kg = parseFloat(pesoInput.replace(',', '.'));
+    if (!kg || kg <= 0) { toast.error('Ingresá un peso válido'); return; }
+    agregarConCantidad(pesoModal, Math.round(kg * 1000) / 1000);
+    setPesoModal(null);
+    setPesoInput('');
+  }
+
+  // ── Listener de lector de código de barras ───────────────────────────────
   useEffect(() => {
     let buffer = '';
     let bufferTimer: ReturnType<typeof setTimeout> | null = null;
-
-    // Los lectores físicos envían cada char en < 50ms y terminan con Enter.
-    // Un humano tarda > 150ms entre teclas. Usamos 80ms como umbral.
     const BUFFER_TIMEOUT_MS = 80;
-    const MIN_CODE_LENGTH = 3; // EAN-8 tiene 8 dígitos, pero permitimos códigos cortos
+    const MIN_CODE_LENGTH = 3;
 
     function procesarScan(codigo: string) {
       const trimmed = codigo.trim();
       if (!trimmed || trimmed.length < MIN_CODE_LENGTH) return;
-
       const encontrado = productos.find(
         (p) => p.activo && p.codigo && p.codigo.trim().toLowerCase() === trimmed.toLowerCase()
       );
-
       if (encontrado) {
-        agregarAlCarrito(encontrado);
+        if (encontrado.tipoUnidad === 'por_kg') {
+          setPesoModal(encontrado);
+          setPesoInput('');
+        } else {
+          agregarConCantidad(encontrado, 1);
+          toast.success(`${encontrado.nombre} agregado`, { duration: 1500, icon: '✓' });
+        }
         setBusqueda('');
-        toast.success(`${encontrado.nombre} agregado al carrito`, {
-          duration: 1500,
-          icon: '✓',
-        });
       } else {
         toast.error(`Código "${trimmed}" no encontrado`, {
           description: 'Verificá que el producto tenga el código registrado.',
@@ -124,13 +171,11 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
     }
 
     function onKeyDown(e: KeyboardEvent) {
+      if (pesoModal) return; // No interferir si el modal está abierto
       const target = e.target as HTMLElement;
-
-      // Si el foco está en un input que NO es la búsqueda del POS, no interferir
       const isFocusedOtherInput =
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) &&
         target.id !== 'pos-busqueda';
-
       if (isFocusedOtherInput) return;
 
       if (e.key === 'Enter') {
@@ -143,7 +188,6 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
         }
       } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         buffer += e.key;
-        // Reset buffer si el próximo char tarda demasiado (tipeo humano)
         if (bufferTimer) clearTimeout(bufferTimer);
         bufferTimer = setTimeout(() => { buffer = ''; }, BUFFER_TIMEOUT_MS);
       }
@@ -154,13 +198,27 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
       window.removeEventListener('keydown', onKeyDown);
       if (bufferTimer) clearTimeout(bufferTimer);
     };
-  }, [productos, agregarAlCarrito]);
+  }, [productos, agregarConCantidad, pesoModal]);
 
-  function cambiarCantidad(productoId: string, delta: number) {
+  function cambiarCantidadUnidad(productoId: string, delta: number) {
     setCart((prev) =>
       prev.map((i) => i.producto.id === productoId ? { ...i, cantidad: i.cantidad + delta } : i)
           .filter((i) => i.cantidad > 0)
     );
+  }
+
+  function editarPesoEnCarrito(productoId: string, valor: string) {
+    const kg = parseFloat(valor.replace(',', '.'));
+    if (isNaN(kg) || kg < 0) return;
+    if (kg === 0) {
+      setCart((prev) => prev.filter((i) => i.producto.id !== productoId));
+    } else {
+      setCart((prev) =>
+        prev.map((i) =>
+          i.producto.id === productoId ? { ...i, cantidad: Math.round(kg * 1000) / 1000 } : i
+        )
+      );
+    }
   }
 
   function eliminarItem(productoId: string) {
@@ -206,312 +264,454 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] md:h-screen overflow-hidden">
+    <>
+      <div className="flex h-[calc(100dvh-3.5rem)] md:h-screen overflow-hidden">
 
-      {/* ── Panel izquierdo: productos ── */}
-      <div className={`flex-1 flex-col border-r overflow-hidden ${mobileView === 'carrito' ? 'hidden md:flex' : 'flex'}`}>
+        {/* ── Panel izquierdo: productos ── */}
+        <div className={`flex-1 flex-col border-r overflow-hidden ${mobileView === 'carrito' ? 'hidden md:flex' : 'flex'}`}>
 
-        {/* Header con canal + búsqueda */}
-        <div className="p-4 border-b bg-card/50 space-y-3">
-          {/* Canal switcher */}
-          <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
-            {(['minorista', 'mayorista'] as CanalVenta[]).map((c) => (
-              <button
-                key={c}
-                onClick={() => switchCanal(c)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 capitalize ${
-                  canal === c
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+          {/* Header con canal + búsqueda */}
+          <div className="p-4 border-b bg-card/50 space-y-3">
+            <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
+              {(['minorista', 'mayorista'] as CanalVenta[]).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => switchCanal(c)}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 capitalize ${
+                    canal === c
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="pos-busqueda"
+                className="pl-9 pr-24 bg-background border-border/60 focus-visible:border-primary/50"
+                placeholder="Buscar o escanear código de barras..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                autoFocus
+              />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-muted-foreground/50 pointer-events-none select-none">
+                <ScanBarcode className="h-3.5 w-3.5" />
+                scanner activo
+              </span>
+            </div>
           </div>
 
-          {/* Búsqueda + indicador scanner */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="pos-busqueda"
-              className="pl-9 pr-24 bg-background border-border/60 focus-visible:border-primary/50"
-              placeholder="Buscar o escanear código de barras..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              autoFocus
-            />
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-muted-foreground/50 pointer-events-none select-none">
-              <ScanBarcode className="h-3.5 w-3.5" />
-              scanner activo
-            </span>
-          </div>
-        </div>
-
-        {/* Grid de productos */}
-        <div className="flex-1 overflow-y-auto p-3 md:p-4">
-          {productosFiltrados.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
-                <Package className="h-5 w-5 text-muted-foreground" />
+          {/* Grid de productos */}
+          <div className="flex-1 overflow-y-auto p-3 md:p-4">
+            {productosFiltrados.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
+                  <Package className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium">Sin resultados</p>
+                <p className="text-xs text-muted-foreground mt-1">Probá con otro nombre o código</p>
               </div>
-              <p className="text-sm font-medium">Sin resultados</p>
-              <p className="text-xs text-muted-foreground mt-1">Probá con otro nombre o código</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-              {productosFiltrados.map((p) => {
-                const enCarrito = cart.find((i) => i.producto.id === p.id);
-                const precio = esMayorista ? Number(p.precioMayorista) : Number(p.precioMinorista);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => agregarAlCarrito(p)}
-                    className={`relative text-left p-3 rounded-xl border transition-all duration-150 ${
-                      enCarrito
-                        ? 'border-primary/40 bg-primary/5 shadow-[0_0_0_1px_oklch(0.78_0.16_52_/_20%)]'
-                        : 'border-border/60 bg-card hover:border-border hover:bg-card/80'
-                    }`}
-                  >
-                    {enCarrito && (
-                      <span className="absolute top-2 right-2 h-5 w-5 bg-primary text-primary-foreground rounded-full text-[10px] flex items-center justify-center font-bold">
-                        {enCarrito.cantidad}
-                      </span>
-                    )}
-                    <p className="font-medium text-sm leading-snug pr-6">{p.nombre}</p>
-                    {p.categoria && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{p.categoria}</p>
-                    )}
-                    <p className="text-sm font-semibold text-primary mt-2">
-                      {formatARS(precio)}
-                      <span className="text-[11px] font-normal text-muted-foreground">
-                        /{p.tipoUnidad === 'por_kg' ? 'kg' : 'un'}
-                      </span>
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {p.tipoUnidad === 'por_kg' ? formatKg(Number(p.stockActual)) : `${p.stockActual} un`}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                {productosFiltrados.map((p) => {
+                  const enCarrito = cart.find((i) => i.producto.id === p.id);
+                  const precio = esMayorista ? Number(p.precioMayorista) : Number(p.precioMinorista);
+                  const esKg = p.tipoUnidad === 'por_kg';
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => handleClickProducto(p)}
+                      className={`relative text-left p-3 rounded-xl border transition-all duration-150 ${
+                        enCarrito
+                          ? 'border-primary/40 bg-primary/5 shadow-[0_0_0_1px_oklch(0.78_0.16_52_/_20%)]'
+                          : 'border-border/60 bg-card hover:border-border hover:bg-card/80'
+                      }`}
+                    >
+                      {/* Badge: kg o cantidad */}
+                      {enCarrito && (
+                        <span className="absolute top-2 right-2 h-auto min-w-5 px-1 bg-primary text-primary-foreground rounded-full text-[10px] flex items-center justify-center font-bold leading-5">
+                          {esKg ? `${enCarrito.cantidad.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 3 })} kg` : enCarrito.cantidad}
+                        </span>
+                      )}
+                      <p className="font-medium text-sm leading-snug pr-8">{p.nombre}</p>
+                      {p.categoria && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{p.categoria}</p>
+                      )}
+                      <p className="text-sm font-semibold text-primary mt-2">
+                        {formatARS(precio)}
+                        <span className="text-[11px] font-normal text-muted-foreground">
+                          /{esKg ? 'kg' : 'un'}
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                        {esKg
+                          ? <><Scale className="h-3 w-3" />{formatKg(Number(p.stockActual))}</>
+                          : `${p.stockActual} un`
+                        }
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* ── Panel derecho: carrito ── */}
+        <div className={`flex-col bg-card border-l w-full md:w-80 lg:w-96 ${mobileView === 'productos' ? 'hidden md:flex' : 'flex'}`}>
+
+          <div className="h-14 flex items-center gap-2 px-4 border-b shrink-0">
+            <button
+              onClick={() => setMobileView('productos')}
+              className="md:hidden mr-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold text-sm">Carrito</span>
+            {cart.length > 0 && (
+              <Badge className="ml-auto h-5 px-1.5 text-[10px]">{cart.length}</Badge>
+            )}
+          </div>
+
+          {/* Items */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+            {cart.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center h-full text-center py-8"
+              >
+                <ShoppingCart className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">Hacé click en un producto</p>
+              </motion.div>
+            ) : (
+              <AnimatePresence initial={false}>
+                {cart.map((item) => {
+                  const esKg = item.producto.tipoUnidad === 'por_kg';
+                  return (
+                    <motion.div
+                      key={item.producto.id}
+                      layout
+                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: 20, scale: 0.95 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      className="flex items-center gap-2 p-2.5 rounded-lg bg-background/60 border border-border/40 group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{item.producto.nombre}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatARS(item.precioUnitario)}/{esKg ? 'kg' : 'un'}
+                        </p>
+                      </div>
+
+                      {/* Controles de cantidad */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {esKg ? (
+                          // Kg: input editable + click para abrir modal de peso
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              step="0.001"
+                              min="0.001"
+                              value={item.cantidad}
+                              onChange={(e) => editarPesoEnCarrito(item.producto.id, e.target.value)}
+                              onClick={() => {
+                                setPesoModal(item.producto);
+                                setPesoInput(String(item.cantidad));
+                              }}
+                              readOnly
+                              className="w-16 text-right text-sm font-semibold tabular-nums bg-muted/60 border border-border/40 rounded-md px-2 py-1 cursor-pointer hover:border-primary/40 transition-colors"
+                            />
+                            <span className="text-xs text-muted-foreground">kg</span>
+                          </div>
+                        ) : (
+                          // Unidades: +/-
+                          <>
+                            <button
+                              onClick={() => cambiarCantidadUnidad(item.producto.id, -1)}
+                              className="h-6 w-6 rounded-md border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <motion.span
+                              key={item.cantidad}
+                              initial={{ scale: 1.3 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                              className="w-7 text-center text-sm font-semibold tabular-nums inline-block"
+                            >
+                              {item.cantidad}
+                            </motion.span>
+                            <button
+                              onClick={() => cambiarCantidadUnidad(item.producto.id, 1)}
+                              className="h-6 w-6 rounded-md border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      <p className="w-20 text-right text-sm font-semibold tabular-nums shrink-0">
+                        {formatARS(item.cantidad * item.precioUnitario)}
+                      </p>
+                      <button
+                        onClick={() => eliminarItem(item.producto.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            )}
+          </div>
+
+          {/* Panel de cobro */}
+          <div className="border-t p-4 space-y-3 bg-card">
+            {descuentoMonto > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xs text-muted-foreground">Subtotal</span>
+                  <span className="text-sm tabular-nums text-muted-foreground">{formatARS(subtotal)}</span>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xs text-emerald-400">Descuento {descuentoPct}%</span>
+                  <span className="text-sm tabular-nums text-emerald-400">− {formatARS(descuentoMonto)}</span>
+                </div>
+              </div>
+            )}
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Total</span>
+              <motion.span
+                key={total}
+                initial={{ opacity: 0.6, scale: 1.04 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                className="text-2xl font-bold tracking-tight tabular-nums"
+              >
+                {formatARS(total)}
+              </motion.span>
+            </div>
+
+            <div className="h-px bg-border/60" />
+
+            {/* Cliente */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                Cliente {esMayorista && <span className="text-destructive">*</span>}
+              </label>
+              <Select value={clienteId} onValueChange={setClienteId}>
+                <SelectTrigger className="h-8 text-sm bg-background border-border/60">
+                  <SelectValue placeholder="Seleccionar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientesCanal.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.razonSocial}{c.esConsumidorFinal && ' (CF)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tipo de pago */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Pago</label>
+              <div className="flex gap-1 p-1 bg-muted rounded-lg">
+                <button
+                  onClick={() => setTipoPago('contado')}
+                  className={`flex-1 py-1 rounded-md text-xs font-medium transition-all ${
+                    tipoPago === 'contado' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Contado
+                </button>
+                <button
+                  onClick={() => puedeUsarCC && setTipoPago('cuenta_corriente')}
+                  className={`flex-1 py-1 rounded-md text-xs font-medium transition-all ${
+                    !puedeUsarCC ? 'opacity-30 cursor-not-allowed' :
+                    tipoPago === 'cuenta_corriente' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Cta. cte.
+                </button>
+              </div>
+            </div>
+
+            {tipoPago === 'contado' && (
+              <Select value={metodoPago} onValueChange={(v) => setMetodoPago(v as MetodoPago)}>
+                <SelectTrigger className="h-8 text-sm bg-background border-border/60">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {metodos.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <Button
+              className="w-full h-11 font-semibold text-sm shadow-[0_0_20px_oklch(0.78_0.16_52_/_25%)] transition-all"
+              onClick={handleConfirmar}
+              disabled={isPending || cart.length === 0 || (esMayorista && !clienteId)}
+            >
+              {confirmado ? (
+                <span className="flex items-center gap-2"><Check className="h-4 w-4" /> Venta registrada</span>
+              ) : isPending ? 'Registrando...' : `Cobrar ${formatARS(total)}`}
+            </Button>
+          </div>
+        </div>
+
+        {/* ── Botón flotante carrito (solo mobile) ── */}
+        <AnimatePresence>
+          {mobileView === 'productos' && cart.length > 0 && (
+            <motion.button
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              onClick={() => setMobileView('carrito')}
+              className="md:hidden fixed bottom-6 left-4 right-4 z-30 h-14 flex items-center justify-between px-5 rounded-2xl bg-primary text-primary-foreground shadow-[0_8px_32px_oklch(0.68_0.19_38_/_40%)]"
+            >
+              <div className="flex items-center gap-2.5">
+                <ShoppingCart className="h-5 w-5" />
+                <span className="font-semibold text-sm">Ver carrito</span>
+                <span className="h-5 w-5 bg-primary-foreground/20 rounded-full text-[11px] font-bold flex items-center justify-center">
+                  {cart.length}
+                </span>
+              </div>
+              <span className="font-bold text-base tabular-nums">{formatARS(total)}</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* ── Panel derecho: carrito ── */}
-      <div className={`flex-col bg-card border-l w-full md:w-80 lg:w-96 ${mobileView === 'productos' ? 'hidden md:flex' : 'flex'}`}>
-
-        {/* Header carrito */}
-        <div className="h-14 flex items-center gap-2 px-4 border-b shrink-0">
-          {/* Volver — solo mobile */}
-          <button
-            onClick={() => setMobileView('productos')}
-            className="md:hidden mr-1 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          <span className="font-semibold text-sm">Carrito</span>
-          {cart.length > 0 && (
-            <Badge className="ml-auto h-5 px-1.5 text-[10px]">{cart.length}</Badge>
-          )}
-        </div>
-
-        {/* Items */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-          {cart.length === 0 ? (
+      {/* ── Modal de peso para productos por_kg ─────────────────────────── */}
+      <AnimatePresence>
+        {pesoModal && (
+          <>
+            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center h-full text-center py-8"
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+              onClick={() => { setPesoModal(null); setPesoInput(''); }}
+            />
+
+            {/* Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
             >
-              <ShoppingCart className="h-8 w-8 text-muted-foreground/30 mb-2" />
-              <p className="text-sm text-muted-foreground">Hacé click en un producto</p>
-            </motion.div>
-          ) : (
-            <AnimatePresence initial={false}>
-              {cart.map((item) => (
-                <motion.div
-                  key={item.producto.id}
-                  layout
-                  initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: 20, scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  className="flex items-center gap-2 p-2.5 rounded-lg bg-background/60 border border-border/40 group"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{item.producto.nombre}</p>
-                    <p className="text-xs text-muted-foreground">{formatARS(item.precioUnitario)}/un</p>
+              <div
+                className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm p-6 pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-5">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Scale className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+                        Peso a vender
+                      </span>
+                    </div>
+                    <h2 className="text-lg font-semibold tracking-tight">{pesoModal.nombre}</h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {formatARS(esMayorista ? Number(pesoModal.precioMayorista) : Number(pesoModal.precioMinorista))}/kg
+                      <span className="ml-2 text-muted-foreground/50">·</span>
+                      <span className="ml-2">Stock: {formatKg(Number(pesoModal.stockActual))}</span>
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => cambiarCantidad(item.producto.id, -1)}
-                      className="h-6 w-6 rounded-md border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <motion.span
-                      key={item.cantidad}
-                      initial={{ scale: 1.3 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                      className="w-7 text-center text-sm font-semibold tabular-nums inline-block"
-                    >
-                      {item.cantidad}
-                    </motion.span>
-                    <button
-                      onClick={() => cambiarCantidad(item.producto.id, 1)}
-                      className="h-6 w-6 rounded-md border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  </div>
-                  <p className="w-20 text-right text-sm font-semibold tabular-nums shrink-0">
-                    {formatARS(item.cantidad * item.precioUnitario)}
-                  </p>
                   <button
-                    onClick={() => eliminarItem(item.producto.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                    onClick={() => { setPesoModal(null); setPesoInput(''); }}
+                    className="text-muted-foreground hover:text-foreground transition-colors mt-1"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4" />
                   </button>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          )}
-        </div>
+                </div>
 
-        {/* Panel de cobro */}
-        <div className="border-t p-4 space-y-3 bg-card">
+                {/* Input grande */}
+                <div className="relative mb-4">
+                  <input
+                    ref={pesoInputRef}
+                    type="number"
+                    step="0.001"
+                    min="0.001"
+                    placeholder="0.000"
+                    value={pesoInput}
+                    onChange={(e) => setPesoInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') confirmarPeso();
+                      if (e.key === 'Escape') { setPesoModal(null); setPesoInput(''); }
+                    }}
+                    className="w-full text-4xl font-bold tabular-nums text-center bg-muted/40 border border-border/60 rounded-xl px-4 py-5 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground/60">
+                    kg
+                  </span>
+                </div>
 
-          {/* Subtotal + descuento + total */}
-          {descuentoMonto > 0 && (
-            <div className="space-y-1">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-muted-foreground">Subtotal</span>
-                <span className="text-sm tabular-nums text-muted-foreground">{formatARS(subtotal)}</span>
+                {/* Preview precio */}
+                {pesoInput && Number(pesoInput) > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mb-4 rounded-lg bg-primary/5 border border-primary/15 px-4 py-2.5 flex items-center justify-between"
+                  >
+                    <span className="text-sm text-muted-foreground">
+                      {Number(pesoInput).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 3 })} kg × {formatARS(esMayorista ? Number(pesoModal.precioMayorista) : Number(pesoModal.precioMinorista))}
+                    </span>
+                    <span className="text-base font-bold text-primary tabular-nums">
+                      {formatARS(
+                        Number(pesoInput) *
+                        (esMayorista ? Number(pesoModal.precioMayorista) : Number(pesoModal.precioMinorista))
+                      )}
+                    </span>
+                  </motion.div>
+                )}
+
+                {/* Botones */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => { setPesoModal(null); setPesoInput(''); }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    className="flex-1 glow-primary"
+                    onClick={confirmarPeso}
+                    disabled={!pesoInput || Number(pesoInput) <= 0}
+                  >
+                    Agregar al carrito
+                  </Button>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground/50 text-center mt-3">
+                  Enter para confirmar · Esc para cerrar
+                </p>
               </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-emerald-400 flex items-center gap-1">
-                  Descuento {descuentoPct}%
-                </span>
-                <span className="text-sm tabular-nums text-emerald-400">− {formatARS(descuentoMonto)}</span>
-              </div>
-            </div>
-          )}
-          <div className="flex items-baseline justify-between">
-            <span className="text-sm text-muted-foreground">Total</span>
-            <motion.span
-              key={total}
-              initial={{ opacity: 0.6, scale: 1.04 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-              className="text-2xl font-bold tracking-tight tabular-nums"
-            >
-              {formatARS(total)}
-            </motion.span>
-          </div>
-
-          <div className="h-px bg-border/60" />
-
-          {/* Cliente */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-              Cliente {esMayorista && <span className="text-destructive">*</span>}
-            </label>
-            <Select value={clienteId} onValueChange={setClienteId}>
-              <SelectTrigger className="h-8 text-sm bg-background border-border/60">
-                <SelectValue placeholder="Seleccionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {clientesCanal.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.razonSocial}{c.esConsumidorFinal && ' (CF)'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Tipo de pago */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Pago</label>
-            <div className="flex gap-1 p-1 bg-muted rounded-lg">
-              <button
-                onClick={() => setTipoPago('contado')}
-                className={`flex-1 py-1 rounded-md text-xs font-medium transition-all ${
-                  tipoPago === 'contado' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Contado
-              </button>
-              <button
-                onClick={() => puedeUsarCC && setTipoPago('cuenta_corriente')}
-                className={`flex-1 py-1 rounded-md text-xs font-medium transition-all ${
-                  !puedeUsarCC ? 'opacity-30 cursor-not-allowed' :
-                  tipoPago === 'cuenta_corriente' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Cta. cte.
-              </button>
-            </div>
-          </div>
-
-          {/* Método */}
-          {tipoPago === 'contado' && (
-            <Select value={metodoPago} onValueChange={(v) => setMetodoPago(v as MetodoPago)}>
-              <SelectTrigger className="h-8 text-sm bg-background border-border/60">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {metodos.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {/* Botón cobrar */}
-          <Button
-            className="w-full h-11 font-semibold text-sm shadow-[0_0_20px_oklch(0.78_0.16_52_/_25%)] transition-all"
-            onClick={handleConfirmar}
-            disabled={isPending || cart.length === 0 || (esMayorista && !clienteId)}
-          >
-            {confirmado ? (
-              <span className="flex items-center gap-2"><Check className="h-4 w-4" /> Venta registrada</span>
-            ) : isPending ? (
-              'Registrando...'
-            ) : (
-              `Cobrar ${formatARS(total)}`
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Botón flotante carrito (solo mobile, solo cuando hay items) ── */}
-      <AnimatePresence>
-        {mobileView === 'productos' && cart.length > 0 && (
-          <motion.button
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            onClick={() => setMobileView('carrito')}
-            className="md:hidden fixed bottom-6 left-4 right-4 z-30 h-14 flex items-center justify-between px-5 rounded-2xl bg-primary text-primary-foreground shadow-[0_8px_32px_oklch(0.68_0.19_38_/_40%)]"
-          >
-            <div className="flex items-center gap-2.5">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="font-semibold text-sm">Ver carrito</span>
-              <span className="h-5 w-5 bg-primary-foreground/20 rounded-full text-[11px] font-bold flex items-center justify-center">
-                {cart.reduce((a, i) => a + i.cantidad, 0)}
-              </span>
-            </div>
-            <span className="font-bold text-base tabular-nums">{formatARS(total)}</span>
-          </motion.button>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
