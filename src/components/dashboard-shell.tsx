@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DashboardSidebar } from './dashboard-sidebar';
+import { MobileBottomNav } from './mobile-bottom-nav';
 import { CommandPalette } from './command-palette';
 import { Toaster } from '@/components/ui/sonner';
 import type { Producto, Cliente } from '@/server/db/schema';
@@ -31,10 +32,17 @@ export function DashboardShell({ email, productos, clientes, children }: Props) 
 
   return (
     <div className="min-h-screen flex relative">
+      {/* Sidebar — solo desktop */}
       <DashboardSidebar email={email} onOpenCommand={() => setOpenCmd(true)} />
-      <main className="flex-1 overflow-y-auto relative">
+
+      {/* Contenido principal — padding bottom en mobile para no quedar detrás del bottom nav */}
+      <main className="flex-1 overflow-y-auto relative pb-16 md:pb-0">
         {children}
       </main>
+
+      {/* Bottom nav — solo mobile */}
+      <MobileBottomNav email={email} />
+
       <CommandPalette
         open={openCmd}
         onOpenChange={setOpenCmd}

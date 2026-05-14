@@ -74,7 +74,7 @@ export function DashboardSidebar({ email, onOpenCommand }: Props) {
   }
 
   return (
-    <aside className="w-60 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col relative">
+    <aside className="hidden md:flex w-60 shrink-0 bg-sidebar border-r border-sidebar-border flex-col relative">
 
       {/* Gradiente radial sutil detrás del logo */}
       <div
