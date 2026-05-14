@@ -35,7 +35,7 @@ export default async function EditarPresupuestoPage({ params }: Props) {
   };
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">
       <div>
         <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Editar presupuesto</h1>
         <p className="text-sm text-muted-foreground mt-1">

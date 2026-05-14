@@ -32,10 +32,10 @@ export default async function DetallePresupuestoPage({ params }: Props) {
   const vencimiento = new Date(new Date(pres.fecha).getTime() + pres.validezDias * 86_400_000);
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">
 
       {/* Back + acciones */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <Link
           href="/dashboard/presupuestos"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
@@ -58,7 +58,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
       </div>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <span className="font-mono text-xs text-muted-foreground">#{String(pres.numero).padStart(5, '0')}</span>

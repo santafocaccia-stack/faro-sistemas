@@ -17,10 +17,10 @@ export default async function ClientesPage() {
   const conDeuda = clientes.filter((c) => Number(c.saldoActual) > 0).length;
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto space-y-8 animate-fade-up">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl mx-auto space-y-8 animate-fade-up">
 
       {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Clientes</h1>
           <p className="text-sm text-muted-foreground mt-1">

@@ -13,7 +13,7 @@ export default async function CuentaCorrientePage() {
   const conDeuda = conCC.filter((c) => Number(c.saldoActual) > 0).length;
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-5xl mx-auto space-y-8 animate-fade-up">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-5xl mx-auto space-y-8 animate-fade-up">
 
       {/* Header */}
       <div>

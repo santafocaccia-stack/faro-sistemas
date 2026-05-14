@@ -19,7 +19,7 @@ export default async function PresupuestosPage() {
   const presupuestos = await listarPresupuestos();
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-5xl mx-auto space-y-6 animate-fade-up">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-5xl mx-auto space-y-6 animate-fade-up">
 
       {/* Header */}
       <div className="flex items-end justify-between gap-4">

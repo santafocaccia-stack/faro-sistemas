@@ -50,10 +50,10 @@ export default async function ReportesPage({ searchParams }: Props) {
   const maxDia = Math.max(...dias.map(([, v]) => v.minorista + v.mayorista), 1);
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto space-y-8 animate-fade-up">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl mx-auto space-y-8 animate-fade-up">
 
       {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Reportes</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -86,7 +86,7 @@ export default async function ReportesPage({ searchParams }: Props) {
       </div>
 
       {/* KPIs principales */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard label="Total ventas" icon={TrendingUp} accent="primary">
           <p className="text-[24px] font-semibold tracking-tight tabular-nums font-mono leading-none">
             {formatARS(data.resumen.total)}

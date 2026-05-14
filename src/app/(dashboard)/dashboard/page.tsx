@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   const cantHoy = kpis.ventasHoy.minorista.cantidad + kpis.ventasHoy.mayorista.cantidad;
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto space-y-10">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl mx-auto space-y-10">
 
       {/* Header */}
       <FadeUp index={0}>

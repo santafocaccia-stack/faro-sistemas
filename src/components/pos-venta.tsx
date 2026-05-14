@@ -206,7 +206,7 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100svh-3.5rem)] md:h-screen overflow-hidden">
+    <div className="flex h-[calc(100dvh-3.5rem)] md:h-screen overflow-hidden">
 
       {/* ── Panel izquierdo: productos ── */}
       <div className={`flex-1 flex-col border-r overflow-hidden ${mobileView === 'carrito' ? 'hidden md:flex' : 'flex'}`}>

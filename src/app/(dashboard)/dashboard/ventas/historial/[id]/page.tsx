@@ -36,10 +36,10 @@ export default async function DetalleVentaPage({ params }: Props) {
   return (
     <>
       {/* ── Vista en pantalla ─────────────────────────── */}
-      <div className="screen-only px-6 lg:px-10 py-8 max-w-3xl mx-auto animate-fade-up">
+      <div className="screen-only px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-3xl mx-auto animate-fade-up">
 
         {/* Back link */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
           <Link
             href={`/dashboard/ventas/historial?canal=${venta.canal}`}
             className="no-print inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
@@ -57,7 +57,7 @@ export default async function DetalleVentaPage({ params }: Props) {
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <span className="font-mono text-xs text-muted-foreground">#{venta.numero}</span>
