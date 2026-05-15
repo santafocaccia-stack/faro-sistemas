@@ -6,15 +6,17 @@ import { MobileNav } from './mobile-nav';
 import { CommandPalette } from './command-palette';
 import { Toaster } from '@/components/ui/sonner';
 import type { Producto, Cliente } from '@/server/db/schema';
+import type { PlanId } from '@/lib/planes';
 
 type Props = {
   email: string;
+  plan: PlanId;
   productos: Producto[];
   clientes: Cliente[];
   children: React.ReactNode;
 };
 
-export function DashboardShell({ email, productos, clientes, children }: Props) {
+export function DashboardShell({ email, plan, productos, clientes, children }: Props) {
   const [openCmd, setOpenCmd] = useState(false);
 
   // Atajo ⌘K / Ctrl+K
@@ -33,7 +35,7 @@ export function DashboardShell({ email, productos, clientes, children }: Props) 
   return (
     <div className="min-h-screen flex relative">
       {/* Sidebar — solo desktop */}
-      <DashboardSidebar email={email} onOpenCommand={() => setOpenCmd(true)} />
+      <DashboardSidebar email={email} plan={plan} onOpenCommand={() => setOpenCmd(true)} />
 
       {/* Contenido principal — padding top en mobile para no quedar detrás del header */}
       <main className="flex-1 overflow-y-auto relative pt-14 md:pt-0">
@@ -41,7 +43,7 @@ export function DashboardShell({ email, productos, clientes, children }: Props) 
       </main>
 
       {/* Header + drawer — solo mobile */}
-      <MobileNav email={email} />
+      <MobileNav email={email} plan={plan} />
 
       <CommandPalette
         open={openCmd}
