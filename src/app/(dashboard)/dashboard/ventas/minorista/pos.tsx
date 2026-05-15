@@ -153,9 +153,6 @@ export function PosMinorista({ productos, clientes, consumidorFinalId }: Props) 
                     </span>
                   )}
                   <div className="font-medium text-sm leading-tight">{p.nombre}</div>
-                  {p.categoria && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{p.categoria}</div>
-                  )}
                   <div className="text-sm font-semibold text-primary mt-1">
                     {formatARS(Number(p.precioMinorista))}
                     <span className="text-xs font-normal text-muted-foreground">

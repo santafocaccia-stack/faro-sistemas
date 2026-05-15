@@ -79,14 +79,13 @@ export async function obtenerReporte(periodo: Periodo = 'mes') {
     db.select({
       productoId:   ventasLineas.productoId,
       nombre:       productos.nombre,
-      categoria:    productos.categoria,
       totalCantidad:sql<number>`coalesce(sum(${ventasLineas.cantidad}), 0)::numeric`,
       totalMonto:   sql<number>`coalesce(sum(${ventasLineas.subtotal}), 0)::numeric`,
     })
     .from(ventasLineas)
     .innerJoin(ventas, and(eq(ventasLineas.ventaId, ventas.id), filtroBase))
     .leftJoin(productos, eq(ventasLineas.productoId, productos.id))
-    .groupBy(ventasLineas.productoId, productos.nombre, productos.categoria)
+    .groupBy(ventasLineas.productoId, productos.nombre)
     .orderBy(sql`sum(${ventasLineas.subtotal}) desc`)
     .limit(10),
   ]);

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { motion, AnimatePresence } from 'framer-motion';
 import { crearVenta, type LineaVenta } from '@/server/actions/ventas';
 import { formatARS, formatKg } from '@/lib/utils';
-import type { Producto, Cliente, MetodoPago, CanalVenta } from '@/server/db/schema';
+import type { Producto, Cliente, MetodoPago, CanalVenta, Categoria } from '@/server/db/schema';
 
 type CartItem = {
   producto: Producto;
@@ -42,11 +42,14 @@ type Props = {
   productos: Producto[];
   clientes: Cliente[];
   consumidorFinalId: string | null;
+  categorias: Categoria[];
 };
 
-export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
+export function PosVenta({ productos, clientes, consumidorFinalId, categorias }: Props) {
   const [canal, setCanal] = useState<CanalVenta>('minorista');
   const [busqueda, setBusqueda] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string | null>(null);
+  const [variantesGrupo, setVariantesGrupo] = useState<Producto[] | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [clienteId, setClienteId] = useState<string>(consumidorFinalId ?? '');
   const [tipoPago, setTipoPago] = useState<'contado' | 'cuenta_corriente'>('contado');
@@ -69,10 +72,13 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
   }, [clientes, esMayorista]);
 
   const productosFiltrados = useMemo(() =>
-    productos.filter((p) =>
-      p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      (p.codigo ?? '').toLowerCase().includes(busqueda.toLowerCase())
-    ), [productos, busqueda]);
+    productos.filter((p) => {
+      const matchBusqueda =
+        p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        (p.codigo ?? '').toLowerCase().includes(busqueda.toLowerCase());
+      const matchCategoria = !categoriaFiltro || p.categoriaId === categoriaFiltro;
+      return matchBusqueda && matchCategoria;
+    }), [productos, busqueda, categoriaFiltro]);
 
   const clienteSeleccionado = clientes.find((c) => c.id === clienteId);
   const puedeUsarCC = clienteSeleccionado?.habilitaCuentaCorriente ?? false;
@@ -118,10 +124,23 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
     });
   }, [esMayorista]);
 
-  // Click en producto del grid
+  // Click en producto del grid — si tiene grupo de variantes, mostrar panel lateral
   function handleClickProducto(p: Producto) {
+    if (p.grupoVarianteId) {
+      const variantes = productos.filter(
+        (prod) => prod.grupoVarianteId === p.grupoVarianteId && prod.activo
+      );
+      if (variantes.length > 1) {
+        setVariantesGrupo(variantes);
+        return;
+      }
+    }
+    abrirProducto(p);
+  }
+
+  function abrirProducto(p: Producto) {
+    setVariantesGrupo(null);
     if (p.tipoUnidad === 'por_kg') {
-      // Ver si ya está en el carrito para pre-rellenar el peso
       const enCarrito = cart.find((i) => i.producto.id === p.id);
       setPesoModal(p);
       setPesoInput(enCarrito ? String(enCarrito.cantidad) : '');
@@ -270,7 +289,7 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
         {/* ── Panel izquierdo: productos ── */}
         <div className={`flex-1 flex-col border-r overflow-hidden ${mobileView === 'carrito' ? 'hidden md:flex' : 'flex'}`}>
 
-          {/* Header con canal + búsqueda */}
+          {/* Header con canal + búsqueda + categorías */}
           <div className="p-4 border-b bg-card/50 space-y-3">
             <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
               {(['minorista', 'mayorista'] as CanalVenta[]).map((c) => (
@@ -303,6 +322,35 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
                 scanner activo
               </span>
             </div>
+
+            {/* Chips de categoría */}
+            {categorias.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap">
+                <button
+                  onClick={() => setCategoriaFiltro(null)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                    !categoriaFiltro
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Todos
+                </button>
+                {categorias.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategoriaFiltro(categoriaFiltro === cat.id ? null : cat.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                      categoriaFiltro === cat.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {cat.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Grid de productos */}
@@ -338,9 +386,6 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
                         </span>
                       )}
                       <p className="font-medium text-sm leading-snug pr-8">{p.nombre}</p>
-                      {p.categoria && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{p.categoria}</p>
-                      )}
                       <p className="text-sm font-semibold text-primary mt-2">
                         {formatARS(precio)}
                         <span className="text-[11px] font-normal text-muted-foreground">
@@ -594,6 +639,82 @@ export function PosVenta({ productos, clientes, consumidorFinalId }: Props) {
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── Panel de variantes del grupo ─────────────────────────────────── */}
+      <AnimatePresence>
+        {variantesGrupo && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+              onClick={() => setVariantesGrupo(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+            >
+              <div
+                className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md p-5 pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold">
+                    {variantesGrupo[0]?.grupoVarianteId ? 'Variantes del grupo' : 'Productos relacionados'}
+                  </h2>
+                  <button
+                    onClick={() => setVariantesGrupo(null)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {variantesGrupo.map((p) => {
+                    const precio = esMayorista ? Number(p.precioMayorista) : Number(p.precioMinorista);
+                    const enCarrito = cart.find((i) => i.producto.id === p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => abrirProducto(p)}
+                        className={`w-full text-left p-3 rounded-xl border transition-all ${
+                          enCarrito
+                            ? 'border-primary/40 bg-primary/5'
+                            : 'border-border/60 bg-background/40 hover:border-border hover:bg-muted/30'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">{p.nombre}</p>
+                          <p className="text-sm font-semibold text-primary tabular-nums">
+                            {formatARS(precio)}/{p.tipoUnidad === 'por_kg' ? 'kg' : 'un'}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-muted-foreground">
+                            Stock: {p.tipoUnidad === 'por_kg' ? formatKg(Number(p.stockActual)) : `${p.stockActual} un`}
+                          </p>
+                          {enCarrito && (
+                            <span className="text-xs text-primary font-medium">
+                              {p.tipoUnidad === 'por_kg'
+                                ? `${enCarrito.cantidad} kg en carrito`
+                                : `${enCarrito.cantidad} en carrito`}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── Modal de peso para productos por_kg ─────────────────────────── */}
       <AnimatePresence>

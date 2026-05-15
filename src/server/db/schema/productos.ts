@@ -24,6 +24,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
+import { categorias, gruposVariantes } from './categorias';
 
 export const tipoUnidadEnum = pgEnum('tipo_unidad', ['por_kg', 'por_unidad']);
 
@@ -36,10 +37,11 @@ export const productos = pgTable(
       .references(() => tenants.id, { onDelete: 'cascade' }),
 
     // Identificación
-    codigo: text('codigo'),                          // código interno o de barras
+    codigo: text('codigo'),
     nombre: text('nombre').notNull(),
     descripcion: text('descripcion'),
-    categoria: text('categoria'),                    // ej: 'vacuno', 'cerdo', 'pollo', 'embutidos'
+    categoriaId: uuid('categoria_id').references(() => categorias.id, { onDelete: 'set null' }),
+    grupoVarianteId: uuid('grupo_variante_id').references(() => gruposVariantes.id, { onDelete: 'set null' }),
 
     // Tipo de unidad y stock
     tipoUnidad: tipoUnidadEnum('tipo_unidad').notNull().default('por_kg'),

@@ -153,9 +153,6 @@ export function PosMayorista({ productos, clientes }: Props) {
                     </span>
                   )}
                   <div className="font-medium text-sm leading-tight">{p.nombre}</div>
-                  {p.categoria && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{p.categoria}</div>
-                  )}
                   <div className="text-sm font-semibold text-primary mt-1">
                     {formatARS(Number(p.precioMayorista))}
                     <span className="text-xs font-normal text-muted-foreground">

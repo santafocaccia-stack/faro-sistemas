@@ -1,8 +1,16 @@
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { ProductoForm } from '@/components/producto-form';
+import { listarCategorias, listarGruposVariantes } from '@/server/actions/categorias';
+import { listarProveedores } from '@/server/actions/proveedores';
 
-export default function NuevoProductoPage() {
+export default async function NuevoProductoPage() {
+  const [categorias, gruposVariantes, proveedoresDisponibles] = await Promise.all([
+    listarCategorias(),
+    listarGruposVariantes(),
+    listarProveedores(),
+  ]);
+
   return (
     <div className="px-6 lg:px-10 py-8 max-w-3xl mx-auto animate-fade-up">
       <Link
@@ -18,7 +26,11 @@ export default function NuevoProductoPage() {
           Agregá un producto al catálogo con sus precios mayorista y minorista
         </p>
       </div>
-      <ProductoForm />
+      <ProductoForm
+        categorias={categorias}
+        gruposVariantes={gruposVariantes}
+        proveedoresDisponibles={proveedoresDisponibles}
+      />
     </div>
   );
 }

@@ -118,7 +118,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Bola de lomo',
-        categoria: 'Vacuno',
         tipoUnidad: 'por_kg',
         stockActual: '8.500',
         stockMinimo: '2.000',
@@ -130,7 +129,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Nalga',
-        categoria: 'Vacuno',
         tipoUnidad: 'por_kg',
         stockActual: '11.200',
         stockMinimo: '2.000',
@@ -142,7 +140,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Vacío',
-        categoria: 'Vacuno',
         tipoUnidad: 'por_kg',
         stockActual: '9.800',
         stockMinimo: '2.000',
@@ -154,7 +151,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Asado de tira',
-        categoria: 'Vacuno',
         tipoUnidad: 'por_kg',
         stockActual: '14.600',
         stockMinimo: '3.000',
@@ -166,7 +162,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Pechuga de pollo',
-        categoria: 'Pollo',
         tipoUnidad: 'por_kg',
         stockActual: '7.400',
         stockMinimo: '2.000',
@@ -178,7 +173,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Pollo entero',
-        categoria: 'Pollo',
         tipoUnidad: 'por_kg',
         stockActual: '12.000',
         stockMinimo: '3.000',
@@ -190,7 +184,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Bondiola de cerdo',
-        categoria: 'Cerdo',
         tipoUnidad: 'por_kg',
         stockActual: '8.200',
         stockMinimo: '2.000',
@@ -202,7 +195,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Chorizo parrillero',
-        categoria: 'Embutidos',
         tipoUnidad: 'por_unidad',
         stockActual: '48',
         stockMinimo: '12',
@@ -214,7 +206,6 @@ async function main() {
       {
         tenantId,
         nombre: 'Morcilla',
-        categoria: 'Embutidos',
         tipoUnidad: 'por_unidad',
         stockActual: '36',
         stockMinimo: '10',

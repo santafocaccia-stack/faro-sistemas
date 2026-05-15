@@ -133,9 +133,6 @@ export default async function ReportesPage({ searchParams }: Props) {
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-medium truncate">{p.nombre ?? 'Sin nombre'}</p>
-                        {p.categoria && (
-                          <p className="text-[11px] text-muted-foreground truncate">{p.categoria}</p>
-                        )}
                       </div>
                       <div className="text-right shrink-0 ml-3">
                         <p className="text-[13px] font-mono tabular-nums font-semibold">{formatARS(p.totalMonto)}</p>

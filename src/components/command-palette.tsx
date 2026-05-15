@@ -98,7 +98,7 @@ export function CommandPalette({ open, onOpenChange, productos, clientes }: Prop
                 {productos.slice(0, 30).map((p) => (
                   <Command.Item
                     key={p.id}
-                    value={`producto ${p.nombre} ${p.codigo ?? ''} ${p.categoria ?? ''}`}
+                    value={`producto ${p.nombre} ${p.codigo ?? ''}`}
                     onSelect={() => go(`/dashboard/productos/${p.id}`)}
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm aria-selected:bg-white/[0.06] data-[selected=true]:bg-white/[0.06] transition-colors"
                   >
@@ -107,9 +107,6 @@ export function CommandPalette({ open, onOpenChange, productos, clientes }: Prop
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground truncate">{p.nombre}</p>
-                      {p.categoria && (
-                        <p className="text-[11px] text-muted-foreground truncate">{p.categoria}</p>
-                      )}
                     </div>
                     <span className="text-xs font-mono tabular-nums text-muted-foreground shrink-0">
                       {formatARS(Number(p.precioMinorista))}

@@ -81,7 +81,7 @@ export default async function ProductosPage() {
                       </Link>
                     </TableCell>
                     <TableCell className="py-2.5 text-xs text-muted-foreground">
-                      {p.categoria ?? <span className="text-muted-foreground/40">—</span>}
+                      <span className="text-muted-foreground/40">—</span>
                     </TableCell>
                     <TableCell className="py-2.5 text-right">
                       <span className={`font-mono tabular-nums text-[13px] ${stockBajo ? 'text-warning font-semibold' : ''}`}>

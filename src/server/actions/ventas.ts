@@ -4,6 +4,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   ventas, ventasLineas, pagos, movimientosCuentaCorriente, clientes, productos,
+  productoProveedores, pedidosProveedores, pedidosLineas,
   type CanalVenta, type MetodoPago,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
@@ -81,13 +82,84 @@ export async function crearVenta(input: NuevaVentaInput) {
       }))
     );
 
-    // Descontar stock de productos (solo los que tienen productoId)
+    // Descontar stock + acumular carrito de pedidos al proveedor principal
     for (const l of input.lineas) {
       if (!l.productoId) continue;
+
       await tx
         .update(productos)
         .set({ stockActual: sql`${productos.stockActual} - ${l.cantidad}::numeric` })
         .where(and(byTenant(session.tenantId, productos), eq(productos.id, l.productoId)));
+
+      // Buscar proveedor principal del producto
+      const [relProv] = await tx
+        .select({ proveedorId: productoProveedores.proveedorId })
+        .from(productoProveedores)
+        .where(
+          and(
+            byTenant(session.tenantId, productoProveedores),
+            eq(productoProveedores.productoId, l.productoId),
+            eq(productoProveedores.esPrincipal, true),
+          ),
+        )
+        .limit(1);
+
+      if (!relProv) continue;
+
+      // Buscar o crear pedido en borrador para este proveedor
+      const [pedidoExistente] = await tx
+        .select({ id: pedidosProveedores.id })
+        .from(pedidosProveedores)
+        .where(
+          and(
+            byTenant(session.tenantId, pedidosProveedores),
+            eq(pedidosProveedores.proveedorId, relProv.proveedorId),
+            eq(pedidosProveedores.estado, 'borrador'),
+          ),
+        )
+        .limit(1);
+
+      let pedidoId: string;
+      if (pedidoExistente) {
+        pedidoId = pedidoExistente.id;
+      } else {
+        const [nuevoPedido] = await tx
+          .insert(pedidosProveedores)
+          .values({
+            tenantId: session.tenantId,
+            proveedorId: relProv.proveedorId,
+            estado: 'borrador',
+          })
+          .returning({ id: pedidosProveedores.id });
+        pedidoId = nuevoPedido!.id;
+      }
+
+      // Upsert: acumular cantidad en la línea de pedido
+      const [lineaExistente] = await tx
+        .select({ id: pedidosLineas.id })
+        .from(pedidosLineas)
+        .where(
+          and(
+            byTenant(session.tenantId, pedidosLineas),
+            eq(pedidosLineas.pedidoId, pedidoId),
+            eq(pedidosLineas.productoId, l.productoId),
+          ),
+        )
+        .limit(1);
+
+      if (lineaExistente) {
+        await tx
+          .update(pedidosLineas)
+          .set({ cantidadPedida: sql`${pedidosLineas.cantidadPedida} + ${l.cantidad}::numeric` })
+          .where(eq(pedidosLineas.id, lineaExistente.id));
+      } else {
+        await tx.insert(pedidosLineas).values({
+          tenantId: session.tenantId,
+          pedidoId,
+          productoId: l.productoId,
+          cantidadPedida: l.cantidad,
+        });
+      }
     }
 
     if (!esCuentaCorriente && input.metodoPago) {

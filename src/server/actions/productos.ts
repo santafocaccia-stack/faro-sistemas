@@ -1,17 +1,19 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { eq, and, ilike, desc } from 'drizzle-orm';
+import { eq, and, ilike, desc, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { productos, type TipoUnidad } from '@/server/db/schema';
+import { productos, productoProveedores, proveedores, type TipoUnidad } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
+import type { VinculoProveedorInput } from './proveedores';
 
 export type ProductoInput = {
   codigo?: string | null;
   nombre: string;
   descripcion?: string | null;
-  categoria?: string | null;
+  categoriaId?: string | null;
+  grupoVarianteId?: string | null;
   tipoUnidad: TipoUnidad;
   stockActual: string;
   stockMinimo?: string | null;
@@ -19,6 +21,7 @@ export type ProductoInput = {
   precioMayorista: string;
   precioMinorista: string;
   activo: boolean;
+  vinculos?: VinculoProveedorInput[];
 };
 
 export async function listarProductos(filtros?: { busqueda?: string; soloActivos?: boolean }) {
@@ -51,6 +54,7 @@ export async function obtenerProducto(id: string) {
 
 export async function crearProducto(input: ProductoInput) {
   const session = await requireSession();
+
   const [creado] = await db
     .insert(productos)
     .values({
@@ -58,7 +62,8 @@ export async function crearProducto(input: ProductoInput) {
       codigo: input.codigo || null,
       nombre: input.nombre,
       descripcion: input.descripcion || null,
-      categoria: input.categoria || null,
+      categoriaId: input.categoriaId || null,
+      grupoVarianteId: input.grupoVarianteId || null,
       tipoUnidad: input.tipoUnidad,
       stockActual: input.stockActual,
       stockMinimo: input.stockMinimo || null,
@@ -69,28 +74,71 @@ export async function crearProducto(input: ProductoInput) {
     })
     .returning({ id: productos.id });
 
+  if (creado && input.vinculos && input.vinculos.length > 0) {
+    await db.insert(productoProveedores).values(
+      input.vinculos.map((v) => ({
+        tenantId: session.tenantId,
+        productoId: creado.id,
+        proveedorId: v.proveedorId,
+        precioCosto: v.precioCosto,
+        markupMayorista: v.markupMayorista || null,
+        markupMinorista: v.markupMinorista || null,
+        esPrincipal: v.esPrincipal,
+      })),
+    );
+  }
+
   revalidatePath('/dashboard/productos');
   return creado;
 }
 
 export async function actualizarProducto(id: string, input: ProductoInput) {
   const session = await requireSession();
-  await db
-    .update(productos)
-    .set({
-      codigo: input.codigo || null,
-      nombre: input.nombre,
-      descripcion: input.descripcion || null,
-      categoria: input.categoria || null,
-      tipoUnidad: input.tipoUnidad,
-      stockActual: input.stockActual,
-      stockMinimo: input.stockMinimo || null,
-      costoPromedio: input.costoPromedio,
-      precioMayorista: input.precioMayorista,
-      precioMinorista: input.precioMinorista,
-      activo: input.activo,
-    })
-    .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)));
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(productos)
+      .set({
+        codigo: input.codigo || null,
+        nombre: input.nombre,
+        descripcion: input.descripcion || null,
+        categoriaId: input.categoriaId || null,
+        grupoVarianteId: input.grupoVarianteId || null,
+        tipoUnidad: input.tipoUnidad,
+        stockActual: input.stockActual,
+        stockMinimo: input.stockMinimo || null,
+        costoPromedio: input.costoPromedio,
+        precioMayorista: input.precioMayorista,
+        precioMinorista: input.precioMinorista,
+        activo: input.activo,
+      })
+      .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)));
+
+    if (input.vinculos !== undefined) {
+      await tx
+        .delete(productoProveedores)
+        .where(
+          and(
+            byTenant(session.tenantId, productoProveedores),
+            eq(productoProveedores.productoId, id),
+          ),
+        );
+
+      if (input.vinculos.length > 0) {
+        await tx.insert(productoProveedores).values(
+          input.vinculos.map((v) => ({
+            tenantId: session.tenantId,
+            productoId: id,
+            proveedorId: v.proveedorId,
+            precioCosto: v.precioCosto,
+            markupMayorista: v.markupMayorista || null,
+            markupMinorista: v.markupMinorista || null,
+            esPrincipal: v.esPrincipal,
+          })),
+        );
+      }
+    }
+  });
 
   revalidatePath('/dashboard/productos');
   revalidatePath(`/dashboard/productos/${id}`);
@@ -116,8 +164,6 @@ export async function ajustarStock(input: {
   const cantidad = Number(input.cantidad);
   if (isNaN(cantidad) || cantidad <= 0) throw new Error('Cantidad inválida');
 
-  // Transacción para evitar race condition entre la lectura del stock
-  // y la escritura — en especial con ventas simultáneas que hacen decremento atómico
   await db.transaction(async (tx) => {
     const result = await tx
       .select({ stock: productos.stockActual })

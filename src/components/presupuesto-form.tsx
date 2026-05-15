@@ -245,7 +245,6 @@ export function PresupuestoForm({ productos, clientes, initialData }: Props) {
                     >
                       <div>
                         <p className="text-[13px] font-medium">{p.nombre}</p>
-                        {p.categoria && <p className="text-[11px] text-muted-foreground">{p.categoria}</p>}
                       </div>
                       <p className="text-sm font-semibold text-primary shrink-0 ml-3">
                         {formatARS(Number(p.precioMayorista))}

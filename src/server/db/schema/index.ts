@@ -4,8 +4,10 @@
  */
 export * from './tenants';
 export * from './users';
+export * from './categorias';
 export * from './productos';
 export * from './clientes';
 export * from './ventas';
 export * from './cuenta-corriente';
 export * from './presupuestos';
+export * from './proveedores';

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import {
   Package, Users, ShoppingCart, BookOpen, BarChart3,
   Settings, LayoutDashboard, LogOut, History, Search, Command, UsersRound, FileText,
+  Truck, ClipboardList,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -42,6 +43,8 @@ const sections: NavSection[] = [
       { href: '/dashboard/clientes',      label: 'Clientes',       icon: Users },
       { href: '/dashboard/cc',            label: 'Cta. corriente', icon: BookOpen },
       { href: '/dashboard/presupuestos',  label: 'Presupuestos',   icon: FileText },
+      { href: '/dashboard/proveedores',   label: 'Proveedores',    icon: Truck },
+      { href: '/dashboard/pedidos',       label: 'Pedidos',        icon: ClipboardList },
     ],
   },
   {

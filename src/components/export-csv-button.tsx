@@ -19,7 +19,6 @@ type Props = {
   porMetodo: { metodo: string; total: number; cantidad: number }[];
   topProductos: {
     nombre: string | null;
-    categoria: string | null;
     totalCantidad: number;
     totalMonto: number;
   }[];
@@ -104,7 +103,7 @@ function buildCSV(props: Props): string {
   for (const p of topProductos) {
     rows.push(row(
       p.nombre ?? 'Sin nombre',
-      p.categoria ?? '',
+      '',
       num(p.totalCantidad),
       num(p.totalMonto),
     ));
