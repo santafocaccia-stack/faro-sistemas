@@ -5,10 +5,13 @@ import { createClient } from '@/lib/supabase/server';
 import { db } from '@/server/db';
 import { tenants, users, usersTenants, clientes } from '@/server/db/schema';
 
+import type { PlanId } from '@/lib/planes';
+
 type CrearTenantInput = {
   nombreNegocio: string;
   habilitaMayorista: boolean;
   habilitaMinorista: boolean;
+  plan: PlanId;
 };
 
 function slugify(text: string): string {
@@ -29,10 +32,16 @@ export async function crearTenant(input: CrearTenantInput) {
   const slug = `${slugify(input.nombreNegocio)}-${Date.now()}`;
 
   await db.transaction(async (tx) => {
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 14);
+
     // 1. Crear el tenant
     const [tenant] = await tx.insert(tenants).values({
       nombre: input.nombreNegocio,
       slug,
+      plan: input.plan,
+      status: 'trial',
+      trialEnd,
       habilitaMayorista: input.habilitaMayorista,
       habilitaMinorista: input.habilitaMinorista,
     }).returning({ id: tenants.id });

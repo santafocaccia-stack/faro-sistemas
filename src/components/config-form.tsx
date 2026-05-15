@@ -7,14 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { actualizarConfig } from '@/server/actions/config';
+import { PLANES } from '@/lib/planes';
 import type { Tenant } from '@/server/db/schema';
+import Link from 'next/link';
 
 type Props = { tenant: Tenant };
 
 const planLabel: Record<string, string> = {
+  servicios: 'Gesto Servicios',
+  market:    'Gesto Market',
+  food:      'Gesto Food',
+  balanza:   'Gesto Balanza',
+  // legacy
   basico: 'Básico',
-  pro: 'Pro',
-  plus: 'Plus',
+  pro:    'Pro',
+  plus:   'Plus',
 };
 
 const statusBadge: Record<string, { label: string; className: string }> = {
@@ -165,6 +172,14 @@ export function ConfigForm({ tenant }: Props) {
             </InfoCell>
           )}
         </div>
+        {tenant.status === 'trial' && (
+          <Link
+            href="/planes"
+            className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:brightness-110 transition-all"
+          >
+            Ver planes y suscribirse
+          </Link>
+        )}
       </FormSection>
 
       <div className="flex justify-end pt-2">

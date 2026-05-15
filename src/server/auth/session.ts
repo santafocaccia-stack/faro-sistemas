@@ -1,31 +1,25 @@
-/**
- * Helpers de autenticación y sesión para el server-side.
- *
- * Patrón estándar de uso:
- *   const session = await requireSession();
- *   // session.user — datos del usuario
- *   // session.tenantId — tenant activo del usuario
- *
- * Si no hay sesión o tenant, redirige a /login.
- */
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/server/db';
-import { usersTenants, type Rol } from '@/server/db/schema';
+import { usersTenants, tenants, type Rol } from '@/server/db/schema';
+import type { PlanId } from '@/lib/planes';
 
 export type Session = {
   userId: string;
   email: string;
   tenantId: string;
   rol: Rol;
+  plan: PlanId;
+  status: 'trial' | 'activo' | 'moroso' | 'suspendido' | 'cancelado';
+  trialEnd: Date | null;
 };
 
-/**
- * Devuelve la sesión activa o redirige a login si no hay.
- * Usar en Server Components, Server Actions y Route Handlers protegidos.
- */
-export async function requireSession(): Promise<Session> {
+type RequireSessionOpts = {
+  allowExpired?: boolean;
+};
+
+export async function requireSession(opts?: RequireSessionOpts): Promise<Session> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -33,9 +27,6 @@ export async function requireSession(): Promise<Session> {
 
   if (!user) redirect('/login');
 
-  // Buscar el tenant activo del usuario.
-  // En v1 asumimos que un usuario tiene un solo tenant. Si tuviera varios,
-  // habría que mantener un "tenant activo" en cookie/preferencia.
   const memberships = await db
     .select()
     .from(usersTenants)
@@ -43,9 +34,25 @@ export async function requireSession(): Promise<Session> {
     .limit(1);
 
   const membership = memberships[0];
-  if (!membership) {
-    // Usuario sin tenant — pasar por flow de onboarding
-    redirect('/onboarding');
+  if (!membership) redirect('/onboarding');
+
+  const [tenant] = await db
+    .select({
+      status: tenants.status,
+      trialEnd: tenants.trialEnd,
+      plan: tenants.plan,
+    })
+    .from(tenants)
+    .where(eq(tenants.id, membership.tenantId))
+    .limit(1);
+
+  if (!tenant) redirect('/onboarding');
+
+  if (!opts?.allowExpired) {
+    const now = new Date();
+    const trialExpired = tenant.status === 'trial' && tenant.trialEnd && tenant.trialEnd < now;
+    const blocked = tenant.status === 'suspendido' || tenant.status === 'cancelado';
+    if (trialExpired || blocked) redirect('/planes');
   }
 
   return {
@@ -53,13 +60,12 @@ export async function requireSession(): Promise<Session> {
     email: user.email!,
     tenantId: membership.tenantId,
     rol: membership.rol,
+    plan: tenant.plan as PlanId,
+    status: tenant.status,
+    trialEnd: tenant.trialEnd,
   };
 }
 
-/**
- * Como requireSession pero también verifica un rol mínimo.
- * Útil en endpoints que solo admins/owners pueden ejecutar.
- */
 export async function requireRol(rolesPermitidos: Rol[]): Promise<Session> {
   const session = await requireSession();
   if (!rolesPermitidos.includes(session.rol)) {

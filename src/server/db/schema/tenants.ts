@@ -2,7 +2,6 @@
  * Tenants — cada tenant es un negocio que usa la plataforma.
  * Multi-tenancy: TODO lo demás cuelga de un tenant_id.
  */
-import { sql } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -12,7 +11,7 @@ import {
   pgEnum,
 } from 'drizzle-orm/pg-core';
 
-export const planTier = pgEnum('plan_tier', ['basico', 'pro', 'plus']);
+export const planGesto = pgEnum('plan_gesto', ['servicios', 'market', 'food', 'balanza']);
 export const tenantStatus = pgEnum('tenant_status', [
   'trial',         // período de prueba activo
   'activo',        // pagando al día
@@ -30,10 +29,11 @@ export const tenants = pgTable('tenants', {
   cuit: text('cuit'),                              // CUIT fiscal del negocio
 
   // Plan y suscripción
-  plan: planTier('plan').notNull().default('basico'),
+  plan: planGesto('plan').notNull().default('market'),
   status: tenantStatus('status').notNull().default('trial'),
   trialEnd: timestamp('trial_end', { withTimezone: true }),
   subscriptionEnd: timestamp('subscription_end', { withTimezone: true }),
+  mpSubscriptionId: text('mp_subscription_id'),
 
   // Configuración del negocio
   zonaHoraria: text('zona_horaria').notNull().default('America/Argentina/Buenos_Aires'),
