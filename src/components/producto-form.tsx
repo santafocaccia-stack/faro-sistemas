@@ -528,18 +528,20 @@ export function ProductoForm({
     </form>
   );
 
-  function Field({
-    label, htmlFor, hint, className, children,
-  }: { label: string; htmlFor: string; hint?: string; className?: string; children: React.ReactNode }) {
-    return (
-      <div className={`space-y-1.5 ${className ?? ''}`}>
-        <label htmlFor={htmlFor} className={labelCls}>
-          {label}{hint && <span className="ml-1 normal-case text-muted-foreground/40">({hint})</span>}
-        </label>
-        {children}
-      </div>
-    );
-  }
+}
+
+function Field({
+  label, htmlFor, hint, className, children,
+}: { label: string; htmlFor: string; hint?: string; className?: string; children: React.ReactNode }) {
+  const labelCls = 'text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70';
+  return (
+    <div className={`space-y-1.5 ${className ?? ''}`}>
+      <label htmlFor={htmlFor} className={labelCls}>
+        {label}{hint && <span className="ml-1 normal-case text-muted-foreground/40">({hint})</span>}
+      </label>
+      {children}
+    </div>
+  );
 }
 
 function FormSection({
