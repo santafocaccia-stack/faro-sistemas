@@ -28,12 +28,18 @@ export const tenants = pgTable('tenants', {
   slug: text('slug').notNull().unique(),           // "el-toro" — para URLs si se necesita
   cuit: text('cuit'),                              // CUIT fiscal del negocio
 
-  // Plan y suscripción
+  // Plan y suscripción (Faro Sistemas cobra al negocio)
   plan: planGesto('plan').notNull().default('market'),
   status: tenantStatus('status').notNull().default('trial'),
   trialEnd: timestamp('trial_end', { withTimezone: true }),
   subscriptionEnd: timestamp('subscription_end', { withTimezone: true }),
   mpSubscriptionId: text('mp_subscription_id'),
+
+  // Mercado Pago del negocio (el negocio cobra a sus clientes)
+  mpNegocioAccessToken:  text('mp_negocio_access_token'),
+  mpNegocioRefreshToken: text('mp_negocio_refresh_token'),
+  mpNegocioTokenExpiry:  timestamp('mp_negocio_token_expiry', { withTimezone: true }),
+  mpNegocioUserId:       text('mp_negocio_user_id'),
 
   // Configuración del negocio
   zonaHoraria: text('zona_horaria').notNull().default('America/Argentina/Buenos_Aires'),

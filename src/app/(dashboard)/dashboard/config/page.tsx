@@ -2,8 +2,10 @@ import { notFound } from 'next/navigation';
 import { obtenerTenant } from '@/server/actions/config';
 import { ConfigForm } from '@/components/config-form';
 
-export default async function ConfigPage() {
-  const tenant = await obtenerTenant();
+type Props = { searchParams: Promise<{ mp?: string }> };
+
+export default async function ConfigPage({ searchParams }: Props) {
+  const [tenant, { mp }] = await Promise.all([obtenerTenant(), searchParams]);
   if (!tenant) notFound();
 
   return (
@@ -14,7 +16,7 @@ export default async function ConfigPage() {
           Datos del negocio y preferencias generales
         </p>
       </div>
-      <ConfigForm tenant={tenant} />
+      <ConfigForm tenant={tenant} mpStatus={mp} />
     </div>
   );
 }

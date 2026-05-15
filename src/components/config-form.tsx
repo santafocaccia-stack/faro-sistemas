@@ -2,16 +2,16 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Building2, ShoppingBag, CreditCard } from 'lucide-react';
+import { Building2, ShoppingBag, CreditCard, Wallet, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { actualizarConfig } from '@/server/actions/config';
-import { PLANES } from '@/lib/planes';
+import { desconectarMP, getUrlConectarMP } from '@/server/actions/mp-negocio';
 import type { Tenant } from '@/server/db/schema';
 import Link from 'next/link';
 
-type Props = { tenant: Tenant };
+type Props = { tenant: Tenant; mpStatus?: string };
 
 const planLabel: Record<string, string> = {
   servicios: 'Gesto Servicios',
@@ -32,7 +32,7 @@ const statusBadge: Record<string, { label: string; className: string }> = {
   cancelado:  { label: 'Cancelado',   className: 'bg-muted text-muted-foreground border-border' },
 };
 
-export function ConfigForm({ tenant }: Props) {
+export function ConfigForm({ tenant, mpStatus }: Props) {
   const [nombre, setNombre] = useState(tenant.nombre);
   const [cuit, setCuit] = useState(tenant.cuit ?? '');
   const [direccion, setDireccion] = useState(tenant.direccion ?? '');
@@ -67,6 +67,7 @@ export function ConfigForm({ tenant }: Props) {
   const status = statusBadge[tenant.status] ?? { label: tenant.status, className: 'bg-muted text-muted-foreground' };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-4">
 
       {/* Datos del negocio */}
@@ -192,6 +193,9 @@ export function ConfigForm({ tenant }: Props) {
         </Button>
       </div>
     </form>
+
+    <MPSection tenant={tenant} mpStatus={mpStatus} />
+    </>
   );
 }
 
@@ -245,6 +249,75 @@ function InfoCell({ label, children }: { label: string; children: React.ReactNod
     <div>
       <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">{label}</p>
       {children}
+    </div>
+  );
+}
+
+function MPSection({ tenant, mpStatus }: { tenant: Tenant; mpStatus?: string }) {
+  const [isPending, startTransition] = useTransition();
+  const conectado = !!tenant.mpNegocioAccessToken;
+  const urlConectar = getUrlConectarMP();
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-4 mt-4">
+      <div className="flex items-center gap-2.5">
+        <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Wallet className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">Mercado Pago</h2>
+          <p className="text-[11px] text-muted-foreground">Para cobrar con tarjeta y QR a tus clientes</p>
+        </div>
+      </div>
+
+      {mpStatus === 'ok' && (
+        <div className="flex items-center gap-2 text-xs text-success bg-success/10 border border-success/20 rounded-lg px-3 py-2">
+          <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+          Cuenta conectada correctamente
+        </div>
+      )}
+      {mpStatus === 'error' && (
+        <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          Hubo un error al conectar. Intentá de nuevo.
+        </div>
+      )}
+
+      {conectado ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="h-2 w-2 rounded-full bg-success flex-shrink-0" />
+            <span className="font-medium">Cuenta conectada</span>
+            <span className="text-xs text-muted-foreground font-mono">ID: {tenant.mpNegocioUserId}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Los cobros con tarjeta y QR van directo a tu cuenta de Mercado Pago.
+          </p>
+          <button
+            type="button"
+            onClick={() => startTransition(() => desconectarMP())}
+            disabled={isPending}
+            className="text-xs text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2"
+          >
+            {isPending ? 'Desconectando...' : 'Desconectar cuenta'}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Conectá tu cuenta para que tus clientes puedan pagarte con tarjeta de crédito, débito o QR directamente desde el POS.
+          </p>
+          <a
+            href={urlConectar}
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-[#009EE3] text-white text-sm font-medium hover:brightness-110 transition-all"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.33c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.891z"/>
+            </svg>
+            Conectar con Mercado Pago
+          </a>
+        </div>
+      )}
     </div>
   );
 }
