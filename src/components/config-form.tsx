@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { actualizarConfig } from '@/server/actions/config';
-import { desconectarMP, getUrlConectarMP } from '@/server/actions/mp-negocio';
+import { desconectarMP } from '@/server/actions/mp-negocio';
+import { getUrlConectarMP } from '@/lib/mp-url';
 import type { Tenant } from '@/server/db/schema';
 import Link from 'next/link';
 
