@@ -153,6 +153,38 @@ export async function desactivarProducto(id: string) {
   revalidatePath('/dashboard/productos');
 }
 
+export async function toggleActivoProducto(id: string) {
+  const session = await requireSession();
+  const [prod] = await db
+    .select({ activo: productos.activo })
+    .from(productos)
+    .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)))
+    .limit(1);
+  if (!prod) throw new Error('Producto no encontrado');
+
+  await db
+    .update(productos)
+    .set({ activo: !prod.activo })
+    .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)));
+  revalidatePath('/dashboard/productos');
+  revalidatePath(`/dashboard/productos/${id}`);
+}
+
+export async function fijarStock(input: { productoId: string; nuevoStock: string }) {
+  const session = await requireSession();
+  const valor = Number(input.nuevoStock);
+  if (isNaN(valor) || valor < 0) throw new Error('Valor de stock inválido');
+
+  await db
+    .update(productos)
+    .set({ stockActual: valor.toFixed(3) })
+    .where(and(byTenant(session.tenantId, productos), eq(productos.id, input.productoId)));
+
+  revalidatePath('/dashboard/productos');
+  revalidatePath(`/dashboard/productos/${input.productoId}`);
+  revalidatePath('/dashboard');
+}
+
 export type TipoAjuste = 'entrada' | 'salida';
 
 export async function ajustarStock(input: {
