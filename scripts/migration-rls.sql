@@ -11,12 +11,10 @@
 -- ║   2. Llamadas directas a PostgREST                                     ║
 -- ║   3. Bugs en server actions que se salteen byTenant() por error        ║
 -- ║                                                                        ║
--- ║ Correr en el SQL Editor de Supabase.                                   ║
+-- ║ Correr en el SQL Editor de Supabase. Idempotente — se puede re-correr. ║
 -- ╚════════════════════════════════════════════════════════════════════════╝
 
 -- ── Helper: tenant del usuario autenticado ──────────────────────────────────
--- SECURITY DEFINER permite a la función leer users_tenants aunque el usuario
--- no tenga policy de SELECT directa. STABLE = mismo resultado en una query.
 CREATE OR REPLACE FUNCTION auth_tenant_id()
 RETURNS uuid
 LANGUAGE sql
@@ -30,36 +28,28 @@ AS $$
   LIMIT 1
 $$;
 
--- Permitir que cualquier rol autenticado ejecute el helper
 GRANT EXECUTE ON FUNCTION auth_tenant_id() TO authenticated, anon;
 
 -- ── Activar RLS en todas las tablas ─────────────────────────────────────────
-ALTER TABLE tenants               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users                 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users_tenants         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE productos             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE clientes              ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ventas                ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ventas_lineas         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cuenta_corriente      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE proveedores           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE producto_proveedores  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pedidos               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE presupuestos          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE categorias            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE grupos_variantes      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenants                       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users                         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users_tenants                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE productos                     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clientes                      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ventas                        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ventas_lineas                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pagos                         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE movimientos_cuenta_corriente  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE proveedores                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE producto_proveedores          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pedidos_proveedores           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pedidos_lineas                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE presupuestos                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE presupuestos_lineas           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categorias                    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grupos_variantes              ENABLE ROW LEVEL SECURITY;
 
--- Si existe la tabla de líneas de presupuesto / pedido también
-DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'presupuestos_lineas') THEN
-    EXECUTE 'ALTER TABLE presupuestos_lineas ENABLE ROW LEVEL SECURITY';
-  END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'pedidos_lineas') THEN
-    EXECUTE 'ALTER TABLE pedidos_lineas ENABLE ROW LEVEL SECURITY';
-  END IF;
-END $$;
-
--- ── Limpiar policies viejas si existen (para poder re-correr la migración) ──
+-- ── Limpiar policies viejas (re-corribilidad) ───────────────────────────────
 DO $$
 DECLARE r RECORD;
 BEGIN
@@ -73,8 +63,7 @@ BEGIN
   END LOOP;
 END $$;
 
--- ── Policy genérica: el usuario solo ve y modifica filas de SU tenant ──────
--- Para tablas con columna tenant_id
+-- ── Políticas: aislamiento por tenant_id ────────────────────────────────────
 CREATE POLICY gesto_tenant_isolation ON productos
   FOR ALL TO authenticated
   USING (tenant_id = auth_tenant_id())
@@ -95,7 +84,12 @@ CREATE POLICY gesto_tenant_isolation ON ventas_lineas
   USING (tenant_id = auth_tenant_id())
   WITH CHECK (tenant_id = auth_tenant_id());
 
-CREATE POLICY gesto_tenant_isolation ON cuenta_corriente
+CREATE POLICY gesto_tenant_isolation ON pagos
+  FOR ALL TO authenticated
+  USING (tenant_id = auth_tenant_id())
+  WITH CHECK (tenant_id = auth_tenant_id());
+
+CREATE POLICY gesto_tenant_isolation ON movimientos_cuenta_corriente
   FOR ALL TO authenticated
   USING (tenant_id = auth_tenant_id())
   WITH CHECK (tenant_id = auth_tenant_id());
@@ -110,12 +104,22 @@ CREATE POLICY gesto_tenant_isolation ON producto_proveedores
   USING (tenant_id = auth_tenant_id())
   WITH CHECK (tenant_id = auth_tenant_id());
 
-CREATE POLICY gesto_tenant_isolation ON pedidos
+CREATE POLICY gesto_tenant_isolation ON pedidos_proveedores
+  FOR ALL TO authenticated
+  USING (tenant_id = auth_tenant_id())
+  WITH CHECK (tenant_id = auth_tenant_id());
+
+CREATE POLICY gesto_tenant_isolation ON pedidos_lineas
   FOR ALL TO authenticated
   USING (tenant_id = auth_tenant_id())
   WITH CHECK (tenant_id = auth_tenant_id());
 
 CREATE POLICY gesto_tenant_isolation ON presupuestos
+  FOR ALL TO authenticated
+  USING (tenant_id = auth_tenant_id())
+  WITH CHECK (tenant_id = auth_tenant_id());
+
+CREATE POLICY gesto_tenant_isolation ON presupuestos_lineas
   FOR ALL TO authenticated
   USING (tenant_id = auth_tenant_id())
   WITH CHECK (tenant_id = auth_tenant_id());
@@ -130,48 +134,24 @@ CREATE POLICY gesto_tenant_isolation ON grupos_variantes
   USING (tenant_id = auth_tenant_id())
   WITH CHECK (tenant_id = auth_tenant_id());
 
--- Líneas de presupuestos / pedidos (si existen)
-DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'presupuestos_lineas') THEN
-    EXECUTE $POL$
-      CREATE POLICY gesto_tenant_isolation ON presupuestos_lineas
-        FOR ALL TO authenticated
-        USING (tenant_id = auth_tenant_id())
-        WITH CHECK (tenant_id = auth_tenant_id())
-    $POL$;
-  END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'pedidos_lineas') THEN
-    EXECUTE $POL$
-      CREATE POLICY gesto_tenant_isolation ON pedidos_lineas
-        FOR ALL TO authenticated
-        USING (tenant_id = auth_tenant_id())
-        WITH CHECK (tenant_id = auth_tenant_id())
-    $POL$;
-  END IF;
-END $$;
-
--- ── Policies para tablas especiales (no tienen tenant_id directo) ──────────
-
--- tenants: el usuario ve SU tenant (el que está en su users_tenants)
+-- ── Tablas especiales (no tienen tenant_id directo) ────────────────────────
 CREATE POLICY gesto_tenant_own ON tenants
   FOR ALL TO authenticated
   USING (id = auth_tenant_id())
   WITH CHECK (id = auth_tenant_id());
 
--- users_tenants: el usuario ve sus propias memberships
 CREATE POLICY gesto_users_tenants_own ON users_tenants
   FOR ALL TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
--- users: el usuario ve su propio registro
 CREATE POLICY gesto_users_self ON users
   FOR ALL TO authenticated
   USING (id = auth.uid())
   WITH CHECK (id = auth.uid());
 
 -- ╔════════════════════════════════════════════════════════════════════════╗
--- ║ Verificación rápida — listar todas las policies creadas                ║
+-- ║ Verificación rápida — listar todas las policies creadas (17)           ║
 -- ╚════════════════════════════════════════════════════════════════════════╝
 -- SELECT tablename, policyname, cmd, roles
 --   FROM pg_policies
