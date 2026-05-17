@@ -10,37 +10,44 @@ import { Check, Store, ShoppingCart, ChefHat, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Pantalla de loading animada ───────────────────────────────────────────────
-const PASOS = [
+const PASOS_ANIMACION = [
   'Creando tu negocio...',
   'Configurando el catálogo...',
   'Preparando el punto de venta...',
-  '¡Todo listo!',
 ];
 
-function LoadingScreen() {
+type LoadingFase = 'creando' | 'redirigiendo';
+
+function LoadingScreen({ fase }: { fase: LoadingFase }) {
   const [paso, setPaso] = useState(0);
   const [progreso, setProgreso] = useState(0);
+  const [mostrarLink, setMostrarLink] = useState(false);
 
   useEffect(() => {
-    // Avanzar pasos en intervalos
     const intervaloPasos = setInterval(() => {
-      setPaso((p) => Math.min(p + 1, PASOS.length - 1));
+      setPaso((p) => Math.min(p + 1, PASOS_ANIMACION.length - 1));
     }, 900);
-
-    // Barra de progreso continua
     const intervaloProg = setInterval(() => {
-      setProgreso((p) => Math.min(p + 1.2, 95)); // llega hasta 95%, el 100% lo hace cuando termina
+      setProgreso((p) => {
+        const tope = fase === 'redirigiendo' ? 100 : 90;
+        const velocidad = fase === 'redirigiendo' ? 3 : 1.2;
+        return Math.min(p + velocidad, tope);
+      });
     }, 60);
+    return () => { clearInterval(intervaloPasos); clearInterval(intervaloProg); };
+  }, [fase]);
 
-    return () => {
-      clearInterval(intervaloPasos);
-      clearInterval(intervaloProg);
-    };
-  }, []);
+  // Si lleva más de 8 segundos redirigiendo, mostrar link manual
+  useEffect(() => {
+    if (fase !== 'redirigiendo') return;
+    const t = setTimeout(() => setMostrarLink(true), 8000);
+    return () => clearTimeout(t);
+  }, [fase]);
+
+  const listo = fase === 'redirigiendo';
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      {/* Fondo con gradiente igual al onboarding */}
       <div
         aria-hidden
         className="fixed inset-0 pointer-events-none"
@@ -53,54 +60,60 @@ function LoadingScreen() {
       />
 
       <div className="relative w-full max-w-sm text-center space-y-8">
-        {/* Logo animado */}
+        {/* Logo */}
         <div className="flex justify-center">
           <div className="relative">
             <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
-              <span className="text-primary-foreground font-bold text-2xl leading-none tracking-tight">G</span>
+              {listo
+                ? <Check className="h-7 w-7 text-primary-foreground" strokeWidth={2.5} />
+                : <span className="text-primary-foreground font-bold text-2xl leading-none tracking-tight">G</span>
+              }
             </div>
-            {/* Anillo pulsante */}
-            <div className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-primary" />
+            {!listo && <div className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-primary" />}
           </div>
         </div>
 
-        {/* Texto del paso actual */}
-        <div className="space-y-2">
-          <p className="text-lg font-semibold tracking-tight transition-all">
-            {PASOS[paso]}
+        <div className="space-y-1.5">
+          <p className="text-lg font-semibold tracking-tight">
+            {listo ? '¡Negocio creado!' : PASOS_ANIMACION[paso]}
           </p>
           <p className="text-sm text-muted-foreground">
-            Esto toma unos segundos…
+            {listo ? 'Entrando al dashboard...' : 'Esto toma unos segundos…'}
           </p>
         </div>
 
-        {/* Barra de progreso */}
         <div className="space-y-3">
           <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary rounded-full transition-all duration-100 ease-out"
+              className="h-full bg-primary rounded-full transition-all duration-150 ease-out"
               style={{ width: `${progreso}%` }}
             />
           </div>
-
-          {/* Pasos con checkmarks */}
           <div className="flex justify-between px-1">
-            {PASOS.slice(0, 3).map((label, i) => (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <div className={cn(
-                  'h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all duration-300',
-                  paso > i
-                    ? 'border-primary bg-primary'
-                    : paso === i
-                    ? 'border-primary bg-transparent animate-pulse'
-                    : 'border-muted-foreground/30 bg-transparent',
-                )}>
-                  {paso > i && <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />}
-                </div>
+            {PASOS_ANIMACION.map((_, i) => (
+              <div key={i} className={cn(
+                'h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all duration-300',
+                listo || paso > i
+                  ? 'border-primary bg-primary'
+                  : paso === i
+                  ? 'border-primary bg-transparent animate-pulse'
+                  : 'border-muted-foreground/30',
+              )}>
+                {(listo || paso > i) && <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />}
               </div>
             ))}
           </div>
         </div>
+
+        {/* Fallback si la navegación tarda demasiado */}
+        {mostrarLink && (
+          <a
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-sm text-primary underline underline-offset-4 hover:opacity-80"
+          >
+            ¿No carga? Ir al dashboard →
+          </a>
+        )}
       </div>
     </div>
   );
@@ -120,12 +133,12 @@ export default function OnboardingPage() {
   const [mayorista, setMayorista] = useState(true);
   const [minorista, setMinorista] = useState(true);
   const [plan, setPlan] = useState<PlanId>('market');
-  const [loading, setLoading] = useState(false);
+  const [fase, setFase] = useState<LoadingFase | null>(null);
   const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    setFase('creando');
     setError('');
 
     const result = await crearTenant({
@@ -136,16 +149,19 @@ export default function OnboardingPage() {
     });
 
     if (!result.ok) {
-      setLoading(false);
+      setFase(null);
       setError(result.error ?? 'Ocurrió un error. Intentá de nuevo.');
       return;
     }
 
-    // Recarga completa para que el middleware lea el nuevo tenant desde la sesión
-    window.location.href = '/dashboard';
+    // Cambiar a fase "redirigiendo" antes de navegar para que el usuario
+    // vea el feedback visual; luego forzar recarga completa para que
+    // el servidor lea el nuevo tenant desde la sesión.
+    setFase('redirigiendo');
+    setTimeout(() => { window.location.href = '/dashboard'; }, 400);
   }
 
-  if (loading) return <LoadingScreen />;
+  if (fase) return <LoadingScreen fase={fase} />;
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
