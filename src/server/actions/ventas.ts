@@ -11,6 +11,8 @@ import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
 import { revalidatePath } from 'next/cache';
 import { calcularTotalesVenta, validarLimiteCredito } from '@/lib/business-logic';
+import { nuevaVentaSchema, formatZodError } from '@/server/schemas';
+import { z } from 'zod';
 
 export type LineaVenta = {
   productoId: string | null;
@@ -41,6 +43,9 @@ async function siguienteNumero(tenantId: string, canal: CanalVenta, tx: any): Pr
 
 export async function crearVenta(input: NuevaVentaInput) {
   const session = await requireSession();
+  const parsed = nuevaVentaSchema.safeParse(input);
+  if (!parsed.success) throw new Error(formatZodError(parsed.error));
+  // input ya está validado; seguimos usando `input` para no romper tipos downstream
 
   const { subtotal, descuento, total } = calcularTotalesVenta(
     input.lineas,
@@ -231,6 +236,8 @@ export async function listarVentas(canal: CanalVenta, page = 0) {
 
 export async function anularVenta(id: string) {
   const session = await requireSession();
+  const parsedId = z.string().uuid('ID inválido').safeParse(id);
+  if (!parsedId.success) throw new Error(formatZodError(parsedId.error));
 
   await db.transaction(async (tx) => {
     // Traer la venta

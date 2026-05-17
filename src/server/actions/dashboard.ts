@@ -2,9 +2,58 @@
 
 import { and, eq, gt, isNotNull, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { ventas, clientes, productos } from '@/server/db/schema';
+import { ventas, clientes, productos, tenants } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
+
+/**
+ * Verifica qué tan completo está el setup inicial del tenant.
+ * Usado por el wizard "Empezando con Gesto" en el dashboard.
+ */
+export async function obtenerProgresoOnboarding(): Promise<{
+  tieneProductos: boolean;
+  tieneClientes: boolean;
+  tieneVentas: boolean;
+  datosNegocioCompletos: boolean;
+  completado: boolean;
+}> {
+  const session = await requireSession();
+  const { tenantId } = session;
+
+  const [productosCount, clientesCount, ventasCount, tenant] = await Promise.all([
+    db.select({ c: sql<number>`count(*)::int` })
+      .from(productos)
+      .where(byTenant(tenantId, productos)),
+    db.select({ c: sql<number>`count(*)::int` })
+      .from(clientes)
+      .where(and(byTenant(tenantId, clientes), eq(clientes.esConsumidorFinal, false))),
+    db.select({ c: sql<number>`count(*)::int` })
+      .from(ventas)
+      .where(byTenant(tenantId, ventas)),
+    db.select({
+        cuit: tenants.cuit,
+        direccion: tenants.direccion,
+        telefono: tenants.telefono,
+      })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1),
+  ]);
+
+  const tieneProductos = (productosCount[0]?.c ?? 0) > 0;
+  const tieneClientes  = (clientesCount[0]?.c ?? 0) > 0;
+  const tieneVentas    = (ventasCount[0]?.c ?? 0) > 0;
+  const t = tenant[0];
+  const datosNegocioCompletos = !!(t?.cuit && t?.direccion && t?.telefono);
+
+  return {
+    tieneProductos,
+    tieneClientes,
+    tieneVentas,
+    datosNegocioCompletos,
+    completado: tieneProductos && tieneVentas && datosNegocioCompletos,
+  };
+}
 
 export async function obtenerKpisDashboard() {
   const session = await requireSession();

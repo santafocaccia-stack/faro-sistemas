@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { ShoppingCart, BookOpen, AlertTriangle, TrendingUp, ArrowRight, ArrowUpRight, Package } from 'lucide-react';
-import { obtenerKpisDashboard } from '@/server/actions/dashboard';
+import { obtenerKpisDashboard, obtenerProgresoOnboarding } from '@/server/actions/dashboard';
 import { formatARS } from '@/lib/utils';
 import { FadeUp, StaggerList, StaggerItem } from '@/components/motion-primitives';
+import { OnboardingWizard } from '@/components/onboarding-wizard';
 
 const estadoBadge: Record<string, { label: string; className: string }> = {
   pagada:    { label: 'Pagada',    className: 'bg-success/15 text-success border-success/20' },
@@ -12,7 +13,10 @@ const estadoBadge: Record<string, { label: string; className: string }> = {
 };
 
 export default async function DashboardPage() {
-  const kpis = await obtenerKpisDashboard();
+  const [kpis, progreso] = await Promise.all([
+    obtenerKpisDashboard(),
+    obtenerProgresoOnboarding(),
+  ]);
   const totalHoy = kpis.ventasHoy.minorista.total + kpis.ventasHoy.mayorista.total;
   const cantHoy = kpis.ventasHoy.minorista.cantidad + kpis.ventasHoy.mayorista.cantidad;
   const ticketPromedio = cantHoy > 0 ? totalHoy / cantHoy : 0;
@@ -27,6 +31,9 @@ export default async function DashboardPage() {
           {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </FadeUp>
+
+      {/* Wizard de onboarding — solo aparece si faltan pasos */}
+      <OnboardingWizard progreso={progreso} />
 
       {/* KPI cards — grilla 2×2 compacta */}
       <StaggerList className="grid grid-cols-2 gap-3">
