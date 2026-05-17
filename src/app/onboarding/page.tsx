@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { crearTenant } from '@/server/actions/tenants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -117,7 +116,6 @@ const PLAN_ICONS: Record<string, React.ElementType> = {
 
 // ── Formulario de onboarding ──────────────────────────────────────────────────
 export default function OnboardingPage() {
-  const router = useRouter();
   const [nombre, setNombre] = useState('');
   const [mayorista, setMayorista] = useState(true);
   const [minorista, setMinorista] = useState(true);
@@ -143,9 +141,8 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Redirigir desde el cliente — evita el problema de redirect() en server actions
-    router.push('/dashboard');
-    router.refresh();
+    // Recarga completa para que el middleware lea el nuevo tenant desde la sesión
+    window.location.href = '/dashboard';
   }
 
   if (loading) return <LoadingScreen />;
