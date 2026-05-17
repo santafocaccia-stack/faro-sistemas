@@ -95,7 +95,10 @@ export async function requireSession(opts?: { allowExpired?: boolean }): Promise
 - Si no hay usuario auth → `redirect('/login')`
 - Si no hay membership → `redirect('/onboarding')`
 - Si trial vencido o status suspendido/cancelado → `redirect('/planes')` (salvo que `allowExpired: true`)
-- Retorna: `{ userId, email, tenantId, rol, plan, status, trialEnd }`
+- Retorna: `{ userId, email, tenantId, tenantNombre, rol, plan, status, trialEnd }`
+
+`tenantNombre` se incluye en la sesión para que la sidebar y otros componentes
+muestren el nombre real del negocio sin necesidad de query extra.
 
 ### Middleware (`src/lib/supabase/middleware.ts`)
 Solo refresca la cookie de sesión Supabase y redirige a `/login` si no hay usuario. **No verifica tenant** — eso lo hace `requireSession()`.
@@ -133,14 +136,19 @@ src/
 │       └── pdf/                   # generación de PDF presupuesto y remito
 │
 ├── components/
-│   ├── dashboard-shell.tsx        # wrapper client: sidebar + mobile nav + command palette
-│   ├── dashboard-sidebar.tsx      # sidebar desktop con nav por plan
-│   ├── mobile-nav.tsx             # header + drawer mobile
+│   ├── dashboard-shell.tsx        # wrapper client: sidebar + mobile bottom nav + command palette
+│   ├── dashboard-sidebar.tsx      # sidebar desktop: logo+negocio, ⌘K, botón VENDER, primary nav, "Más" collapsible
+│   ├── mobile-bottom-nav.tsx      # bottom nav mobile con FAB Vender central elevado + drawer "Más"
+│   ├── mobile-nav.tsx             # legacy drawer mobile (no integrado actualmente)
 │   ├── productos-list-client.tsx  # lista con búsqueda, filtros y acciones
 │   ├── ajuste-stock-form.tsx      # entrada / salida / fijar / reiniciar a cero
 │   ├── producto-form.tsx          # form edición/creación de producto
-│   ├── pos-minorista.tsx          # POS con modal de peso para kg
+│   ├── pos-venta.tsx              # POS retail unificado minorista+mayorista (scanner, kg modal, variantes, descuentos)
 │   └── ...
+│
+├── app/(dashboard)/dashboard/
+│   ├── page.tsx                   # server: fetch + saludo + fecha AR → DashboardClient
+│   └── dashboard-client.tsx       # client: hero saludo + botón Vender XL + KPIs + acciones + últimas ventas
 │
 ├── server/
 │   ├── actions/                   # Server Actions (todos empiezan con requireSession)
@@ -167,7 +175,7 @@ src/
 │
 └── lib/
     ├── planes.ts                  # definición de planes y precios
-    ├── nav.ts                     # NAV_POR_PLAN — menú según plan
+    ├── nav.ts                     # NAV_POR_PLAN — { primary, secondary } por plan + POS_HREF
     ├── dolar.ts                   # fetch tipo MEP con revalidación
     ├── mp-url.ts                  # getUrlConectarMP() (sync, no puede ir en 'use server')
     ├── business-logic.ts
@@ -310,10 +318,9 @@ formatKg(1.25)       // → "1,250 kg"
 
 ### ✅ Completamente funcionales
 - **Auth completa**: signup, login, logout, forgot password, reset password
-- **Onboarding**: selección de plan + nombre del negocio + canales de venta
-- **Dashboard**: KPIs del día (ventas hoy, semana, cobros pendientes, stock bajo) + últimas ventas
-- **POS Minorista**: grilla de productos, filtro por tipo, modal de peso para kg, carrito, cliente, método de pago, registrar venta
-- **POS Mayorista**: similar al minorista
+- **Onboarding**: selección de plan + nombre del negocio + canales de venta, con loading de 2 fases
+- **Dashboard rediseñado**: saludo personalizado por hora (AR), botón Vender XL, 3 KPIs (Hoy / Semana / Cobros) que se tiñen según estado, grilla de accesos rápidos con alertas y lista de últimas ventas con estado, hora relativa y canal
+- **POS retail unificado** (`pos-venta.tsx`): switch minorista/mayorista con íconos, búsqueda h-11 con scanner activo siempre, tarjetas de producto con avatar de color generado por hash del nombre, badges animados al agregar, carrito con animaciones spring, métodos de pago como chips con íconos, botón Cobrar XL (h-14) con glow naranja, FAB carrito flotante en mobile, modal de peso para productos por kg, modal de variantes para grupos
 - **Historial de ventas**: listado paginado + detalle + anulación
 - **Productos**: listado con búsqueda, filtros (activos/inactivos/stock bajo), acciones por fila (editar, ajustar stock, toggle activo)
 - **Editar producto**: form completo, ajuste de stock (entrada/salida/fijar/reiniciar a cero), vínculos a proveedores
@@ -325,7 +332,9 @@ formatKg(1.25)       // → "1,250 kg"
 - **Reportes**: ventas por período, top productos, exportar CSV
 - **Configuración**: datos del negocio, canales, info de suscripción, conectar/desconectar MP
 - **Equipo**: invitar miembros (en desarrollo)
-- **Navegación por plan**: cada plan ve solo su menú relevante
+- **Navegación rediseñada por plan**: sidebar desktop con logo + nombre del negocio + buscador ⌘K + botón **VENDER** destacado + nav primario plano (5 ítems) + "Más ▾" collapsible con secundarios + Sistema al fondo. Estructura plana orientada a tareas (`{ primary, secondary }` por plan en `nav.ts`).
+- **Mobile bottom nav** con FAB **Vender** central elevado (56px, sombra naranja) + tabs laterales (Inicio · Ventas · Clientes · Más) + bottom sheet "Más" con el resto.
+- **Design System "Brasas" v2**: paleta cálida (negros tintados con hue 55, naranja vibrante hue 43), radius 12px, sidebar con ribbon 3px + glow, utilidades `glow-primary`, `press-scale`, `card-accent-top-*`, `animate-shimmer`. Sin tap highlight gris en mobile.
 - **Banner de trial**: aparece los últimos 7 días antes de vencer
 - **Suscripción MP**: flujo completo de pago
 - **OAuth MP negocio**: conectar cuenta del negocio para cobros QR
@@ -382,7 +391,6 @@ Credenciales demo:
 |------|-------------|
 | Facturación AFIP | Estructura en DB lista (`cae`, `factura_numero`, etc.), no implementada |
 | Migración MP negocio | Ejecutar en Supabase SQL Editor: `ALTER TABLE tenants ADD COLUMN IF NOT EXISTS mp_negocio_access_token TEXT, ...` (ver `scripts/migration-mp-negocio.sql`) |
-| Mobile bottom nav | Archivo `mobile-bottom-nav.tsx` existe pero no está integrado en el shell |
 | Categorías UI | Server actions y schema listos, no hay página de gestión de categorías |
 | Precios por lista | Un solo precio mayorista/minorista por producto; sin lista de precios por cliente |
 | Tests | Hay tests en `src/lib/__tests__/` para business-logic y utils, sin cobertura de actions |

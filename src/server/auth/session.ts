@@ -9,6 +9,7 @@ export type Session = {
   userId: string;
   email: string;
   tenantId: string;
+  tenantNombre: string;
   rol: Rol;
   plan: PlanId;
   status: 'trial' | 'activo' | 'moroso' | 'suspendido' | 'cancelado';
@@ -38,6 +39,7 @@ export async function requireSession(opts?: RequireSessionOpts): Promise<Session
 
   const [tenant] = await db
     .select({
+      nombre: tenants.nombre,
       status: tenants.status,
       trialEnd: tenants.trialEnd,
       plan: tenants.plan,
@@ -59,6 +61,7 @@ export async function requireSession(opts?: RequireSessionOpts): Promise<Session
     userId: user.id,
     email: user.email!,
     tenantId: membership.tenantId,
+    tenantNombre: tenant.nombre,
     rol: membership.rol,
     plan: tenant.plan as PlanId,
     status: tenant.status,

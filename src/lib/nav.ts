@@ -13,129 +13,99 @@ export type NavItem = {
   pronto?: boolean;
 };
 
-export type NavSection = {
-  title: string;
-  items: NavItem[];
+/* ─────────────────────────────────────────────────────────────
+   Nueva estructura: navegación plana, orientada a tareas.
+
+   - `primary`: lista corta y fija que se muestra siempre arriba.
+     Son las acciones del día a día (Inicio, Ventas, Productos,
+     Clientes, Cuenta corriente).
+   - `secondary`: ítems menos frecuentes que viven dentro de un
+     desplegable "Más" para reducir ruido visual.
+
+   El botón "Vender" (CTA principal) NO está acá: lo renderiza
+   el sidebar como botón destacado.
+───────────────────────────────────────────────────────────── */
+export type NavPlan = {
+  primary: NavItem[];
+  secondary: NavItem[];
 };
 
-const INICIO: NavSection = {
-  title: '',
-  items: [{ href: '/dashboard', label: 'Inicio', icon: LayoutDashboard, exactMatch: true }],
+/* Items reutilizables */
+const INICIO: NavItem        = { href: '/dashboard',                  label: 'Inicio',         icon: LayoutDashboard, exactMatch: true };
+const HISTORIAL: NavItem     = { href: '/dashboard/ventas/historial', label: 'Historial',      icon: History };
+const PRODUCTOS: NavItem     = { href: '/dashboard/productos',        label: 'Productos',      icon: Package };
+const CLIENTES: NavItem      = { href: '/dashboard/clientes',         label: 'Clientes',       icon: Users };
+const CTA_CORRIENTE: NavItem = { href: '/dashboard/cc',               label: 'Cta. corriente', icon: BookOpen };
+const PRESUPUESTOS: NavItem  = { href: '/dashboard/presupuestos',     label: 'Presupuestos',   icon: FileText };
+const PROVEEDORES: NavItem   = { href: '/dashboard/proveedores',      label: 'Proveedores',    icon: Truck };
+const PEDIDOS: NavItem       = { href: '/dashboard/pedidos',          label: 'Pedidos',        icon: ClipboardList };
+const REPORTES: NavItem      = { href: '/dashboard/reportes',         label: 'Reportes',       icon: BarChart3 };
+const COCINA: NavItem        = { href: '/dashboard/cocina',           label: 'Cocina (KDS)',   icon: UtensilsCrossed, pronto: true };
+const BALANZA: NavItem       = { href: '/dashboard/balanza',          label: 'Balanza',        icon: Scale, pronto: true };
+
+export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
+
+  servicios: {
+    primary: [
+      INICIO,
+      HISTORIAL,
+      PRESUPUESTOS,
+      CLIENTES,
+      CTA_CORRIENTE,
+    ],
+    secondary: [
+      REPORTES,
+    ],
+  },
+
+  market: {
+    primary: [
+      INICIO,
+      HISTORIAL,
+      PRODUCTOS,
+      CLIENTES,
+      CTA_CORRIENTE,
+    ],
+    secondary: [
+      PROVEEDORES,
+      PEDIDOS,
+      REPORTES,
+    ],
+  },
+
+  food: {
+    primary: [
+      INICIO,
+      HISTORIAL,
+      PRODUCTOS,
+      CLIENTES,
+      CTA_CORRIENTE,
+    ],
+    secondary: [
+      PROVEEDORES,
+      PEDIDOS,
+      COCINA,
+      REPORTES,
+    ],
+  },
+
+  balanza: {
+    primary: [
+      INICIO,
+      HISTORIAL,
+      PRODUCTOS,
+      CLIENTES,
+      CTA_CORRIENTE,
+    ],
+    secondary: [
+      PROVEEDORES,
+      PEDIDOS,
+      BALANZA,
+      REPORTES,
+    ],
+  },
 };
 
-const CONFIG_SECTION: NavSection = {
-  title: 'Sistema',
-  items: [
-    { href: '/dashboard/config/equipo', label: 'Equipo',         icon: Users },
-    { href: '/dashboard/config',        label: 'Configuración',  icon: LayoutDashboard },
-  ],
-};
-
-export const NAV_POR_PLAN: Record<PlanId, NavSection[]> = {
-
-  servicios: [
-    INICIO,
-    {
-      title: 'Trabajo',
-      items: [
-        { href: '/dashboard/presupuestos',     label: 'Presupuestos',    icon: FileText },
-        { href: '/dashboard/ventas/historial', label: 'Historial cobros', icon: History },
-      ],
-    },
-    {
-      title: 'Clientes',
-      items: [
-        { href: '/dashboard/clientes', label: 'Clientes', icon: Users },
-      ],
-    },
-    {
-      title: 'Análisis',
-      items: [
-        { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 },
-      ],
-    },
-  ],
-
-  market: [
-    INICIO,
-    {
-      title: 'Ventas',
-      items: [
-        { href: '/dashboard/ventas',           label: 'Punto de venta', icon: ShoppingCart, exactMatch: true },
-        { href: '/dashboard/ventas/historial', label: 'Historial',      icon: History },
-      ],
-    },
-    {
-      title: 'Administración',
-      items: [
-        { href: '/dashboard/productos',    label: 'Productos',      icon: Package },
-        { href: '/dashboard/clientes',     label: 'Clientes',       icon: Users },
-        { href: '/dashboard/cc',           label: 'Cta. corriente', icon: BookOpen },
-        { href: '/dashboard/proveedores',  label: 'Proveedores',    icon: Truck },
-        { href: '/dashboard/pedidos',      label: 'Pedidos',        icon: ClipboardList },
-      ],
-    },
-    {
-      title: 'Análisis',
-      items: [
-        { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 },
-      ],
-    },
-  ],
-
-  food: [
-    INICIO,
-    {
-      title: 'Ventas',
-      items: [
-        { href: '/dashboard/ventas',           label: 'Punto de venta', icon: ShoppingCart, exactMatch: true },
-        { href: '/dashboard/ventas/historial', label: 'Historial',      icon: History },
-        { href: '/dashboard/cocina',           label: 'Cocina (KDS)',   icon: UtensilsCrossed, pronto: true },
-      ],
-    },
-    {
-      title: 'Administración',
-      items: [
-        { href: '/dashboard/productos',    label: 'Productos',      icon: Package },
-        { href: '/dashboard/clientes',     label: 'Clientes',       icon: Users },
-        { href: '/dashboard/cc',           label: 'Cta. corriente', icon: BookOpen },
-        { href: '/dashboard/proveedores',  label: 'Proveedores',    icon: Truck },
-        { href: '/dashboard/pedidos',      label: 'Pedidos',        icon: ClipboardList },
-      ],
-    },
-    {
-      title: 'Análisis',
-      items: [
-        { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 },
-      ],
-    },
-  ],
-
-  balanza: [
-    INICIO,
-    {
-      title: 'Ventas',
-      items: [
-        { href: '/dashboard/ventas',           label: 'Punto de venta', icon: ShoppingCart, exactMatch: true },
-        { href: '/dashboard/ventas/historial', label: 'Historial',      icon: History },
-        { href: '/dashboard/balanza',          label: 'Balanza',        icon: Scale, pronto: true },
-      ],
-    },
-    {
-      title: 'Administración',
-      items: [
-        { href: '/dashboard/productos',    label: 'Productos',      icon: Package },
-        { href: '/dashboard/clientes',     label: 'Clientes',       icon: Users },
-        { href: '/dashboard/cc',           label: 'Cta. corriente', icon: BookOpen },
-        { href: '/dashboard/proveedores',  label: 'Proveedores',    icon: Truck },
-        { href: '/dashboard/pedidos',      label: 'Pedidos',        icon: ClipboardList },
-      ],
-    },
-    {
-      title: 'Análisis',
-      items: [
-        { href: '/dashboard/reportes', label: 'Reportes', icon: BarChart3 },
-      ],
-    },
-  ],
-};
+/* Ruta del POS por plan (todos usan la misma hoy, pero queda
+   centralizado por si en el futuro algún plan tiene su propio flujo). */
+export const POS_HREF = '/dashboard/ventas';

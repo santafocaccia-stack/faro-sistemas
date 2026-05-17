@@ -11,12 +11,13 @@ import type { PlanId } from '@/lib/planes';
 type Props = {
   email: string;
   plan: PlanId;
+  tenantNombre: string;
   productos: Producto[];
   clientes: Cliente[];
   children: React.ReactNode;
 };
 
-export function DashboardShell({ email, plan, productos, clientes, children }: Props) {
+export function DashboardShell({ email, plan, tenantNombre, productos, clientes, children }: Props) {
   const [openCmd, setOpenCmd] = useState(false);
 
   // Atajo ⌘K / Ctrl+K
@@ -35,7 +36,12 @@ export function DashboardShell({ email, plan, productos, clientes, children }: P
   return (
     <div className="min-h-screen flex relative">
       {/* Sidebar — solo desktop */}
-      <DashboardSidebar email={email} plan={plan} onOpenCommand={() => setOpenCmd(true)} />
+      <DashboardSidebar
+        email={email}
+        plan={plan}
+        tenantNombre={tenantNombre}
+        onOpenCommand={() => setOpenCmd(true)}
+      />
 
       {/* Contenido principal — padding bottom en mobile para no quedar detrás del bottom nav */}
       <main className="flex-1 overflow-y-auto relative pb-16 md:pb-0">

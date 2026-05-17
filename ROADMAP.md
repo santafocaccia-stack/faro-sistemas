@@ -1,6 +1,6 @@
 # Mapa Conceptual — Faro Sistemas
 
-> Actualizado 2026-05-09 (v6).
+> Actualizado 2026-05-17 (v7).
 
 ```mermaid
 mindmap
@@ -88,13 +88,17 @@ mindmap
       ✅ Gestión de equipo invitar miembros roles
       ⬜ Precios especiales por cliente
     UX / Diseño
-      ✅ Paleta Carbón + Ascua oklch
+      ✅ Design System Brasas v2 (paleta cálida hue 55 + naranja vibrante hue 43)
       ✅ Grain texture + gradientes radiales
-      ✅ Linear-style sidebar con ribbon activo
+      ✅ Sidebar rediseñada con nombre del negocio + botón VENDER + Más collapsible
+      ✅ Mobile bottom nav con FAB Vender central elevado
+      ✅ Dashboard rediseñado con saludo + KPIs visuales tinted
+      ✅ POS retail con tarjetas avatar + carrito animado + Cobrar XL
       ✅ Command palette ⌘K
       ✅ Skeleton loaders 7 rutas
       ✅ Framer Motion stagger + AnimatePresence
       ✅ Animate fade-up en páginas
+      ✅ press-scale + glow-primary + no tap highlight mobile
       ⬜ PWA / offline POS
       ⬜ Dark/light toggle
     Negocio SaaS
@@ -121,7 +125,7 @@ mindmap
 | Presupuestos | ✅ Completo | CRUD, PDF, estados, numeración atómica |
 | Calidad código | ✅ Completo | Bugs críticos corregidos, constantes centralizadas, error handling robusto |
 | Config negocio | 🔄 85% | Equipo listo, falta precios por cliente |
-| UX / Diseño | 🔄 90% | Falta PWA |
+| UX / Diseño | 🔄 95% | Brasas v2 + dashboard + POS + nav rediseñados. Falta PWA y dark/light toggle |
 | Negocio SaaS | ⬜ Pendiente | Todo el monetization layer |
 
 ---

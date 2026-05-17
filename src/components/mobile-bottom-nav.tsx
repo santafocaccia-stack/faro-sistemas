@@ -7,26 +7,29 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, ShoppingCart, Users, MoreHorizontal,
   History, Package, BookOpen, FileText, BarChart3,
-  UsersRound, Settings, LogOut, X,
+  UsersRound, Settings, LogOut, X, Truck, ClipboardList,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-/* ── Íconos fijos en la barra ─────────────────────────── */
-const BOTTOM_TABS = [
-  { href: '/dashboard',          label: 'Inicio',    icon: LayoutDashboard, exactMatch: true  },
-  { href: '/dashboard/ventas',   label: 'POS',       icon: ShoppingCart,    exactMatch: true  },
-  { href: '/dashboard/clientes', label: 'Clientes',  icon: Users,           exactMatch: false },
+/* ── Tabs laterales (Vender va al centro como FAB elevado) ──── */
+const LEFT_TABS = [
+  { href: '/dashboard',          label: 'Inicio',   icon: LayoutDashboard, exactMatch: true },
+  { href: '/dashboard/ventas/historial', label: 'Ventas', icon: History, exactMatch: false },
+];
+const RIGHT_TABS = [
+  { href: '/dashboard/clientes', label: 'Clientes', icon: Users, exactMatch: false },
 ];
 
 /* ── Ítems del drawer "Más" ───────────────────────────── */
 const MAS_ITEMS = [
-  { href: '/dashboard/ventas/historial', label: 'Historial',      icon: History },
-  { href: '/dashboard/productos',        label: 'Productos',       icon: Package },
-  { href: '/dashboard/cc',               label: 'Cta. Corriente',  icon: BookOpen },
-  { href: '/dashboard/presupuestos',     label: 'Presupuestos',    icon: FileText },
-  { href: '/dashboard/reportes',         label: 'Reportes',        icon: BarChart3 },
-  { href: '/dashboard/config/equipo',    label: 'Equipo',          icon: UsersRound },
-  { href: '/dashboard/config',           label: 'Configuración',   icon: Settings },
+  { href: '/dashboard/productos',     label: 'Productos',       icon: Package },
+  { href: '/dashboard/cc',            label: 'Cta. Corriente',  icon: BookOpen },
+  { href: '/dashboard/proveedores',   label: 'Proveedores',     icon: Truck },
+  { href: '/dashboard/pedidos',       label: 'Pedidos',         icon: ClipboardList },
+  { href: '/dashboard/presupuestos',  label: 'Presupuestos',    icon: FileText },
+  { href: '/dashboard/reportes',      label: 'Reportes',        icon: BarChart3 },
+  { href: '/dashboard/config/equipo', label: 'Equipo',          icon: UsersRound },
+  { href: '/dashboard/config',        label: 'Configuración',   icon: Settings },
 ];
 
 function isActive(href: string, pathname: string, exactMatch?: boolean) {
@@ -36,13 +39,10 @@ function isActive(href: string, pathname: string, exactMatch?: boolean) {
 
 export function MobileBottomNav({ email }: { email: string }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const router   = useRouter();
   const [masOpen, setMasOpen] = useState(false);
 
-  /* Cerrar drawer al cambiar de ruta */
   useEffect(() => { setMasOpen(false); }, [pathname]);
-
-  /* Bloquear scroll del body cuando el drawer está abierto */
   useEffect(() => {
     document.body.style.overflow = masOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -55,47 +55,72 @@ export function MobileBottomNav({ email }: { email: string }) {
     router.refresh();
   }
 
-  /* ¿Algún ítem del drawer está activo? → iluminar botón Más */
   const masActive = MAS_ITEMS.some((i) => isActive(i.href, pathname)) ||
     pathname.startsWith('/dashboard/config');
+  const venderActive = isActive('/dashboard/ventas', pathname, true);
+
+  /* Helper para tabs comunes */
+  const renderTab = (tab: typeof LEFT_TABS[number]) => {
+    const Icon = tab.icon;
+    const active = isActive(tab.href, pathname, tab.exactMatch);
+    return (
+      <Link
+        key={tab.href}
+        href={tab.href}
+        className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
+      >
+        <Icon
+          className={cn('h-5 w-5 transition-colors', active ? 'text-primary' : 'text-muted-foreground')}
+          strokeWidth={active ? 2.25 : 1.75}
+        />
+        <span className={cn(
+          'text-[10px] font-medium transition-colors',
+          active ? 'text-primary' : 'text-muted-foreground',
+        )}>
+          {tab.label}
+        </span>
+      </Link>
+    );
+  };
 
   return (
     <>
       {/* ── Barra fija inferior ─────────────────────────── */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-sidebar border-t border-sidebar-border safe-area-pb">
-        <div className="flex items-stretch h-16">
+        <div className="relative flex items-stretch h-16">
 
-          {/* Tabs fijos */}
-          {BOTTOM_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const active = isActive(tab.href, pathname, tab.exactMatch);
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
-              >
-                <Icon
-                  className={cn(
-                    'h-5 w-5 transition-colors',
-                    active ? 'text-primary' : 'text-muted-foreground',
-                  )}
-                  strokeWidth={active ? 2.25 : 1.75}
-                />
-                <span className={cn(
-                  'text-[10px] font-medium transition-colors',
-                  active ? 'text-primary' : 'text-muted-foreground',
-                )}>
-                  {tab.label}
-                </span>
-              </Link>
-            );
-          })}
+          {/* Tabs izquierda */}
+          {LEFT_TABS.map(renderTab)}
+
+          {/* FAB Vender — centro elevado */}
+          <div className="flex-1 relative flex items-start justify-center">
+            <Link
+              href="/dashboard/ventas"
+              className={cn(
+                'absolute -top-5 h-14 w-14 rounded-2xl flex items-center justify-center',
+                'bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0.70_0.22_43_/_45%)]',
+                'transition-all duration-150 active:scale-95',
+                venderActive && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-sidebar',
+              )}
+              aria-label="Nueva venta"
+            >
+              <ShoppingCart className="h-6 w-6" strokeWidth={2.25} />
+            </Link>
+            <span className={cn(
+              'absolute bottom-2 text-[10px] font-semibold transition-colors',
+              venderActive ? 'text-primary' : 'text-muted-foreground',
+            )}>
+              Vender
+            </span>
+          </div>
+
+          {/* Tabs derecha */}
+          {RIGHT_TABS.map(renderTab)}
 
           {/* Botón Más */}
           <button
             onClick={() => setMasOpen((v) => !v)}
-            className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
           >
             <MoreHorizontal
               className={cn(
