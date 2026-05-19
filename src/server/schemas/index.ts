@@ -19,6 +19,16 @@ import { z } from 'zod';
 const numericString = (msg = 'Número inválido') =>
   z.string().refine((s) => s !== '' && !isNaN(Number(s)) && Number(s) >= 0, msg);
 
+/**
+ * Numérico opcional — string con número válido, null, o undefined.
+ * Convierte string vacío automáticamente a null (común al venir de un input vacío).
+ */
+const optionalNumericString = (msg = 'Número inválido') =>
+  z.preprocess(
+    (val) => (val === '' || val === undefined ? null : val),
+    z.string().refine((s) => !isNaN(Number(s)) && Number(s) >= 0, msg).nullable(),
+  );
+
 /** Numérico-como-string que admite negativos (ej: descuentos). */
 const numericStringSigned = (msg = 'Número inválido') =>
   z.string().refine((s) => s !== '' && !isNaN(Number(s)), msg);
@@ -43,7 +53,7 @@ export const productoInputSchema = z.object({
   grupoVarianteId: uuid.nullable().optional(),
   tipoUnidad: z.enum(['por_kg', 'por_unidad'], { message: 'Tipo de unidad inválido' }),
   stockActual: numericString('Stock inválido'),
-  stockMinimo: numericString('Stock mínimo inválido').nullable().optional(),
+  stockMinimo: optionalNumericString('Stock mínimo inválido').optional(),
   costoPromedio: numericString('Costo inválido'),
   precioMayorista: numericString('Precio mayorista inválido'),
   precioMinorista: numericString('Precio minorista inválido'),

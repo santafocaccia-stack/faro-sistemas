@@ -138,8 +138,11 @@ export function ProductoForm({
     startTransition(async () => {
       const input: ProductoInput = {
         ...form,
+        codigo: form.codigo?.trim() || null,
+        descripcion: form.descripcion?.trim() || null,
         categoriaId: form.categoriaId || null,
         grupoVarianteId: form.grupoVarianteId || null,
+        stockMinimo: form.stockMinimo?.trim() || null,
         vinculos: vinculos.map(({ _key: _, ...v }) => v),
       };
 
