@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Tag, Boxes, DollarSign, ScanBarcode, Truck, Plus, Trash2, Star } from 'lucide-react';
+import { Tag, Boxes, DollarSign, ScanBarcode, Camera, Truck, Plus, Trash2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,7 @@ import {
 import { crearProducto, actualizarProducto, desactivarProducto, type ProductoInput } from '@/server/actions/productos';
 import type { Producto, Categoria, GrupoVariante, Proveedor, ProductoProveedor } from '@/server/db/schema';
 import type { VinculoProveedorInput } from '@/server/actions/proveedores';
+import { BarcodeScannerModal } from '@/components/barcode-scanner-modal';
 
 type VinculoLocal = VinculoProveedorInput & { _key: string };
 
@@ -37,6 +38,7 @@ export function ProductoForm({
   const isEdit = !!producto;
   const [codigoFocused, setCodigoFocused] = useState(false);
   const codigoRef = useRef<HTMLInputElement>(null);
+  const [scannerAbierto, setScannerAbierto] = useState(false);
 
   const [form, setForm] = useState<Omit<ProductoInput, 'vinculos'>>({
     codigo: producto?.codigo ?? '',
@@ -203,8 +205,17 @@ export function ProductoForm({
                 onBlur={() => setCodigoFocused(false)}
                 onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                 placeholder="Escaneá o ingresá el código"
-                className={`${inputCls} pl-8 font-mono`}
+                className={`${inputCls} pl-8 pr-10 font-mono`}
               />
+              <button
+                type="button"
+                onClick={() => setScannerAbierto(true)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors active:scale-95"
+                aria-label="Escanear con cámara"
+                title="Escanear con cámara"
+              >
+                <Camera className="h-4 w-4" strokeWidth={2} />
+              </button>
             </div>
           </Field>
         </div>
@@ -525,6 +536,17 @@ export function ProductoForm({
           </Button>
         </div>
       </div>
+
+      {/* Modal scanner cámara */}
+      <BarcodeScannerModal
+        open={scannerAbierto}
+        onClose={() => setScannerAbierto(false)}
+        onDetected={(codigo) => {
+          update('codigo', codigo.trim());
+          setScannerAbierto(false);
+          toast.success('Código escaneado', { duration: 1500 });
+        }}
+      />
     </form>
   );
 
