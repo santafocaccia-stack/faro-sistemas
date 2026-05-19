@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, Camera, AlertCircle, Loader2, ShieldOff } from 'lucide-react';
+import { X, Camera, AlertCircle, Loader2, ShieldOff, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -11,27 +11,116 @@ type Props = {
 };
 
 type Estado =
-  | 'inicializando'      // pidiendo permiso + iniciando
-  | 'escaneando'         // todo ok, leyendo
-  | 'sin-permiso'        // usuario rechazó o ya estaba bloqueado
-  | 'no-soportado'       // dispositivo sin cámara
-  | 'no-seguro'          // HTTPS requerido
+  | 'inicializando'
+  | 'escaneando'
+  | 'sin-permiso'
+  | 'no-soportado'
+  | 'no-seguro'
   | 'error';
 
+type Browser =
+  | 'chrome-android'
+  | 'chrome-desktop'
+  | 'safari-ios'
+  | 'safari-mac'
+  | 'firefox'
+  | 'edge'
+  | 'desconocido';
+
 /**
- * Modal de escaneo de código de barras usando la cámara del dispositivo.
- *
- * Al abrir, llama directamente a getUserMedia() para que aparezca el prompt
- * nativo del navegador inmediatamente. Sin botones intermedios.
- *
- * Soporta EAN-13, EAN-8, Code 128, UPC-A y QR.
+ * Detecta el browser para mostrar instrucciones específicas si la cámara
+ * fue bloqueada (cada browser tiene un flujo distinto para resetear permisos).
  */
+function detectarBrowser(): Browser {
+  if (typeof navigator === 'undefined') return 'desconocido';
+  const ua = navigator.userAgent.toLowerCase();
+  const isAndroid = ua.includes('android');
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+  const isMac = ua.includes('macintosh') && !isIOS;
+
+  if (ua.includes('edg/')) return 'edge';
+  if (ua.includes('firefox/')) return 'firefox';
+  if (ua.includes('chrome/') && !ua.includes('edg/')) {
+    return isAndroid ? 'chrome-android' : 'chrome-desktop';
+  }
+  if (ua.includes('safari/') && !ua.includes('chrome/')) {
+    if (isIOS) return 'safari-ios';
+    if (isMac) return 'safari-mac';
+  }
+  return 'desconocido';
+}
+
+function instruccionesDesbloqueo(browser: Browser): { titulo: string; pasos: string[] } {
+  switch (browser) {
+    case 'chrome-android':
+      return {
+        titulo: 'Chrome Android',
+        pasos: [
+          'Tocá el candado 🔒 a la izquierda de la URL',
+          'Tocá "Permisos" o "Configuración del sitio"',
+          'Cámara → cambiar a "Preguntar" o "Permitir"',
+          'Volvé a tocar el botón de escanear',
+        ],
+      };
+    case 'safari-ios':
+      return {
+        titulo: 'Safari iOS',
+        pasos: [
+          'Abrí Configuración del iPhone',
+          'Bajá a Safari → Cámara',
+          'Cambiá a "Preguntar" o "Permitir"',
+          'Volvé al sitio y recargá la página',
+        ],
+      };
+    case 'chrome-desktop':
+    case 'edge':
+      return {
+        titulo: browser === 'edge' ? 'Edge' : 'Chrome',
+        pasos: [
+          'Tocá el candado 🔒 a la izquierda de la URL',
+          'Buscá "Cámara" y cambialo a "Permitir"',
+          'Recargá la página',
+        ],
+      };
+    case 'safari-mac':
+      return {
+        titulo: 'Safari Mac',
+        pasos: [
+          'En la barra del menú: Safari → Configuración',
+          'Pestaña "Sitios web" → Cámara',
+          'Buscá el sitio y cambialo a "Permitir"',
+          'Recargá la página',
+        ],
+      };
+    case 'firefox':
+      return {
+        titulo: 'Firefox',
+        pasos: [
+          'Tocá el candado 🔒 a la izquierda de la URL',
+          'Tocá la "X" al lado de "Bloqueada temporalmente"',
+          'Recargá la página y aceptá el prompt',
+        ],
+      };
+    default:
+      return {
+        titulo: 'Tu navegador',
+        pasos: [
+          'Buscá la configuración de permisos del sitio',
+          'Habilitá el acceso a la cámara',
+          'Recargá la página',
+        ],
+      };
+  }
+}
+
 export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const [estado, setEstado] = useState<Estado>('inicializando');
   const [error, setError] = useState<string>('');
+  const [browser, setBrowser] = useState<Browser>('desconocido');
+  const [intento, setIntento] = useState(0);
 
   function cleanup() {
     controlsRef.current?.stop();
@@ -45,19 +134,34 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
       cleanup();
       setEstado('inicializando');
       setError('');
+      setIntento(0);
       return;
     }
 
+    setBrowser(detectarBrowser());
     let cancelado = false;
 
     async function arrancar() {
-      // Validaciones tempranas
+      // 1) Validar contexto seguro (HTTPS)
       const isSecure = window.isSecureContext || window.location.hostname === 'localhost';
       if (!isSecure) { setEstado('no-seguro'); return; }
       if (!navigator.mediaDevices?.getUserMedia) { setEstado('no-soportado'); return; }
 
+      // 2) Chequear estado del permiso ANTES de pedir cámara
       try {
-        // Pedir cámara — esto dispara el prompt nativo
+        if ('permissions' in navigator) {
+          const status = await navigator.permissions.query({ name: 'camera' as PermissionName });
+          if (status.state === 'denied' && !cancelado) {
+            setEstado('sin-permiso');
+            return;
+          }
+        }
+      } catch {
+        // Algunos browsers (Safari iOS) no soportan permissions.query con 'camera'
+        // — seguimos adelante e intentamos getUserMedia directamente
+      }
+
+      try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: false,
           video: {
@@ -79,7 +183,6 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
         video.srcObject = stream;
         await video.play();
 
-        // Cargar zxing diferido
         const { BrowserMultiFormatReader } = await import('@zxing/browser');
         if (cancelado) return;
         const reader = new BrowserMultiFormatReader();
@@ -113,14 +216,18 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
     }
 
     arrancar();
+    return () => { cancelado = true; cleanup(); };
+  }, [open, onDetected, intento]);
 
-    return () => {
-      cancelado = true;
-      cleanup();
-    };
-  }, [open, onDetected]);
+  function reintentar() {
+    setEstado('inicializando');
+    setError('');
+    setIntento((n) => n + 1);
+  }
 
   if (!open) return null;
+
+  const instr = instruccionesDesbloqueo(browser);
 
   return (
     <div
@@ -147,7 +254,10 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
         </div>
 
         {/* Contenido */}
-        <div className="relative aspect-[4/3] bg-black overflow-hidden">
+        <div className={cn(
+          'relative bg-black overflow-hidden',
+          estado === 'sin-permiso' ? 'min-h-[420px]' : 'aspect-[4/3]',
+        )}>
 
           <video
             ref={videoRef}
@@ -160,7 +270,6 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
             autoPlay
           />
 
-          {/* Overlay mira */}
           {estado === 'escaneando' && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="relative w-3/4 h-1/2 max-w-xs">
@@ -176,21 +285,50 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
           {estado === 'inicializando' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <p className="text-xs">Esperando permisos de cámara...</p>
+              <p className="text-xs">Esperando permiso de cámara...</p>
+              <p className="text-[10px] text-muted-foreground/60 max-w-[260px] text-center px-6">
+                Si no aparece el prompt, revisá la barra de URL o aceptá el permiso.
+              </p>
             </div>
           )}
 
+          {/* Sin permiso — pantalla detallada con instrucciones */}
           {estado === 'sin-permiso' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
-              <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-5 py-6 text-center overflow-y-auto">
+              <div className="h-12 w-12 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center shrink-0">
                 <ShieldOff className="h-5 w-5 text-destructive" />
               </div>
-              <div>
-                <p className="text-sm font-medium">Cámara bloqueada</p>
-                <p className="text-[11px] text-muted-foreground mt-1 max-w-[280px] leading-relaxed">
-                  Tocá el ícono de candado 🔒 a la izquierda de la URL → Cámara → Permitir, y volvé a entrar.
+
+              <div className="max-w-[300px]">
+                <p className="text-sm font-semibold">Cámara bloqueada</p>
+                <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                  Para escanear, necesitás habilitar la cámara en {instr.titulo}.
                 </p>
               </div>
+
+              <div className="w-full max-w-[300px] bg-muted/30 border border-border/40 rounded-lg p-3 text-left">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+                  Pasos:
+                </p>
+                <ol className="space-y-1.5">
+                  {instr.pasos.map((paso, i) => (
+                    <li key={i} className="flex gap-2 text-[11px] text-foreground/80 leading-snug">
+                      <span className="shrink-0 h-4 w-4 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span>{paso}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <button
+                onClick={reintentar}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-medium bg-primary text-primary-foreground hover:brightness-110 active:scale-95 transition-all"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Ya lo habilité, probar de nuevo
+              </button>
             </div>
           )}
 
@@ -233,6 +371,13 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
                   {error}
                 </p>
               </div>
+              <button
+                onClick={reintentar}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-medium bg-muted text-foreground hover:bg-muted/70 transition-all"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Reintentar
+              </button>
             </div>
           )}
         </div>
@@ -241,7 +386,9 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
           <p className="text-[11px] text-muted-foreground">
             {estado === 'escaneando'
               ? 'Apuntá la cámara al código de barras'
-              : 'Aceptá el permiso de cámara'}
+              : estado === 'sin-permiso'
+              ? 'El permiso se guarda — solo lo hacés una vez'
+              : 'Aceptá el permiso para continuar'}
           </p>
         </div>
       </div>
