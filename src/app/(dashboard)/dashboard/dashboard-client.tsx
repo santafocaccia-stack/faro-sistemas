@@ -315,7 +315,7 @@ export function DashboardClient({
           ) : (
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               {ultimasVentas.map((v, i) => {
-                const cfg = estadoConfig[v.estado] ?? estadoConfig.pendiente;
+                const cfg = estadoConfig[v.estado] ?? { dot: 'bg-muted-foreground', label: v.estado };
                 const hora = horaRelativa(v.fecha);
                 const esMinorista = v.canal === 'minorista';
                 return (
