@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Check } from 'lucide-react';
-import { crearSuscripcionMP } from '@/server/actions/suscripcion';
-import type { PLANES } from '@/lib/planes';
+import type { PLANES, PlanId } from '@/lib/planes';
 
 type Plan = (typeof PLANES)[keyof typeof PLANES];
 
@@ -11,9 +10,10 @@ type Props = {
   plan: Plan;
   dolarMep: number;
   esPlanActual: boolean;
+  onContratar: (planId: PlanId) => Promise<void>;
 };
 
-export function PlanCard({ plan, dolarMep, esPlanActual }: Props) {
+export function PlanCard({ plan, dolarMep, esPlanActual, onContratar }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ export function PlanCard({ plan, dolarMep, esPlanActual }: Props) {
     setError(null);
     startTransition(async () => {
       try {
-        await crearSuscripcionMP(plan.id);
+        await onContratar(plan.id);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al procesar el pago');
       }

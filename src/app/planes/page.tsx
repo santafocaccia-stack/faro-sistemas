@@ -3,6 +3,7 @@ import { requireSession } from '@/server/auth/session';
 import { getDolarMep } from '@/lib/dolar';
 import { PLANES_ARRAY } from '@/lib/planes';
 import { PlanCard } from './plan-card';
+import { crearSuscripcionMP } from '@/server/actions/suscripcion';
 
 export default async function PlanesPage() {
   const session = await requireSession({ allowExpired: true });
@@ -65,6 +66,7 @@ export default async function PlanesPage() {
             plan={plan}
             dolarMep={dolarMep}
             esPlanActual={session.plan === plan.id}
+            onContratar={crearSuscripcionMP}
           />
         ))}
       </div>
