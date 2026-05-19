@@ -64,37 +64,50 @@ export async function crearProducto(input: ProductoInput) {
   if (!parsed.success) throw new Error(formatZodError(parsed.error));
   const data = parsed.data;
 
-  const [creado] = await db
-    .insert(productos)
-    .values({
-      tenantId: session.tenantId,
-      codigo: data.codigo || null,
-      nombre: data.nombre,
-      descripcion: data.descripcion || null,
-      categoriaId: data.categoriaId || null,
-      grupoVarianteId: data.grupoVarianteId || null,
-      tipoUnidad: data.tipoUnidad,
-      stockActual: data.stockActual,
-      stockMinimo: data.stockMinimo || null,
-      costoPromedio: data.costoPromedio,
-      precioMayorista: data.precioMayorista,
-      precioMinorista: data.precioMinorista,
-      activo: data.activo,
-    })
-    .returning({ id: productos.id });
+  let creado: { id: string } | undefined;
+  try {
+    [creado] = await db
+      .insert(productos)
+      .values({
+        tenantId: session.tenantId,
+        codigo: data.codigo || null,
+        nombre: data.nombre,
+        descripcion: data.descripcion || null,
+        categoriaId: data.categoriaId || null,
+        grupoVarianteId: data.grupoVarianteId || null,
+        tipoUnidad: data.tipoUnidad,
+        stockActual: data.stockActual,
+        stockMinimo: data.stockMinimo || null,
+        costoPromedio: data.costoPromedio,
+        precioMayorista: data.precioMayorista,
+        precioMinorista: data.precioMinorista,
+        activo: data.activo,
+      })
+      .returning({ id: productos.id });
+  } catch (err) {
+    console.error('[crearProducto] Error insertando producto:', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`No se pudo crear el producto: ${msg}`);
+  }
 
   if (creado && data.vinculos && data.vinculos.length > 0) {
-    await db.insert(productoProveedores).values(
-      data.vinculos.map((v) => ({
-        tenantId: session.tenantId,
-        productoId: creado.id,
-        proveedorId: v.proveedorId,
-        precioCosto: v.precioCosto,
-        markupMayorista: v.markupMayorista || null,
-        markupMinorista: v.markupMinorista || null,
-        esPrincipal: v.esPrincipal,
-      })),
-    );
+    try {
+      await db.insert(productoProveedores).values(
+        data.vinculos.map((v) => ({
+          tenantId: session.tenantId,
+          productoId: creado!.id,
+          proveedorId: v.proveedorId,
+          precioCosto: v.precioCosto,
+          markupMayorista: v.markupMayorista || null,
+          markupMinorista: v.markupMinorista || null,
+          esPrincipal: v.esPrincipal,
+        })),
+      );
+    } catch (err) {
+      console.error('[crearProducto] Error insertando vinculos:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`Producto creado pero falló vincular proveedores: ${msg}`);
+    }
   }
 
   revalidatePath('/dashboard/productos');
