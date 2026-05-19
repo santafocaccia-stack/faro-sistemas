@@ -55,7 +55,7 @@ export function PlanCard({ plan, dolarMep, esPlanActual }: Props) {
           <span className="text-2xl font-bold tabular-nums">U$S {plan.precioUsd}</span>
           <span className="text-xs text-muted-foreground">/mes</span>
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5 font-mono tabular-nums">
+        <p className="text-xs text-muted-foreground mt-0.5 font-mono tabular-nums" suppressHydrationWarning>
           ≈ ${precioArs.toLocaleString('es-AR')} ARS
         </p>
       </div>
