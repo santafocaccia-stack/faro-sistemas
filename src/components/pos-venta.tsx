@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { crearVenta, type LineaVenta } from '@/server/actions/ventas';
 import { formatARS, formatKg, cn } from '@/lib/utils';
 import type { Producto, Cliente, MetodoPago, CanalVenta, Categoria } from '@/server/db/schema';
+import { BarcodeScannerModal } from '@/components/barcode-scanner-modal';
 
 /* ─────────────────────────────────────────────────────────────
    Tipos
@@ -208,6 +209,9 @@ export function PosVenta({ productos, clientes, consumidorFinalId, categorias }:
   const pesoInputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // Modal scanner cámara mobile
+  const [scannerAbierto, setScannerAbierto] = useState(false);
+
   /* ── Derivados ──────────────────────────────────────────── */
   const esMayorista = canal === 'mayorista';
   const metodos = esMayorista ? METODOS_MAYORISTA : METODOS_MINORISTA;
@@ -352,35 +356,37 @@ export function PosVenta({ productos, clientes, consumidorFinalId, categorias }:
     });
   }
 
-  /* ── Listener scanner de código de barras ───────────────── */
+  /* ── Procesar un código escaneado (scanner físico o cámara) ── */
+  const procesarScan = useCallback((codigo: string) => {
+    const MIN_CODE_LENGTH = 3;
+    const trimmed = codigo.trim();
+    if (!trimmed || trimmed.length < MIN_CODE_LENGTH) return;
+    const encontrado = productos.find(
+      (p) => p.activo && p.codigo && p.codigo.trim().toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (encontrado) {
+      if (encontrado.tipoUnidad === 'por_kg') {
+        setPesoModal(encontrado);
+        setPesoInput('');
+      } else {
+        agregarConCantidad(encontrado, 1);
+        toast.success(`${encontrado.nombre} agregado`, { duration: 1500, icon: '✓' });
+      }
+      setBusqueda('');
+    } else {
+      toast.error(`Código "${trimmed}" no encontrado`, { duration: 3000 });
+    }
+  }, [productos, agregarConCantidad]);
+
+  /* ── Listener scanner físico (USB / Bluetooth — emite teclado) ── */
   useEffect(() => {
     let buffer = '';
     let bufferTimer: ReturnType<typeof setTimeout> | null = null;
     const BUFFER_TIMEOUT_MS = 80;
     const MIN_CODE_LENGTH = 3;
 
-    function procesarScan(codigo: string) {
-      const trimmed = codigo.trim();
-      if (!trimmed || trimmed.length < MIN_CODE_LENGTH) return;
-      const encontrado = productos.find(
-        (p) => p.activo && p.codigo && p.codigo.trim().toLowerCase() === trimmed.toLowerCase(),
-      );
-      if (encontrado) {
-        if (encontrado.tipoUnidad === 'por_kg') {
-          setPesoModal(encontrado);
-          setPesoInput('');
-        } else {
-          agregarConCantidad(encontrado, 1);
-          toast.success(`${encontrado.nombre} agregado`, { duration: 1500, icon: '✓' });
-        }
-        setBusqueda('');
-      } else {
-        toast.error(`Código "${trimmed}" no encontrado`, { duration: 3000 });
-      }
-    }
-
     function onKeyDown(e: KeyboardEvent) {
-      if (pesoModal) return;
+      if (pesoModal || scannerAbierto) return;
       const target = e.target as HTMLElement;
       const isFocusedOtherInput =
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) &&
@@ -404,7 +410,7 @@ export function PosVenta({ productos, clientes, consumidorFinalId, categorias }:
       window.removeEventListener('keydown', onKeyDown);
       if (bufferTimer) clearTimeout(bufferTimer);
     };
-  }, [productos, agregarConCantidad, pesoModal]);
+  }, [procesarScan, pesoModal, scannerAbierto]);
 
   /* ────────────────────────────────────────────────────────────
      RENDER
@@ -470,7 +476,7 @@ export function PosVenta({ productos, clientes, consumidorFinalId, categorias }:
                 autoComplete="off"
                 autoFocus
                 className={cn(
-                  'w-full h-11 pl-10 pr-28 rounded-xl text-sm',
+                  'w-full h-11 pl-10 pr-12 sm:pr-28 rounded-xl text-sm',
                   'bg-background border border-border/60',
                   'placeholder:text-muted-foreground/50',
                   'focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10',
@@ -480,10 +486,21 @@ export function PosVenta({ productos, clientes, consumidorFinalId, categorias }:
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-muted-foreground/40 pointer-events-none select-none">
+              {/* Indicador scanner activo — solo desktop */}
+              <span className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-1 text-[10px] text-muted-foreground/40 pointer-events-none select-none">
                 <ScanBarcode className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">scanner activo</span>
+                <span>scanner activo</span>
               </span>
+              {/* Botón cámara — solo mobile */}
+              <button
+                type="button"
+                onClick={() => setScannerAbierto(true)}
+                className="sm:hidden absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors active:scale-95"
+                aria-label="Escanear con cámara"
+                title="Escanear con cámara"
+              >
+                <ScanBarcode className="h-4 w-4" strokeWidth={2} />
+              </button>
             </div>
 
             {/* Chips de categoría */}
@@ -1060,6 +1077,18 @@ export function PosVenta({ productos, clientes, consumidorFinalId, categorias }:
           </>
         )}
       </AnimatePresence>
+
+      {/* ══════════════════════════════════════════════════════
+          Modal: Scanner cámara (mobile)
+      ════════════════════════════════════════════════════ */}
+      <BarcodeScannerModal
+        open={scannerAbierto}
+        onClose={() => setScannerAbierto(false)}
+        onDetected={(codigo) => {
+          setScannerAbierto(false);
+          procesarScan(codigo);
+        }}
+      />
     </>
   );
 }
