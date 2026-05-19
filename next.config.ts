@@ -8,7 +8,11 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+    // camera=(self): permitido solo en el mismo origen (necesario para el scanner)
+    // microphone=(): bloqueado completamente
+    // geolocation=(): bloqueado completamente
+    // interest-cohort=(): bloquea FLoC (privacidad)
+    value: "camera=(self), microphone=(), geolocation=(), interest-cohort=()",
   },
 ];
 
