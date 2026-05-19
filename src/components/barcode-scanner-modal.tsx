@@ -11,8 +11,7 @@ type Props = {
 };
 
 type Estado =
-  | 'pidiendo-permiso'  // mostrando botón "Activar cámara"
-  | 'inicializando'      // permisos ok, cargando libs y stream
+  | 'inicializando'      // pidiendo permiso + iniciando
   | 'escaneando'         // todo ok, leyendo
   | 'sin-permiso'        // usuario rechazó o ya estaba bloqueado
   | 'no-soportado'       // dispositivo sin cámara
@@ -22,11 +21,8 @@ type Estado =
 /**
  * Modal de escaneo de código de barras usando la cámara del dispositivo.
  *
- * Flujo en dos pasos para máxima compatibilidad (especialmente iOS Safari):
- *   1) El usuario ve un botón "Activar cámara"
- *   2) Al tocarlo, se llama getUserMedia() dentro del gesto del usuario,
- *      lo que dispara el prompt nativo de permisos
- *   3) Una vez con stream, se carga @zxing/browser (lazy) y se decodifica
+ * Al abrir, llama directamente a getUserMedia() para que aparezca el prompt
+ * nativo del navegador inmediatamente. Sin botones intermedios.
  *
  * Soporta EAN-13, EAN-8, Code 128, UPC-A y QR.
  */
@@ -34,10 +30,9 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
-  const [estado, setEstado] = useState<Estado>('pidiendo-permiso');
+  const [estado, setEstado] = useState<Estado>('inicializando');
   const [error, setError] = useState<string>('');
 
-  /** Limpia stream y controles */
   function cleanup() {
     controlsRef.current?.stop();
     controlsRef.current = null;
@@ -45,89 +40,85 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
     streamRef.current = null;
   }
 
-  // Reset al abrir/cerrar
   useEffect(() => {
     if (!open) {
       cleanup();
-      setEstado('pidiendo-permiso');
+      setEstado('inicializando');
       setError('');
       return;
     }
 
-    // Validaciones tempranas
-    if (typeof window !== 'undefined') {
+    let cancelado = false;
+
+    async function arrancar() {
+      // Validaciones tempranas
       const isSecure = window.isSecureContext || window.location.hostname === 'localhost';
-      if (!isSecure) {
-        setEstado('no-seguro');
-        return;
-      }
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setEstado('no-soportado');
-        return;
-      }
-    }
+      if (!isSecure) { setEstado('no-seguro'); return; }
+      if (!navigator.mediaDevices?.getUserMedia) { setEstado('no-soportado'); return; }
 
-    return () => cleanup();
-  }, [open]);
+      try {
+        // Pedir cámara — esto dispara el prompt nativo
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+        if (cancelado) { stream.getTracks().forEach((t) => t.stop()); return; }
+        streamRef.current = stream;
 
-  /** Handler del botón "Activar cámara" — corre dentro del gesto del usuario */
-  async function activarCamara() {
-    setEstado('inicializando');
-    setError('');
-
-    try {
-      // 1) Pedir cámara — esto dispara el prompt nativo si no fue pedido antes
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-      streamRef.current = stream;
-
-      // 2) Mostrar el stream en el <video>
-      const video = videoRef.current;
-      if (!video) {
-        stream.getTracks().forEach((t) => t.stop());
-        setEstado('error');
-        setError('No se pudo conectar el video');
-        return;
-      }
-      video.srcObject = stream;
-      await video.play();
-
-      // 3) Cargar zxing diferido y empezar a decodificar
-      const { BrowserMultiFormatReader } = await import('@zxing/browser');
-      const reader = new BrowserMultiFormatReader();
-
-      const controls = await reader.decodeFromVideoElement(video, (result) => {
-        if (result) {
-          const codigo = result.getText();
-          beep();
-          // Detener antes de notificar para evitar dobles lecturas
-          cleanup();
-          onDetected(codigo);
+        const video = videoRef.current;
+        if (!video) {
+          stream.getTracks().forEach((t) => t.stop());
+          setEstado('error');
+          setError('No se pudo conectar el video');
+          return;
         }
-      });
+        video.srcObject = stream;
+        await video.play();
 
-      controlsRef.current = controls;
-      setEstado('escaneando');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const name = err instanceof Error ? err.name : '';
+        // Cargar zxing diferido
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        if (cancelado) return;
+        const reader = new BrowserMultiFormatReader();
 
-      if (name === 'NotAllowedError' || msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
-        setEstado('sin-permiso');
-      } else if (name === 'NotFoundError' || msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('no se encontró')) {
-        setEstado('no-soportado');
-      } else {
-        setEstado('error');
-        setError(msg);
+        const controls = await reader.decodeFromVideoElement(video, (result) => {
+          if (result && !cancelado) {
+            const codigo = result.getText();
+            beep();
+            cleanup();
+            onDetected(codigo);
+          }
+        });
+
+        if (cancelado) { controls.stop(); return; }
+        controlsRef.current = controls;
+        setEstado('escaneando');
+      } catch (err) {
+        if (cancelado) return;
+        const msg = err instanceof Error ? err.message : String(err);
+        const name = err instanceof Error ? err.name : '';
+
+        if (name === 'NotAllowedError' || msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
+          setEstado('sin-permiso');
+        } else if (name === 'NotFoundError' || msg.toLowerCase().includes('not found')) {
+          setEstado('no-soportado');
+        } else {
+          setEstado('error');
+          setError(msg);
+        }
       }
     }
-  }
+
+    arrancar();
+
+    return () => {
+      cancelado = true;
+      cleanup();
+    };
+  }, [open, onDetected]);
 
   if (!open) return null;
 
@@ -135,7 +126,6 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
     <div
       className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in"
       onClick={(e) => {
-        // Click en el fondo cierra
         if (e.target === e.currentTarget) onClose();
       }}
     >
@@ -159,7 +149,6 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
         {/* Contenido */}
         <div className="relative aspect-[4/3] bg-black overflow-hidden">
 
-          {/* Video — siempre montado */}
           <video
             ref={videoRef}
             className={cn(
@@ -184,58 +173,27 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
             </div>
           )}
 
-          {/* Estado: pidiendo-permiso (botón explícito) */}
-          {estado === 'pidiendo-permiso' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
-              <div className="h-14 w-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Camera className="h-6 w-6 text-primary" strokeWidth={1.75} />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Acceso a la cámara</p>
-                <p className="text-[11px] text-muted-foreground mt-1 max-w-[240px]">
-                  Necesitamos usar la cámara para leer el código de barras.
-                </p>
-              </div>
-              <button
-                onClick={activarCamara}
-                className="inline-flex items-center gap-2 px-4 h-9 rounded-lg bg-primary text-primary-foreground text-[13px] font-medium hover:brightness-110 active:scale-95 transition-all glow-primary"
-              >
-                <Camera className="h-3.5 w-3.5" strokeWidth={2.25} />
-                Activar cámara
-              </button>
-            </div>
-          )}
-
-          {/* Estado: inicializando */}
           {estado === 'inicializando' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <p className="text-xs">Iniciando cámara...</p>
+              <p className="text-xs">Esperando permisos de cámara...</p>
             </div>
           )}
 
-          {/* Estado: sin-permiso */}
           {estado === 'sin-permiso' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
               <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
                 <ShieldOff className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <p className="text-sm font-medium">Permiso denegado</p>
-                <p className="text-[11px] text-muted-foreground mt-1 max-w-[260px]">
-                  Para escanear, habilitá la cámara desde la configuración del navegador y volvé a entrar.
+                <p className="text-sm font-medium">Cámara bloqueada</p>
+                <p className="text-[11px] text-muted-foreground mt-1 max-w-[280px] leading-relaxed">
+                  Tocá el ícono de candado 🔒 a la izquierda de la URL → Cámara → Permitir, y volvé a entrar.
                 </p>
               </div>
-              <button
-                onClick={activarCamara}
-                className="text-[11px] text-primary underline underline-offset-4 mt-1"
-              >
-                Intentar de nuevo
-              </button>
             </div>
           )}
 
-          {/* Estado: no-soportado */}
           {estado === 'no-soportado' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
               <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
@@ -250,7 +208,6 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
             </div>
           )}
 
-          {/* Estado: no-seguro (HTTPS) */}
           {estado === 'no-seguro' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
               <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
@@ -259,42 +216,32 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
               <div>
                 <p className="text-sm font-medium">Conexión no segura</p>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  La cámara requiere HTTPS. Abrí el sitio con https://
+                  La cámara requiere HTTPS.
                 </p>
               </div>
             </div>
           )}
 
-          {/* Estado: error */}
           {estado === 'error' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
               <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
                 <AlertCircle className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <p className="text-sm font-medium">Error al iniciar cámara</p>
+                <p className="text-sm font-medium">Error</p>
                 <p className="text-[11px] text-muted-foreground mt-1 break-words max-w-[260px]">
                   {error}
                 </p>
               </div>
-              <button
-                onClick={activarCamara}
-                className="text-[11px] text-primary underline underline-offset-4 mt-1"
-              >
-                Intentar de nuevo
-              </button>
             </div>
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-3 text-center border-t border-border">
           <p className="text-[11px] text-muted-foreground">
             {estado === 'escaneando'
               ? 'Apuntá la cámara al código de barras'
-              : estado === 'pidiendo-permiso'
-              ? 'El navegador va a pedirte permiso'
-              : ''}
+              : 'Aceptá el permiso de cámara'}
           </p>
         </div>
       </div>
@@ -302,7 +249,6 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
   );
 }
 
-/** Beep corto con Web Audio API */
 function beep() {
   if (typeof window === 'undefined') return;
   try {
