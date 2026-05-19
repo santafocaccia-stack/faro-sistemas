@@ -136,25 +136,24 @@ export function ProductoForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      try {
-        const input: ProductoInput = {
-          ...form,
-          categoriaId: form.categoriaId || null,
-          grupoVarianteId: form.grupoVarianteId || null,
-          vinculos: vinculos.map(({ _key: _, ...v }) => v),
-        };
+      const input: ProductoInput = {
+        ...form,
+        categoriaId: form.categoriaId || null,
+        grupoVarianteId: form.grupoVarianteId || null,
+        vinculos: vinculos.map(({ _key: _, ...v }) => v),
+      };
 
-        if (isEdit) {
-          await actualizarProducto(producto.id, input);
-          toast.success('Producto actualizado');
-        } else {
-          await crearProducto(input);
-          toast.success('Producto creado');
-        }
-        router.push('/dashboard/productos');
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Error al guardar');
+      const result = isEdit
+        ? await actualizarProducto(producto.id, input)
+        : await crearProducto(input);
+
+      if (!result.ok) {
+        toast.error(result.error, { duration: 6000 });
+        return;
       }
+
+      toast.success(isEdit ? 'Producto actualizado' : 'Producto creado');
+      router.push('/dashboard/productos');
     });
   }
 

@@ -58,10 +58,16 @@ export async function obtenerProducto(id: string) {
   return producto ?? null;
 }
 
-export async function crearProducto(input: ProductoInput) {
+export type CrearProductoResult =
+  | { ok: true; id: string }
+  | { ok: false; error: string };
+
+export async function crearProducto(input: ProductoInput): Promise<CrearProductoResult> {
   const session = await requireSession();
   const parsed = productoInputSchema.safeParse(input);
-  if (!parsed.success) throw new Error(formatZodError(parsed.error));
+  if (!parsed.success) {
+    return { ok: false, error: formatZodError(parsed.error) };
+  }
   const data = parsed.data;
 
   let creado: { id: string } | undefined;
@@ -87,10 +93,14 @@ export async function crearProducto(input: ProductoInput) {
   } catch (err) {
     console.error('[crearProducto] Error insertando producto:', err);
     const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(`No se pudo crear el producto: ${msg}`);
+    return { ok: false, error: `BD: ${msg}` };
   }
 
-  if (creado && data.vinculos && data.vinculos.length > 0) {
+  if (!creado) {
+    return { ok: false, error: 'No se devolvió ID del producto creado' };
+  }
+
+  if (data.vinculos && data.vinculos.length > 0) {
     try {
       await db.insert(productoProveedores).values(
         data.vinculos.map((v) => ({
@@ -106,67 +116,83 @@ export async function crearProducto(input: ProductoInput) {
     } catch (err) {
       console.error('[crearProducto] Error insertando vinculos:', err);
       const msg = err instanceof Error ? err.message : String(err);
-      throw new Error(`Producto creado pero falló vincular proveedores: ${msg}`);
+      return { ok: false, error: `Vínculos proveedores: ${msg}` };
     }
   }
 
   revalidatePath('/dashboard/productos');
-  return creado;
+  return { ok: true, id: creado.id };
 }
 
-export async function actualizarProducto(id: string, input: ProductoInput) {
+export type ActualizarProductoResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function actualizarProducto(
+  id: string,
+  input: ProductoInput,
+): Promise<ActualizarProductoResult> {
   const session = await requireSession();
   const parsed = productoInputSchema.safeParse(input);
-  if (!parsed.success) throw new Error(formatZodError(parsed.error));
+  if (!parsed.success) {
+    return { ok: false, error: formatZodError(parsed.error) };
+  }
   const data = parsed.data;
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(productos)
-      .set({
-        codigo: data.codigo || null,
-        nombre: data.nombre,
-        descripcion: data.descripcion || null,
-        categoriaId: data.categoriaId || null,
-        grupoVarianteId: data.grupoVarianteId || null,
-        tipoUnidad: data.tipoUnidad,
-        stockActual: data.stockActual,
-        stockMinimo: data.stockMinimo || null,
-        costoPromedio: data.costoPromedio,
-        precioMayorista: data.precioMayorista,
-        precioMinorista: data.precioMinorista,
-        activo: data.activo,
-      })
-      .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)));
-
-    if (data.vinculos !== undefined) {
+  try {
+    await db.transaction(async (tx) => {
       await tx
-        .delete(productoProveedores)
-        .where(
-          and(
-            byTenant(session.tenantId, productoProveedores),
-            eq(productoProveedores.productoId, id),
-          ),
-        );
+        .update(productos)
+        .set({
+          codigo: data.codigo || null,
+          nombre: data.nombre,
+          descripcion: data.descripcion || null,
+          categoriaId: data.categoriaId || null,
+          grupoVarianteId: data.grupoVarianteId || null,
+          tipoUnidad: data.tipoUnidad,
+          stockActual: data.stockActual,
+          stockMinimo: data.stockMinimo || null,
+          costoPromedio: data.costoPromedio,
+          precioMayorista: data.precioMayorista,
+          precioMinorista: data.precioMinorista,
+          activo: data.activo,
+        })
+        .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)));
 
-      if (data.vinculos.length > 0) {
-        await tx.insert(productoProveedores).values(
-          data.vinculos.map((v) => ({
-            tenantId: session.tenantId,
-            productoId: id,
-            proveedorId: v.proveedorId,
-            precioCosto: v.precioCosto,
-            markupMayorista: v.markupMayorista || null,
-            markupMinorista: v.markupMinorista || null,
-            esPrincipal: v.esPrincipal,
-          })),
-        );
+      if (data.vinculos !== undefined) {
+        await tx
+          .delete(productoProveedores)
+          .where(
+            and(
+              byTenant(session.tenantId, productoProveedores),
+              eq(productoProveedores.productoId, id),
+            ),
+          );
+
+        if (data.vinculos.length > 0) {
+          await tx.insert(productoProveedores).values(
+            data.vinculos.map((v) => ({
+              tenantId: session.tenantId,
+              productoId: id,
+              proveedorId: v.proveedorId,
+              precioCosto: v.precioCosto,
+              markupMayorista: v.markupMayorista || null,
+              markupMinorista: v.markupMinorista || null,
+              esPrincipal: v.esPrincipal,
+            })),
+          );
+        }
       }
-    }
-  });
+    });
+  } catch (err) {
+    console.error('[actualizarProducto] Error:', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: `BD: ${msg}` };
+  }
 
   revalidatePath('/dashboard/productos');
   revalidatePath(`/dashboard/productos/${id}`);
+  return { ok: true };
 }
 
 export async function desactivarProducto(id: string) {
