@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { crearTenant } from '@/server/actions/tenants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -135,9 +135,12 @@ export default function OnboardingPage() {
   const [plan, setPlan] = useState<PlanId>('market');
   const [fase, setFase] = useState<LoadingFase | null>(null);
   const [error, setError] = useState('');
+  const enviandoRef = useRef(false); // guard contra doble submit
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (enviandoRef.current) return; // ignorar segundo click
+    enviandoRef.current = true;
     setFase('creando');
     setError('');
 
@@ -149,6 +152,7 @@ export default function OnboardingPage() {
     });
 
     if (!result.ok) {
+      enviandoRef.current = false; // permitir reintentar si falla
       setFase(null);
       setError(result.error ?? 'Ocurrió un error. Intentá de nuevo.');
       return;
