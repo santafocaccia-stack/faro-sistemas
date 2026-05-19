@@ -147,19 +147,9 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
       if (!isSecure) { setEstado('no-seguro'); return; }
       if (!navigator.mediaDevices?.getUserMedia) { setEstado('no-soportado'); return; }
 
-      // 2) Chequear estado del permiso ANTES de pedir cámara
-      try {
-        if ('permissions' in navigator) {
-          const status = await navigator.permissions.query({ name: 'camera' as PermissionName });
-          if (status.state === 'denied' && !cancelado) {
-            setEstado('sin-permiso');
-            return;
-          }
-        }
-      } catch {
-        // Algunos browsers (Safari iOS) no soportan permissions.query con 'camera'
-        // — seguimos adelante e intentamos getUserMedia directamente
-      }
+      // No chequeamos Permissions API previamente porque en algunos browsers
+      // da falsos positivos (reporta 'denied' aunque el sitio no esté bloqueado
+      // explícitamente). Vamos directo a getUserMedia y manejamos el error.
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
