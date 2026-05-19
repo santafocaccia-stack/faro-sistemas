@@ -235,6 +235,7 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
             <h3 className="text-sm font-semibold">Escanear código</h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
             aria-label="Cerrar"
@@ -313,6 +314,7 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
               </div>
 
               <button
+                type="button"
                 onClick={reintentar}
                 className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-medium bg-primary text-primary-foreground hover:brightness-110 active:scale-95 transition-all"
               >
@@ -362,6 +364,7 @@ export function BarcodeScannerModal({ open, onClose, onDetected }: Props) {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={reintentar}
                 className="inline-flex items-center gap-1.5 px-3 h-8 rounded-md text-[12px] font-medium bg-muted text-foreground hover:bg-muted/70 transition-all"
               >
