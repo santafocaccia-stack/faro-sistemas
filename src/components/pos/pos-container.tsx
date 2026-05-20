@@ -78,6 +78,10 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
   const [ventaCompletada, setVentaCompletada] = useState<VentaCompletada | null>(null);
   const [confirmSinStock, setConfirmSinStock] = useState<ConfirmacionSinStock | null>(null);
   const [sonido, setSonido] = useState(true);
+  // Key del scanner — cambia después de cada venta para forzar un
+  // reinicio limpio de la cámara (evita que quede congelada al volver
+  // de los modales de cobro).
+  const [scannerKey, setScannerKey] = useState(0);
   const [isPending, startTransition] = useTransition();
   const enviandoRef = useRef(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -315,6 +319,8 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
   function handleSeguirVendiendo() {
     setVentaCompletada(null);
     vaciar();
+    // Reiniciar el scanner para que la cámara quede fresca y lista
+    setScannerKey((k) => k + 1);
     searchRef.current?.focus();
   }
 
@@ -514,7 +520,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
             relative = contiene el video con position absolute */}
         {modoEscaneo && (
           <div className="flex-[42] shrink-0 relative border-t-2 border-primary/30 overflow-hidden bg-black">
-            <PosScanner onCodigo={manejarCodigo} />
+            <PosScanner key={scannerKey} onCodigo={manejarCodigo} />
             {/* Botón cerrar cámara — overlay arriba a la derecha */}
             <button
               type="button"

@@ -46,12 +46,16 @@ export function ProductoForm({
     descripcion: producto?.descripcion ?? '',
     categoriaId: producto?.categoriaId ?? '',
     grupoVarianteId: producto?.grupoVarianteId ?? '',
-    tipoUnidad: producto?.tipoUnidad ?? 'por_kg',
-    stockActual: producto?.stockActual ?? '0',
+    // Default 'por_unidad': la mayoría de los productos de kiosco/market
+    // se venden por unidad. Lo por kg se ingresa manual en el POS.
+    tipoUnidad: producto?.tipoUnidad ?? 'por_unidad',
+    // Campos numéricos arrancan vacíos en producto nuevo — sin el "0"
+    // molesto que hay que borrar. Se convierten a '0' al guardar.
+    stockActual: producto?.stockActual ?? '',
     stockMinimo: producto?.stockMinimo ?? '',
-    costoPromedio: producto?.costoPromedio ?? '0',
-    precioMayorista: producto?.precioMayorista ?? '0',
-    precioMinorista: producto?.precioMinorista ?? '0',
+    costoPromedio: producto?.costoPromedio ?? '',
+    precioMayorista: producto?.precioMayorista ?? '',
+    precioMinorista: producto?.precioMinorista ?? '',
     activo: producto?.activo ?? true,
   });
 
@@ -139,10 +143,16 @@ export function ProductoForm({
       const input: ProductoInput = {
         ...form,
         codigo: form.codigo?.trim() || null,
+        nombre: normalizarNombre(form.nombre),
         descripcion: form.descripcion?.trim() || null,
         categoriaId: form.categoriaId || null,
         grupoVarianteId: form.grupoVarianteId || null,
+        // Campos numéricos vacíos → '0' (el schema requiere un número)
+        stockActual: form.stockActual?.trim() || '0',
         stockMinimo: form.stockMinimo?.trim() || null,
+        costoPromedio: form.costoPromedio?.trim() || '0',
+        precioMayorista: form.precioMayorista?.trim() || '0',
+        precioMinorista: form.precioMinorista?.trim() || '0',
         vinculos: vinculos.map(({ _key: _, ...v }) => v),
       };
 
@@ -186,6 +196,7 @@ export function ProductoForm({
               required
               value={form.nombre}
               onChange={(e) => update('nombre', e.target.value)}
+              onBlur={(e) => update('nombre', normalizarNombre(e.target.value))}
               placeholder="Bola de lomo"
               className={inputCls}
             />
@@ -290,9 +301,12 @@ export function ProductoForm({
             <Input
               id="stockActual"
               type="number"
+              inputMode="decimal"
               step={form.tipoUnidad === 'por_kg' ? '0.001' : '1'}
               value={form.stockActual}
               onChange={(e) => update('stockActual', e.target.value)}
+              onFocus={(e) => e.target.select()}
+              placeholder="0"
               className={`${inputCls} font-mono tabular-nums`}
             />
           </Field>
@@ -300,9 +314,11 @@ export function ProductoForm({
             <Input
               id="stockMinimo"
               type="number"
+              inputMode="decimal"
               step={form.tipoUnidad === 'por_kg' ? '0.001' : '1'}
               value={form.stockMinimo ?? ''}
               onChange={(e) => update('stockMinimo', e.target.value)}
+              onFocus={(e) => e.target.select()}
               placeholder="—"
               className={`${inputCls} font-mono tabular-nums`}
             />
@@ -467,9 +483,12 @@ export function ProductoForm({
             <Input
               id="costoPromedio"
               type="number"
+              inputMode="decimal"
               step="0.01"
               value={form.costoPromedio}
               onChange={(e) => update('costoPromedio', e.target.value)}
+              onFocus={(e) => e.target.select()}
+              placeholder="0"
               className={`${inputCls} font-mono tabular-nums`}
             />
           </Field>
@@ -477,10 +496,13 @@ export function ProductoForm({
             <Input
               id="precioMayorista"
               type="number"
+              inputMode="decimal"
               step="0.01"
               required
               value={form.precioMayorista}
               onChange={(e) => update('precioMayorista', e.target.value)}
+              onFocus={(e) => e.target.select()}
+              placeholder="0"
               className={`${inputCls} font-mono tabular-nums`}
             />
           </Field>
@@ -488,10 +510,13 @@ export function ProductoForm({
             <Input
               id="precioMinorista"
               type="number"
+              inputMode="decimal"
               step="0.01"
               required
               value={form.precioMinorista}
               onChange={(e) => update('precioMinorista', e.target.value)}
+              onFocus={(e) => e.target.select()}
+              placeholder="0"
               className={`${inputCls} font-mono tabular-nums`}
             />
           </Field>
@@ -566,6 +591,26 @@ function Field({
       {children}
     </div>
   );
+}
+
+/**
+ * Normaliza el nombre de un producto a "Title Case" (cada palabra con
+ * mayúscula inicial) para que sea legible en listas y tickets.
+ *
+ * Excepción: si el usuario escribió TODO en mayúsculas, se respeta —
+ * es una decisión deliberada (ej: "OREO", "TNT").
+ */
+function normalizarNombre(s: string): string {
+  const trimmed = s.trim().replace(/\s+/g, ' ');
+  if (!trimmed) return trimmed;
+  // Si está todo en mayúsculas y tiene al menos una letra, respetarlo
+  if (trimmed === trimmed.toUpperCase() && /\p{L}/u.test(trimmed)) {
+    return trimmed;
+  }
+  // Title case: primera letra de cada palabra en mayúscula
+  return trimmed
+    .toLowerCase()
+    .replace(/(^|\s|\()\p{L}/gu, (m) => m.toUpperCase());
 }
 
 function FormSection({
