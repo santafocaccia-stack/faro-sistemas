@@ -62,6 +62,17 @@ type PosCartState = {
   cambiarCantidad: (id: string, cantidad: number) => void;
   quitar: (id: string) => void;
   vaciar: () => void;
+
+  /**
+   * Recalcula los precios de los items del carrito según un mapa
+   * { productoId → { minorista, mayorista } } y el canal actual.
+   * Las líneas sueltas (productoId null) no se tocan.
+   * Devuelve cuántos items se actualizaron.
+   */
+  recalcularPrecios: (
+    canal: CanalVenta,
+    mapaPrecios: Map<string, { minorista: number; mayorista: number }>,
+  ) => number;
 };
 
 let idCounter = 0;
@@ -147,6 +158,22 @@ export const usePosCart = create<PosCartState>()(
         })),
 
       vaciar: () => set({ items: [], ultimaLineaId: null }),
+
+      recalcularPrecios: (canal, mapaPrecios) => {
+        let cambios = 0;
+        set((s) => ({
+          items: s.items.map((it) => {
+            if (!it.productoId) return it; // línea suelta — no se toca
+            const precios = mapaPrecios.get(it.productoId);
+            if (!precios) return it;
+            const nuevoPrecio = canal === 'mayorista' ? precios.mayorista : precios.minorista;
+            if (nuevoPrecio === it.precio) return it;
+            cambios++;
+            return { ...it, precio: nuevoPrecio };
+          }),
+        }));
+        return cambios;
+      },
     }),
     {
       name: 'gesto-pos-cart',

@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Search, ScanLine, Store, Users2, ShoppingCart,
-  Plus, Minus, Trash2, User, Settings2, Volume2, VolumeX,
-  ChevronDown,
+  Plus, Minus, Trash2, User, Volume2, VolumeX,
+  ChevronDown, X,
 } from 'lucide-react';
 import { usePosCart, selectTotal, selectCantidadItems, type LineaCart } from '@/lib/stores/pos-cart';
 import { crearVenta, type LineaVenta } from '@/server/actions/ventas';
@@ -61,6 +61,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
   const cambiarCantidad = usePosCart((s) => s.cambiarCantidad);
   const quitar = usePosCart((s) => s.quitar);
   const vaciar = usePosCart((s) => s.vaciar);
+  const recalcularPrecios = usePosCart((s) => s.recalcularPrecios);
 
   // ── Estado UI local ──────────────────────────────────────────
   const [busqueda, setBusqueda] = useState('');
@@ -99,6 +100,33 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
     () => productos.filter((p) => p.activo),
     [productos],
   );
+
+  /** Mapa { productoId → { minorista, mayorista } } para lookup rápido al cambiar canal */
+  const mapaPrecios = useMemo(() => {
+    const m = new Map<string, { minorista: number; mayorista: number }>();
+    productosActivos.forEach((p) => {
+      m.set(p.id, {
+        minorista: Number(p.precioMinorista),
+        mayorista: Number(p.precioMayorista),
+      });
+    });
+    return m;
+  }, [productosActivos]);
+
+  /** Cambiar canal + recalcular precios de items ya cargados */
+  function cambiarCanal(nuevoCanal: 'minorista' | 'mayorista') {
+    if (nuevoCanal === canal) return;
+    setCanal(nuevoCanal);
+    if (items.length > 0) {
+      const cambios = recalcularPrecios(nuevoCanal, mapaPrecios);
+      if (cambios > 0) {
+        toast.success(
+          `Precios actualizados a ${nuevoCanal === 'mayorista' ? 'mayorista' : 'minorista'}`,
+          { duration: 1800 },
+        );
+      }
+    }
+  }
 
   const resultadosBusqueda = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -256,7 +284,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
                 <button
                   key={c}
                   type="button"
-                  onClick={() => setCanal(c)}
+                  onClick={() => cambiarCanal(c)}
                   className={cn(
                     'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-semibold transition-all duration-150',
                     canal === c
@@ -427,6 +455,16 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
         {modoEscaneo && (
           <div className="flex-[42] shrink-0 relative border-t-2 border-primary/30 overflow-hidden bg-black">
             <PosScanner onCodigo={manejarCodigo} />
+            {/* Botón cerrar cámara — overlay arriba a la derecha */}
+            <button
+              type="button"
+              onClick={() => setModoEscaneo(false)}
+              className="absolute top-2 right-2 h-8 w-8 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-md text-white/80 hover:text-white hover:bg-black/70 transition-all active:scale-90 z-10"
+              aria-label="Cerrar cámara"
+              title="Cerrar cámara"
+            >
+              <X className="h-4 w-4" strokeWidth={2.5} />
+            </button>
           </div>
         )}
       </div>
