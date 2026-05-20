@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, Send, Trash2 } from 'lucide-react';
+import { Check, Send, Trash2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,12 +24,57 @@ type Props = {
     proveedor: Proveedor;
     lineas: Linea[];
   };
+  negocioNombre: string;
 };
 
-export function PedidoDetalle({ data }: Props) {
+/**
+ * Arma el texto del pedido para enviar por WhatsApp.
+ * Formato pensado para que el distribuidor lo lea de un vistazo.
+ */
+function armarMensajePedido(
+  negocioNombre: string,
+  proveedorNombre: string,
+  lineas: Linea[],
+  cantidades: Record<string, string>,
+  notas: string,
+): string {
+  const fecha = new Date().toLocaleDateString('es-AR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    timeZone: 'America/Argentina/Buenos_Aires',
+  });
+
+  const items = lineas
+    .map((l) => {
+      const cant = cantidades[l.linea.id] ?? l.linea.cantidadPedida;
+      const unidad = l.tipoUnidad === 'por_kg' ? 'kg' : 'un';
+      return `• ${l.productoNombre} — ${cant} ${unidad}`;
+    })
+    .join('\n');
+
+  let msg = `*PEDIDO — ${negocioNombre}*\n${fecha}\n\n`;
+  msg += `Proveedor: ${proveedorNombre}\n\n`;
+  msg += items;
+  if (notas.trim()) {
+    msg += `\n\nNota: ${notas.trim()}`;
+  }
+  return msg;
+}
+
+/** Extrae un teléfono usable para wa.me del campo contacto del proveedor */
+function telefonoParaWhatsApp(contacto: string | null): string {
+  if (!contacto) return '';
+  const digitos = contacto.replace(/\D/g, '');
+  // Solo pre-llenamos el destinatario si parece un número argentino
+  // completo (empieza con 54). Si no, abrimos WhatsApp sin destinatario
+  // y el usuario elige el contacto — evita mandar a un número equivocado.
+  if (digitos.startsWith('54') && digitos.length >= 12) return digitos;
+  return '';
+}
+
+export function PedidoDetalle({ data, negocioNombre }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { pedido, lineas } = data;
+  const { pedido, proveedor, lineas } = data;
 
   // Estado local de cantidades para modo edición
   const [cantidades, setCantidades] = useState<Record<string, string>>(
@@ -71,6 +116,39 @@ export function PedidoDetalle({ data }: Props) {
         router.refresh();
       } catch {
         toast.error('Error al confirmar el pedido');
+      }
+    });
+  }
+
+  /** Abre WhatsApp con el pedido armado y marca el pedido como enviado */
+  function handleEnviarWhatsApp() {
+    if (lineas.length === 0) {
+      toast.error('El pedido no tiene productos');
+      return;
+    }
+    const mensaje = armarMensajePedido(
+      negocioNombre,
+      proveedor.nombre,
+      lineas,
+      cantidades,
+      notas,
+    );
+    const telefono = telefonoParaWhatsApp(proveedor.contacto);
+    const url = telefono
+      ? `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`
+      : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+
+    // Abrir WhatsApp (web o app según el dispositivo)
+    window.open(url, '_blank');
+
+    // Marcar el pedido como enviado
+    startTransition(async () => {
+      try {
+        await confirmarPedido(pedido.id, notas || undefined);
+        toast.success('Pedido abierto en WhatsApp y marcado como enviado');
+        router.refresh();
+      } catch {
+        toast.error('WhatsApp se abrió, pero no se pudo marcar como enviado');
       }
     });
   }
@@ -213,14 +291,31 @@ export function PedidoDetalle({ data }: Props) {
             />
           </div>
 
-          <Button
-            onClick={handleConfirmar}
-            disabled={isPending || lineas.length === 0}
-            className="glow-primary"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            Marcar como enviado
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            {/* Acción principal: enviar por WhatsApp */}
+            <Button
+              onClick={handleEnviarWhatsApp}
+              disabled={isPending || lineas.length === 0}
+              className="bg-[#25D366] hover:bg-[#1fb855] text-white flex-1 sm:flex-none"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Enviar por WhatsApp
+            </Button>
+            {/* Secundaria: marcar enviado sin abrir WhatsApp */}
+            <Button
+              variant="outline"
+              onClick={handleConfirmar}
+              disabled={isPending || lineas.length === 0}
+              className="flex-1 sm:flex-none"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Solo marcar enviado
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground/70">
+            Al enviar por WhatsApp el pedido se arma como mensaje y se marca como enviado.
+            {!proveedor.contacto && ' Como el proveedor no tiene teléfono cargado, vas a elegir el contacto en WhatsApp.'}
+          </p>
         </div>
       )}
 

@@ -2,13 +2,17 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { obtenerPedido } from '@/server/actions/pedidos';
+import { obtenerTenant } from '@/server/actions/config';
 import { PedidoDetalle } from './pedido-detalle';
 
 type Props = { params: Promise<{ id: string }> };
 
 export default async function PedidoPage({ params }: Props) {
   const { id } = await params;
-  const data = await obtenerPedido(id);
+  const [data, tenant] = await Promise.all([
+    obtenerPedido(id),
+    obtenerTenant(),
+  ]);
   if (!data) notFound();
 
   return (
@@ -30,7 +34,7 @@ export default async function PedidoPage({ params }: Props) {
         </div>
       </div>
 
-      <PedidoDetalle data={data} />
+      <PedidoDetalle data={data} negocioNombre={tenant?.nombre ?? 'Mi negocio'} />
     </div>
   );
 }

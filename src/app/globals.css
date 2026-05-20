@@ -431,6 +431,27 @@ button, [role="button"], a, input[type="checkbox"], input[type="radio"] {
   border: 1px solid transparent;
 }
 
+/* ── VIEW TRANSITIONS ────────────────────────────────────────── */
+/* Fade suave entre páginas usando la View Transitions API del browser.
+   Chrome 111+, Edge 111+. En browsers sin soporte simplemente no aplica. */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: 120ms ease-out both fade-out-vt;
+}
+::view-transition-new(root) {
+  animation: 160ms ease-in both fade-in-vt;
+}
+
+@keyframes fade-out-vt {
+  to { opacity: 0; transform: translateY(-3px); }
+}
+@keyframes fade-in-vt {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
 /* ── PRINT ───────────────────────────────────────────────────── */
 @media print {
   aside, nav, .no-print, body::before, body::after { display: none !important; }
