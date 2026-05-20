@@ -168,6 +168,8 @@ html {
   font-feature-settings: "cv11", "ss01", "ss03";
   /* Tap highlight transparente en mobile — evita el flash gris */
   -webkit-tap-highlight-color: transparent;
+  /* Elimina el 300ms delay de tap en iOS/Android */
+  touch-action: manipulation;
 }
 
 body {

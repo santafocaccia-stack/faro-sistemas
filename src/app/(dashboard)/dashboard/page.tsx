@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { obtenerKpisDashboard, obtenerProgresoOnboarding } from '@/server/actions/dashboard';
 import { requireSession } from '@/server/auth/session';
 import { OnboardingWizard } from '@/components/onboarding-wizard';
@@ -28,7 +29,8 @@ function getNombre(email: string): string {
 /* ─────────────────────────────────────────────────────────────
    Page
 ───────────────────────────────────────────────────────────── */
-export default async function DashboardPage() {
+// Componente interno con los datos — se suspende mientras carga
+async function DashboardContent() {
   const [session, kpis, progreso] = await Promise.all([
     requireSession(),
     obtenerKpisDashboard(),
@@ -81,5 +83,27 @@ export default async function DashboardPage() {
         ultimasVentas={kpis.ultimasVentas}
       />
     </div>
+  );
+}
+
+// Skeleton mientras los KPIs cargan
+function DashboardSkeleton() {
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 animate-pulse space-y-4">
+      <div className="h-8 w-48 rounded-lg bg-muted" />
+      <div className="grid grid-cols-3 gap-4">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-24 rounded-xl bg-muted" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

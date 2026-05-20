@@ -16,7 +16,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { crearVenta, type LineaVenta } from '@/server/actions/ventas';
 import { formatARS, formatKg, cn } from '@/lib/utils';
 import type { Producto, Cliente, MetodoPago, CanalVenta, Categoria } from '@/server/db/schema';
-import { BarcodeScannerModal } from '@/components/barcode-scanner-modal';
+import dynamic from 'next/dynamic';
+
+// Lazy: el scanner de cámara pesa ~40kB; solo lo cargamos si el usuario lo abre
+const BarcodeScannerModal = dynamic(
+  () => import('@/components/barcode-scanner-modal').then((m) => ({ default: m.BarcodeScannerModal })),
+  { ssr: false },
+);
 
 /* ─────────────────────────────────────────────────────────────
    Tipos
@@ -98,22 +104,21 @@ function ProductCard({
           : 'border-border/60 bg-card hover:border-primary/30 hover:bg-card/80',
       )}
     >
-      {/* Badge cantidad en carrito */}
-      <AnimatePresence>
-        {enCarrito && (
-          <motion.span
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-            className="absolute top-2 right-2 z-10 min-w-[1.25rem] h-5 px-1 bg-primary text-primary-foreground rounded-full text-[10px] font-bold flex items-center justify-center leading-none"
-          >
-            {esKg
-              ? `${enCarrito.cantidad.toLocaleString('es-AR', { maximumFractionDigits: 2 })}k`
-              : enCarrito.cantidad}
-          </motion.span>
+      {/* Badge cantidad en carrito — CSS transition reemplaza Framer Motion por perf */}
+      <span
+        className={cn(
+          'absolute top-2 right-2 z-10 min-w-[1.25rem] h-5 px-1 bg-primary text-primary-foreground rounded-full text-[10px] font-bold flex items-center justify-center leading-none',
+          'transition-[transform,opacity] duration-150 ease-out',
+          enCarrito ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none',
         )}
-      </AnimatePresence>
+        aria-hidden={!enCarrito}
+      >
+        {enCarrito
+          ? (esKg
+            ? `${enCarrito.cantidad.toLocaleString('es-AR', { maximumFractionDigits: 2 })}k`
+            : enCarrito.cantidad)
+          : null}
+      </span>
 
       {/* Área superior: icono / inicial */}
       <div className="p-3 pb-0">
@@ -619,7 +624,7 @@ export function PosVenta({ productos, clientes, consumidorFinalId, categorias }:
           </div>
 
           {/* ── Items del carrito ────────────────────────── */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overscroll-contain">
             {cart.length === 0 ? (
               <EmptyCart esMayorista={esMayorista} />
             ) : (

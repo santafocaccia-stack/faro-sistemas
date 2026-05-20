@@ -1,16 +1,16 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
 import {
   ShoppingCart, Package, Users, BookOpen, History, BarChart3,
-  Settings, LayoutDashboard, Plus, Search, ArrowRight,
+  Settings, LayoutDashboard, Plus, Search, ArrowRight, Loader2,
 } from 'lucide-react';
-import type { Producto, Cliente } from '@/server/db/schema';
-import { formatARS } from '@/lib/utils';
 import { listarProductos } from '@/server/actions/productos';
 import { listarClientes } from '@/server/actions/clientes';
+import type { Producto, Cliente } from '@/server/db/schema';
+import { formatARS } from '@/lib/utils';
 
 type Props = {
   open: boolean;
@@ -22,6 +22,23 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   const [search, setSearch] = useState('');
   const [productos, setProductos] = useState<Producto[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [cargando, setCargando] = useState(false);
+
+  // Cargar datos solo la primera vez que se abre el palette
+  useEffect(() => {
+    if (!open || productos.length > 0) return;
+    setCargando(true);
+    Promise.all([
+      listarProductos({ soloActivos: true }),
+      listarClientes(),
+    ])
+      .then(([prods, clients]) => {
+        setProductos(prods);
+        setClientes(clients);
+      })
+      .catch(() => { /* silencioso — el palette sigue funcionando sin datos */ })
+      .finally(() => setCargando(false));
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function go(path: string) {
     onOpenChange(false);
@@ -29,21 +46,9 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     router.push(path);
   }
 
-  // Limpiar búsqueda al cerrar; cargar datos al abrir (lazy)
+  // Limpiar búsqueda al cerrar
   useEffect(() => {
-    if (!open) {
-      setSearch('');
-      return;
-    }
-    let cancelado = false;
-    Promise.all([listarProductos({ soloActivos: true }), listarClientes()])
-      .then(([prods, clis]) => {
-        if (cancelado) return;
-        setProductos(prods);
-        setClientes(clis);
-      })
-      .catch(() => { /* silencioso — el palette sigue funcionando para navegar */ });
-    return () => { cancelado = true; };
+    if (!open) setSearch('');
   }, [open]);
 
   if (!open) return null;
@@ -75,9 +80,14 @@ export function CommandPalette({ open, onOpenChange }: Props) {
               placeholder="Buscar productos, clientes, navegar..."
               className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground outline-none"
             />
-            <kbd className="text-[10px] text-muted-foreground/70 font-mono px-1.5 py-0.5 rounded border border-border/60">
-              ESC
-            </kbd>
+            {cargando
+              ? <Loader2 className="h-3.5 w-3.5 text-muted-foreground/60 animate-spin" />
+              : (
+                <kbd className="text-[10px] text-muted-foreground/70 font-mono px-1.5 py-0.5 rounded border border-border/60">
+                  ESC
+                </kbd>
+              )
+            }
           </div>
 
           {/* Lista */}
