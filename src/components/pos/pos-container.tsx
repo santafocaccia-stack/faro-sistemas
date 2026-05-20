@@ -16,6 +16,7 @@ import { PosScanner } from '@/components/pos/pos-scanner';
 import { PosModalCobrar } from '@/components/pos/pos-modal-cobrar';
 import { PosModalLineaSuelta } from '@/components/pos/pos-modal-linea-suelta';
 import { PostVentaModal, type VentaCompletada } from '@/components/pos/pos-modal-post-venta';
+import { PosModalSinStock, type ConfirmacionSinStock } from '@/components/pos/pos-modal-sin-stock';
 import type { Producto, Cliente } from '@/server/db/schema';
 
 type Props = {
@@ -75,6 +76,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
   const [modalCobrar, setModalCobrar] = useState(false);
   const [modalLineaSuelta, setModalLineaSuelta] = useState(false);
   const [ventaCompletada, setVentaCompletada] = useState<VentaCompletada | null>(null);
+  const [confirmSinStock, setConfirmSinStock] = useState<ConfirmacionSinStock | null>(null);
   const [sonido, setSonido] = useState(true);
   const [isPending, startTransition] = useTransition();
   const enviandoRef = useRef(false);
@@ -148,23 +150,48 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
       .slice(0, 8);
   }, [productosActivos, busqueda]);
 
+  /**
+   * Agrega un producto al carrito con chequeo de stock.
+   * Stock efectivo = stockActual del producto − lo que ya hay en el carrito.
+   * Si es <= 0, abre el modal de confirmación "sin stock" en vez de agregar.
+   */
+  function agregarConChequeoStock(p: Producto) {
+    const precio = Number(esMayorista ? p.precioMayorista : p.precioMinorista);
+    const enCarrito = items
+      .filter((it) => it.productoId === p.id)
+      .reduce((acc, it) => acc + it.cantidad, 0);
+    const stockActual = Number(p.stockActual);
+    const stockEfectivo = stockActual - enCarrito;
+
+    const agregar = () => {
+      agregarProducto({ productoId: p.id, nombre: p.nombre, precio, cantidad: 1 });
+      beep();
+      vibrar(40);
+    };
+
+    if (stockEfectivo <= 0) {
+      beepError();
+      setConfirmSinStock({
+        nombre: p.nombre,
+        stockActual,
+        onAgregar: agregar,
+      });
+      return;
+    }
+    agregar();
+  }
+
   // ── Manejo de código escaneado o tecleado ────────────────────
   function manejarCodigo(codigo: string) {
     const trimmed = codigo.trim();
     if (!trimmed) return;
+    // Si hay un modal de confirmación abierto, ignorar escaneos
+    if (confirmSinStock) return;
     const encontrado = productosActivos.find(
       (p) => p.codigo && p.codigo.trim().toLowerCase() === trimmed.toLowerCase(),
     );
     if (encontrado) {
-      const precio = Number(esMayorista ? encontrado.precioMayorista : encontrado.precioMinorista);
-      agregarProducto({
-        productoId: encontrado.id,
-        nombre: encontrado.nombre,
-        precio,
-        cantidad: 1,
-      });
-      beep();
-      vibrar(40);
+      agregarConChequeoStock(encontrado);
     } else {
       beepError();
       toast.error(`Código "${trimmed}" no encontrado`, { duration: 2200 });
@@ -172,9 +199,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
   }
 
   function agregarDesdeResultado(p: Producto) {
-    const precio = Number(esMayorista ? p.precioMayorista : p.precioMinorista);
-    agregarProducto({ productoId: p.id, nombre: p.nombre, precio });
-    beep();
+    agregarConChequeoStock(p);
     setBusqueda('');
     searchRef.current?.focus();
   }
@@ -215,7 +240,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
       if (bufferTimer) clearTimeout(bufferTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productosActivos, esMayorista, modoEscaneo, modalCobrar, modalLineaSuelta]);
+  }, [productosActivos, esMayorista, modoEscaneo, modalCobrar, modalLineaSuelta, items, confirmSinStock]);
 
   // ── Cobrar ────────────────────────────────────────────────────
   async function handleCobrar(payload: {
@@ -568,6 +593,12 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
         venta={ventaCompletada}
         onCerrar={() => setVentaCompletada(null)}
         onSeguirVendiendo={handleSeguirVendiendo}
+      />
+
+      {/* Modal confirmación sin stock */}
+      <PosModalSinStock
+        confirmacion={confirmSinStock}
+        onClose={() => setConfirmSinStock(null)}
       />
     </div>
   );
