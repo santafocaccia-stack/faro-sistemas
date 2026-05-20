@@ -38,6 +38,16 @@ export function DashboardSidebar({ email, plan, tenantNombre, onOpenCommand }: P
     return () => document.removeEventListener('mousedown', handler);
   }, [masOpen]);
 
+  /* Precarga las rutas principales en background al montar el sidebar */
+  useEffect(() => {
+    const rutas = [
+      POS_HREF,
+      ...navPlan.primary.map((i) => i.href),
+      ...navPlan.secondary.filter((i) => !i.pronto).map((i) => i.href),
+    ];
+    rutas.forEach((href) => router.prefetch(href));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* Cierra al cambiar de ruta */
   useEffect(() => { setMasOpen(false); }, [pathname]);
 
@@ -101,6 +111,7 @@ export function DashboardSidebar({ email, plan, tenantNombre, onOpenCommand }: P
       <div className="relative px-3 pb-3">
         <Link
           href={POS_HREF}
+          prefetch={true}
           className={cn(
             'group relative w-full flex items-center gap-2 px-3 h-11 rounded-xl',
             'bg-primary text-primary-foreground font-bold text-[14px] tracking-tight',
@@ -184,6 +195,7 @@ export function DashboardSidebar({ email, plan, tenantNombre, onOpenCommand }: P
               <Link
                 key={href}
                 href={href}
+                prefetch={true}
                 className={cn(
                   'relative flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-all duration-150',
                   active
@@ -258,6 +270,7 @@ function NavLink({
   return (
     <Link
       href={item.href}
+      prefetch={true}
       className={cn(
         'relative flex items-center gap-2.5 rounded-md transition-all duration-150',
         compact ? 'px-2 py-1 text-[12.5px]' : 'px-2.5 py-1.5 text-[13px]',
