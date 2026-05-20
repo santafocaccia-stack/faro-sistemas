@@ -7,8 +7,9 @@ test.describe('Clientes', () => {
   });
 
   test('listado carga con clientes', async ({ page }) => {
-    const rows = page.locator('tr').or(page.locator('[data-testid="cliente-row"]'));
-    await expect(rows.first()).toBeVisible({ timeout: 10_000 });
+    // Los clientes usan <table> — buscamos las filas de datos (no el header)
+    await expect(page.locator('table')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('tbody tr').first()).toBeVisible();
   });
 
   test('botón "Nuevo cliente" existe y lleva al form', async ({ page }) => {
@@ -27,13 +28,12 @@ test.describe('Clientes', () => {
   });
 
   test('ficha de cliente tiene saldo de cuenta corriente', async ({ page }) => {
-    // Click en el primer cliente de la lista
-    const firstClient = page.locator('tr a, [data-testid="cliente-row"] a').first();
-    if (await firstClient.isVisible()) {
-      await firstClient.click();
-      await expect(page).toHaveURL(/\/clientes\/.+/, { timeout: 8_000 });
-      // La ficha debe mostrar el saldo
-      await expect(page.locator('text=/saldo|cuenta corriente/i')).toBeVisible({ timeout: 8_000 });
-    }
+    // El link al cliente está solo en la primera columna de cada fila
+    const firstClientLink = page.locator('table a').first();
+    await expect(firstClientLink).toBeVisible({ timeout: 8_000 });
+    await firstClientLink.click();
+    await expect(page).toHaveURL(/\/clientes\/.+/, { timeout: 8_000 });
+    // La ficha muestra la columna "Saldo" o "Cuenta corriente"
+    await expect(page.locator('text=/saldo|cuenta corriente/i')).toBeVisible({ timeout: 8_000 });
   });
 });

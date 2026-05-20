@@ -2,9 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Printer, Share2, FileText, X, Loader2 } from 'lucide-react';
-import { formatARS, cn } from '@/lib/utils';
+import { CheckCircle2, Printer, Share2, X, Loader2 } from 'lucide-react';
+import { formatARS } from '@/lib/utils';
 import { toast } from 'sonner';
+
+/**
+ * Formatea una fecha con zona horaria forzada a Argentina (UTC-3).
+ * Sin esto, toLocaleString usa el timezone del dispositivo, que puede
+ * estar mal configurado o ser el de un servidor (UTC).
+ */
+function formatFechaAR(d: Date): string {
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'America/Argentina/Buenos_Aires',
+    hour12: false,
+  }).format(d);
+}
 
 export type VentaCompletada = {
   id: string;
@@ -182,10 +196,7 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
 
                 <div className="flex justify-between text-[10px] text-muted-foreground">
                   <span>Ticket #{String(venta.numero).padStart(5, '0')}</span>
-                  <span>{venta.fecha.toLocaleString('es-AR', {
-                    day: '2-digit', month: '2-digit', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit',
-                  })}</span>
+                  <span>{formatFechaAR(venta.fecha)}</span>
                 </div>
 
                 <div className="my-2 border-t border-dashed border-border" />
@@ -297,12 +308,7 @@ function TicketImprimible({ venta }: { venta: VentaCompletada }) {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9 }}>
         <span>Ticket #{String(venta.numero).padStart(5, '0')}</span>
-        <span>
-          {venta.fecha.toLocaleString('es-AR', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit',
-          })}
-        </span>
+        <span>{formatFechaAR(venta.fecha)}</span>
       </div>
 
       <div style={{ fontSize: 9, marginTop: 2 }}>

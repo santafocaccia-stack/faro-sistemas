@@ -12,9 +12,9 @@ test.describe('POS — Punto de Venta', () => {
   });
 
   test('switch minorista / mayorista existe', async ({ page }) => {
-    const minorista = page.getByRole('button', { name: /minorista/i });
-    const mayorista = page.getByRole('button', { name: /mayorista/i });
-    await expect(minorista.or(mayorista)).toBeVisible({ timeout: 8_000 });
+    // Texto exacto con case-sensitive (el componente usa "Minorista" y "Mayorista")
+    await expect(page.getByRole('button', { name: 'Minorista' })).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByRole('button', { name: 'Mayorista' })).toBeVisible();
   });
 
   test('buscar un producto muestra resultados', async ({ page }) => {
@@ -33,33 +33,24 @@ test.describe('POS — Punto de Venta', () => {
     await searchBox.fill('a');
     await page.waitForTimeout(500);
 
-    // Click en el primer producto encontrado
+    // Los productos son botones con precio — click en el primero
     const firstProduct = page.locator('button').filter({ hasText: /\$/ }).first();
     await firstProduct.click();
 
-    // El botón Cobrar debería aparecer o cambiar (muestra monto)
-    const cobrarBtn = page.getByRole('button', { name: /cobrar/i });
-    await expect(cobrarBtn).toBeVisible({ timeout: 5_000 });
-    await expect(cobrarBtn).not.toHaveText(/cobrar$/i); // debería mostrar monto
+    // El botón COBRAR debe seguir visible pero ahora habilitado
+    const cobrarBtn = page.getByRole('button', { name: 'COBRAR' });
+    await expect(cobrarBtn).toBeEnabled({ timeout: 5_000 });
   });
 
   test('el carrito está vacío al inicio', async ({ page }) => {
-    // No debe haber botón Cobrar activo sin productos
-    const cobrarBtn = page.getByRole('button', { name: /cobrar \$0,00/i });
-    // Si no está, está bien — el carrito está vacío
-    await expect(cobrarBtn.or(
-      page.locator('text=/carrito vacío|sin productos/i')
-    )).toBeVisible({ timeout: 5_000 }).catch(() => {
-      // Ambas opciones son válidas
-    });
+    // El botón "COBRAR" debe existir pero estar deshabilitado
+    const cobrarBtn = page.getByRole('button', { name: 'COBRAR' });
+    await expect(cobrarBtn).toBeVisible({ timeout: 5_000 });
+    await expect(cobrarBtn).toBeDisabled();
   });
 
   test('botón Cobrar está deshabilitado sin productos', async ({ page }) => {
-    const cobrarBtn = page.getByRole('button', { name: /cobrar/i });
-    if (await cobrarBtn.isVisible()) {
-      // Si existe debe estar deshabilitado o mostrar $0
-      const text = await cobrarBtn.textContent();
-      expect(text).toMatch(/\$\s?0/);
-    }
+    // "COBRAR" en mayúsculas, deshabilitado sin productos
+    await expect(page.getByRole('button', { name: 'COBRAR' })).toBeDisabled({ timeout: 5_000 });
   });
 });

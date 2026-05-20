@@ -13,8 +13,9 @@ test.describe('Configuración', () => {
     await page.goto('/dashboard/config/equipo');
     await page.waitForLoadState('networkidle');
 
-    // Debe mostrar al menos el owner
-    await expect(page.locator('text=/equipo|miembros/i')).toBeVisible({ timeout: 8_000 });
+    // El h1 dice "Equipo" y el h3 dice "Miembros del equipo"
+    await expect(page.getByRole('heading', { name: 'Equipo', level: 1 })).toBeVisible({ timeout: 8_000 });
+    await expect(page.locator('h3').filter({ hasText: /miembros/i })).toBeVisible();
   });
 
   test('invitar miembro tiene campo de email', async ({ page }) => {

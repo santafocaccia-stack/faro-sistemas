@@ -6,16 +6,15 @@ test.describe('Dashboard', () => {
   });
 
   test('carga sin errores y muestra el saludo', async ({ page }) => {
-    // El h1/h2 de saludo siempre existe (Buenos días / Buenas tardes / etc.)
-    await expect(page.locator('h1, h2').filter({ hasText: /buenos|hola/i })).toBeVisible({ timeout: 10_000 });
+    // El h1 siempre muestra "Buenos días/tardes/noches, nombre 👋"
+    await expect(page.getByRole('heading', { level: 1 }).filter({ hasText: /buen/i })).toBeVisible({ timeout: 10_000 });
   });
 
   test('muestra los 3 KPI cards (Hoy / Semana / Cobros)', async ({ page }) => {
-    // Buscar al menos 3 tarjetas de KPI
-    const kpis = page.locator('[data-testid="kpi-card"], .kpi-card').or(
-      page.locator('text=/\\$[0-9]/').locator('..')
-    );
-    await expect(kpis.first()).toBeVisible({ timeout: 8_000 });
+    // Cada card tiene un <p> con label "Hoy", "Semana" o "Cobros" en uppercase
+    await expect(page.locator('p').filter({ hasText: /^Hoy$/ })).toBeVisible({ timeout: 8_000 });
+    await expect(page.locator('p').filter({ hasText: /^Semana$/ })).toBeVisible();
+    await expect(page.locator('p').filter({ hasText: /^Cobros$/ })).toBeVisible();
   });
 
   test('botón VENDER está visible y lleva al POS', async ({ page }) => {

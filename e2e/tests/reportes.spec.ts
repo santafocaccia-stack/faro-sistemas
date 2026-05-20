@@ -8,7 +8,8 @@ test.describe('Reportes', () => {
 
   test('página de reportes carga sin error', async ({ page }) => {
     await expect(page).toHaveURL(/\/reportes/);
-    await expect(page.locator('text=/500|error/i')).not.toBeVisible();
+    await expect(page.locator('text=/Application error|Internal server error/i')).not.toBeVisible();
+    await expect(page.locator('[data-nextjs-dialog]')).not.toBeVisible();
   });
 
   test('muestra KPIs del período', async ({ page }) => {

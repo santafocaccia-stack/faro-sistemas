@@ -137,8 +137,11 @@ function ars(n: number | string) {
 }
 
 function fmtFecha(d: Date | string) {
+  // Forzar zona horaria Argentina — Vercel corre en UTC y una venta a las
+  // 22hs ARG aparecería con la fecha del día siguiente sin esto.
   return new Date(d).toLocaleDateString('es-AR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
+    timeZone: 'America/Argentina/Buenos_Aires',
   });
 }
 
@@ -172,7 +175,7 @@ export function RemitoPDF({
   subtotal, descuento, total, notas,
   negocioNombre, negocioCuit, metodoPago,
 }: PdfBaseProps & { metodoPago?: string | null }) {
-  const now = new Date().toLocaleDateString('es-AR');
+  const now = fmtFecha(new Date());
 
   return (
     <Document title={`Remito #${numero} — ${negocioNombre}`}>
@@ -291,7 +294,7 @@ export function PresupuestoPDF({
   negocioNombre, negocioCuit,
   validezDias, estado,
 }: PdfBaseProps & { validezDias: number; estado: string }) {
-  const now = new Date().toLocaleDateString('es-AR');
+  const now = fmtFecha(new Date());
   const vencimiento = new Date(new Date(fecha).getTime() + validezDias * 86_400_000);
   const estadoColor = ESTADO_COLOR[estado] ?? C.gris;
 

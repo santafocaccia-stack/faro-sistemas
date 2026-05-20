@@ -7,11 +7,10 @@ test.describe('Productos', () => {
   });
 
   test('listado carga y muestra productos', async ({ page }) => {
-    // Debe haber al menos una fila de producto (la demo tiene 9)
-    const rows = page.locator('tr, [data-testid="producto-row"]').or(
-      page.locator('li').filter({ hasText: /\$/ })
-    );
-    await expect(rows.first()).toBeVisible({ timeout: 10_000 });
+    // Los productos se renderizan como divs con clase cursor-pointer (no hay <table>)
+    // Buscamos por el nombre del producto — texto en <p class="text-[13px] font-medium truncate">
+    const filas = page.locator('div.cursor-pointer').filter({ has: page.locator('p.font-medium') });
+    await expect(filas.first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('buscador filtra la lista', async ({ page }) => {
@@ -35,8 +34,9 @@ test.describe('Productos', () => {
     await page.goto('/dashboard/productos/nuevo');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByLabel(/nombre/i)).toBeVisible();
-    await expect(page.getByLabel(/precio/i).first()).toBeVisible();
+    await expect(page.locator('#nombre')).toBeVisible();
+    // Los campos de precio tienen id precioMayorista / precioMinorista
+    await expect(page.locator('#precioMayorista').or(page.locator('#precioMinorista'))).toBeVisible();
     await expect(page.getByRole('button', { name: /guardar|crear/i })).toBeVisible();
   });
 
