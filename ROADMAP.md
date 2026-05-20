@@ -160,6 +160,33 @@ mindmap
 
 ---
 
+## 💡 Ideas / Backlog
+
+### 💰 Consultor de precios para clientes finales
+**Qué es:** Pantalla pública (sin login) donde el cliente del kiosco/super escanea un producto con la cámara de su celular y ve el precio. También usable en tablet montada en el local. Acceso por URL o QR pegado en la entrada.
+
+**Por qué importa:**
+- Diferenciador único — ningún POS argentino lo tiene
+- Reduce consultas al cajero ("¿cuánto sale esto?")
+- Argumento de venta para el plan Market/Balanza
+- Publicidad pasiva del producto para visitantes del local
+
+**Implementación tentativa:**
+- Ruta pública `/p/[tenantSlug]` o `/consulta/[tenantId]`
+- Reusa el componente `PosScanner` con cámara continua
+- Lookup por código → muestra producto + precio minorista (sin carrito)
+- Branding: logo del negocio + tema personalizado
+- Opcional: ofertas del día, productos destacados
+- Generar QR descargable desde Configuración: "Imprimí este QR y pegalo"
+
+**Riesgos:**
+- Performance: lookup <100ms (índice ya está creado)
+- Caché de productos para no martillar la DB
+- Rate limiting para evitar scraping del catálogo
+- Código no encontrado → "Consultá al cajero" amable
+
+---
+
 ## Leyenda
 - ✅ Completo
 - 🔄 En progreso / parcial
