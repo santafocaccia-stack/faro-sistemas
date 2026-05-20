@@ -1,6 +1,7 @@
 'use server';
 
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
+import { after } from 'next/server';
 import { db } from '@/server/db';
 import {
   ventas, ventasLineas, pagos, movimientosCuentaCorriente, clientes, productos,
@@ -79,7 +80,7 @@ export async function crearVenta(
     if (!venta) throw new Error('No se pudo crear la venta');
     ventaCreada = { id: venta.id, numero };
 
-    // Líneas
+    // Líneas (batch único)
     await tx.insert(ventasLineas).values(
       input.lineas.map((l) => ({
         tenantId: session.tenantId,
@@ -92,88 +93,16 @@ export async function crearVenta(
       }))
     );
 
-    // Descontar stock + acumular carrito de pedidos al proveedor principal
+    // Descontar stock — un UPDATE por producto (crítico, en la transacción)
     for (const l of input.lineas) {
       if (!l.productoId) continue;
-
       await tx
         .update(productos)
         .set({ stockActual: sql`${productos.stockActual} - ${l.cantidad}::numeric` })
         .where(and(byTenant(session.tenantId, productos), eq(productos.id, l.productoId)));
-
-      // Buscar proveedor principal del producto
-      const [relProv] = await tx
-        .select({ proveedorId: productoProveedores.proveedorId })
-        .from(productoProveedores)
-        .where(
-          and(
-            byTenant(session.tenantId, productoProveedores),
-            eq(productoProveedores.productoId, l.productoId),
-            eq(productoProveedores.esPrincipal, true),
-          ),
-        )
-        .limit(1);
-
-      if (!relProv) continue;
-
-      // Buscar o crear pedido en borrador para este proveedor
-      const [pedidoExistente] = await tx
-        .select({ id: pedidosProveedores.id })
-        .from(pedidosProveedores)
-        .where(
-          and(
-            byTenant(session.tenantId, pedidosProveedores),
-            eq(pedidosProveedores.proveedorId, relProv.proveedorId),
-            eq(pedidosProveedores.estado, 'borrador'),
-          ),
-        )
-        .limit(1);
-
-      let pedidoId: string;
-      if (pedidoExistente) {
-        pedidoId = pedidoExistente.id;
-      } else {
-        const [nuevoPedido] = await tx
-          .insert(pedidosProveedores)
-          .values({
-            tenantId: session.tenantId,
-            proveedorId: relProv.proveedorId,
-            estado: 'borrador',
-          })
-          .returning({ id: pedidosProveedores.id });
-        pedidoId = nuevoPedido!.id;
-      }
-
-      // Upsert: acumular cantidad en la línea de pedido
-      const [lineaExistente] = await tx
-        .select({ id: pedidosLineas.id })
-        .from(pedidosLineas)
-        .where(
-          and(
-            byTenant(session.tenantId, pedidosLineas),
-            eq(pedidosLineas.pedidoId, pedidoId),
-            eq(pedidosLineas.productoId, l.productoId),
-          ),
-        )
-        .limit(1);
-
-      if (lineaExistente) {
-        await tx
-          .update(pedidosLineas)
-          .set({ cantidadPedida: sql`${pedidosLineas.cantidadPedida} + ${l.cantidad}::numeric` })
-          .where(eq(pedidosLineas.id, lineaExistente.id));
-      } else {
-        await tx.insert(pedidosLineas).values({
-          tenantId: session.tenantId,
-          pedidoId,
-          productoId: l.productoId,
-          cantidadPedida: l.cantidad,
-        });
-      }
     }
 
     if (!esCuentaCorriente && input.metodoPago) {
-      // Pago contado
       await tx.insert(pagos).values({
         tenantId: session.tenantId,
         clienteId: input.clienteId,
@@ -183,7 +112,6 @@ export async function crearVenta(
         metodo: input.metodoPago,
       });
     } else if (esCuentaCorriente) {
-      // Cuenta corriente — obtener saldo actual y límite del cliente
       const [cliente] = await tx
         .select({ saldo: clientes.saldoActual, limiteCredito: clientes.limiteCredito })
         .from(clientes)
@@ -193,7 +121,6 @@ export async function crearVenta(
       const saldoAnterior = Number(cliente?.saldo ?? 0);
       const saldoPosterior = saldoAnterior + total;
 
-      // Validar límite de crédito si está configurado
       validarLimiteCredito(saldoAnterior, total, Number(cliente?.limiteCredito ?? 0));
 
       await tx.insert(movimientosCuentaCorriente).values({
@@ -208,12 +135,23 @@ export async function crearVenta(
         descripcion: `Venta ${input.canal} #${numero}`,
       });
 
-      // Actualizar saldo cacheado del cliente
       await tx.update(clientes)
         .set({ saldoActual: saldoPosterior.toFixed(2) })
         .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, input.clienteId)));
     }
   });
+
+  // ── Acumular pedidos al proveedor DESPUÉS de responder al cliente ──
+  // Usa after() para que esto corra DESPUÉS de que el resultado se envíe al browser.
+  // La venta ya está registrada — esto es best-effort y no bloquea el ticket.
+  const lineasConProducto = input.lineas.filter((l) => l.productoId !== null);
+  if (lineasConProducto.length > 0) {
+    after(() =>
+      acumularPedidosProveedores(session.tenantId, lineasConProducto).catch((err) => {
+        console.error('[crearVenta] Error acumulando pedidos:', err);
+      }),
+    );
+  }
 
   revalidatePath(`/dashboard/ventas/${input.canal}`);
   revalidatePath('/dashboard/clientes');
@@ -224,6 +162,111 @@ export async function crearVenta(
     numero: (ventaCreada as { id: string; numero: number }).numero,
     total: total.toFixed(2),
   };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Acumula pedidos a proveedores en background (vía after())
+   • 1 query batch para traer proveedores principales
+   • 1 mini-transaction por proveedor (find/create borrador + upsert lineas)
+───────────────────────────────────────────────────────────── */
+async function acumularPedidosProveedores(
+  tenantId: string,
+  lineas: LineaVenta[],
+): Promise<void> {
+  const productoIds = lineas.map((l) => l.productoId as string);
+
+  // 1. Batch: traer proveedor principal de cada producto en una sola query
+  const proveedorRows = await db
+    .select({
+      productoId: productoProveedores.productoId,
+      proveedorId: productoProveedores.proveedorId,
+    })
+    .from(productoProveedores)
+    .where(
+      and(
+        byTenant(tenantId, productoProveedores),
+        inArray(productoProveedores.productoId, productoIds),
+        eq(productoProveedores.esPrincipal, true),
+      ),
+    );
+
+  if (proveedorRows.length === 0) return;
+
+  // 2. Agrupar lineas por proveedor
+  const porProveedor = new Map<string, { productoId: string; cantidad: number }[]>();
+  for (const row of proveedorRows) {
+    const linea = lineas.find((l) => l.productoId === row.productoId);
+    if (!linea) continue;
+    const grupo = porProveedor.get(row.proveedorId) ?? [];
+    grupo.push({ productoId: row.productoId, cantidad: Number(linea.cantidad) });
+    porProveedor.set(row.proveedorId, grupo);
+  }
+
+  // 3. Por cada proveedor: find-or-create borrador + upsert líneas
+  for (const [proveedorId, items] of porProveedor) {
+    await db.transaction(async (tx) => {
+      // Buscar pedido borrador existente
+      const [pedidoExistente] = await tx
+        .select({ id: pedidosProveedores.id })
+        .from(pedidosProveedores)
+        .where(
+          and(
+            byTenant(tenantId, pedidosProveedores),
+            eq(pedidosProveedores.proveedorId, proveedorId),
+            eq(pedidosProveedores.estado, 'borrador'),
+          ),
+        )
+        .limit(1);
+
+      let pedidoId: string;
+      if (pedidoExistente) {
+        pedidoId = pedidoExistente.id;
+      } else {
+        const [nuevoPedido] = await tx
+          .insert(pedidosProveedores)
+          .values({ tenantId, proveedorId })
+          .returning({ id: pedidosProveedores.id });
+        if (!nuevoPedido) return;
+        pedidoId = nuevoPedido.id;
+      }
+
+      // Traer líneas existentes para este pedido (batch, solo los productos vendidos)
+      const existingLines = await tx
+        .select({
+          id: pedidosLineas.id,
+          productoId: pedidosLineas.productoId,
+        })
+        .from(pedidosLineas)
+        .where(
+          and(
+            eq(pedidosLineas.pedidoId, pedidoId),
+            inArray(pedidosLineas.productoId, items.map((i) => i.productoId)),
+          ),
+        );
+
+      const existingMap = new Map(existingLines.map((l) => [l.productoId, l.id]));
+
+      for (const item of items) {
+        const existingId = existingMap.get(item.productoId);
+        if (existingId) {
+          // Sumar cantidad al existente
+          await tx
+            .update(pedidosLineas)
+            .set({ cantidadPedida: sql`${pedidosLineas.cantidadPedida} + ${String(item.cantidad)}::numeric` })
+            .where(eq(pedidosLineas.id, existingId));
+        } else {
+          await tx
+            .insert(pedidosLineas)
+            .values({
+              tenantId,
+              pedidoId,
+              productoId: item.productoId,
+              cantidadPedida: String(item.cantidad),
+            });
+        }
+      }
+    });
+  }
 }
 
 const PAGE_SIZE = 30;
