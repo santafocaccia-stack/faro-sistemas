@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Printer, Share2, X, Loader2 } from 'lucide-react';
+import { CheckCircle2, Printer, Share2, Download, X, Loader2 } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -59,6 +59,13 @@ type Props = {
  */
 export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
   const [descargandoPdf, setDescargandoPdf] = useState(false);
+  const [esTouch, setEsTouch] = useState(false);
+
+  // Detectar si es un dispositivo táctil (mobile/tablet) para elegir
+  // entre "Compartir" (Web Share) y "Descargar PDF"
+  useEffect(() => {
+    setEsTouch(window.matchMedia('(pointer: coarse)').matches);
+  }, []);
 
   // Auto-focus en el botón principal al abrir
   useEffect(() => {
@@ -80,44 +87,55 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
     window.print();
   }
 
+  function descargarPdf(url: string, filename: string) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast.success('Ticket descargado');
+  }
+
   async function compartirOPdf() {
     if (!venta) return;
     setDescargandoPdf(true);
-    try {
-      const url = `/api/pdf/remito/${venta.id}`;
-      const filename = `ticket-${String(venta.numero).padStart(5, '0')}.pdf`;
+    const url = `/api/pdf/remito/${venta.id}`;
+    const filename = `ticket-${String(venta.numero).padStart(5, '0')}.pdf`;
 
-      // Web Share API si está disponible (mobile)
-      if (typeof navigator !== 'undefined' && 'share' in navigator && 'canShare' in navigator) {
+    try {
+      // En DESKTOP (puntero fino, sin touch) la Web Share API de archivos
+      // es errática y no ofrece "descargar". Vamos directo a la descarga.
+      const esTouch =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(pointer: coarse)').matches;
+
+      if (!esTouch) {
+        descargarPdf(url, filename);
+        return;
+      }
+
+      // MOBILE: intentar Web Share API con el archivo (sheet nativo)
+      if ('canShare' in navigator) {
         try {
           const res = await fetch(url);
           if (!res.ok) throw new Error('Error al generar PDF');
           const blob = await res.blob();
           const file = new File([blob], filename, { type: 'application/pdf' });
-          const shareData = { files: [file], title: `Ticket #${venta.numero}` };
-          if (navigator.canShare(shareData)) {
-            await navigator.share(shareData);
-            setDescargandoPdf(false);
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: `Ticket #${venta.numero}` });
             return;
           }
         } catch (err) {
-          // Si share falla, caer en download
-          // (silencioso — algunos browsers tiran AbortError si el user cancela)
-          if (err instanceof Error && err.name === 'AbortError') {
-            setDescargandoPdf(false);
-            return;
-          }
+          // Si el usuario cancela el sheet, no hacemos nada más
+          if (err instanceof Error && err.name === 'AbortError') return;
+          // Cualquier otro error → caemos en descarga
         }
       }
 
-      // Fallback: descarga directa
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      toast.success('Ticket descargado');
+      // Fallback mobile sin Web Share
+      descargarPdf(url, filename);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo generar el PDF');
     } finally {
@@ -249,9 +267,11 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
                 >
                   {descargandoPdf
                     ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : <Share2 className="h-4 w-4" strokeWidth={2} />
+                    : esTouch
+                      ? <Share2 className="h-4 w-4" strokeWidth={2} />
+                      : <Download className="h-4 w-4" strokeWidth={2} />
                   }
-                  {descargandoPdf ? '...' : 'Compartir'}
+                  {descargandoPdf ? '...' : esTouch ? 'Compartir' : 'Descargar PDF'}
                 </button>
               </div>
 
