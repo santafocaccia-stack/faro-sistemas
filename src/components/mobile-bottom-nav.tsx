@@ -48,10 +48,6 @@ export function MobileBottomNav({ email }: { email: string }) {
     return () => { document.body.style.overflow = ''; };
   }, [masOpen]);
 
-  // POS full-screen — la barra inferior molestaría al cobrar
-  const ocultarEnPos = pathname === '/dashboard/ventas';
-  if (ocultarEnPos) return null;
-
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -96,27 +92,35 @@ export function MobileBottomNav({ email }: { email: string }) {
           {/* Tabs izquierda */}
           {LEFT_TABS.map(renderTab)}
 
-          {/* FAB Vender — centro elevado */}
-          <div className="flex-1 relative flex items-start justify-center">
+          {/* FAB Vender — elevado cuando NO estás en /ventas,
+              aplanado cuando ya estás ahí (evita choque con COBRAR) */}
+          {venderActive ? (
             <Link
               href="/dashboard/ventas"
-              className={cn(
-                'absolute -top-5 h-14 w-14 rounded-2xl flex items-center justify-center',
-                'bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0.70_0.22_43_/_45%)]',
-                'transition-all duration-150 active:scale-95',
-                venderActive && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-sidebar',
-              )}
-              aria-label="Nueva venta"
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
+              aria-label="Vender (página actual)"
             >
-              <ShoppingCart className="h-6 w-6" strokeWidth={2.25} />
+              <ShoppingCart className="h-5 w-5 text-primary" strokeWidth={2.25} />
+              <span className="text-[10px] font-semibold text-primary">Vender</span>
             </Link>
-            <span className={cn(
-              'absolute bottom-2 text-[10px] font-semibold transition-colors',
-              venderActive ? 'text-primary' : 'text-muted-foreground',
-            )}>
-              Vender
-            </span>
-          </div>
+          ) : (
+            <div className="flex-1 relative flex items-start justify-center">
+              <Link
+                href="/dashboard/ventas"
+                className={cn(
+                  'absolute -top-5 h-14 w-14 rounded-2xl flex items-center justify-center',
+                  'bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0.70_0.22_43_/_45%)]',
+                  'transition-all duration-150 active:scale-95',
+                )}
+                aria-label="Nueva venta"
+              >
+                <ShoppingCart className="h-6 w-6" strokeWidth={2.25} />
+              </Link>
+              <span className="absolute bottom-2 text-[10px] font-semibold text-muted-foreground">
+                Vender
+              </span>
+            </div>
+          )}
 
           {/* Tabs derecha */}
           {RIGHT_TABS.map(renderTab)}

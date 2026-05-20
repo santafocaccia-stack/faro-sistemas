@@ -40,7 +40,10 @@ for (const ruta of RUTAS) {
     }
 
     // No debe haber texto de error crítico en pantalla
-    await expect(page.locator('text=/Application error|500|Internal server error/i')).not.toBeVisible();
+    // Nota: evitamos "500" solo porque matchea con precios como "$38.500.000"
+    await expect(page.locator('text=/Application error|Internal server error/i')).not.toBeVisible();
+    // El div de error de Next.js tiene un atributo específico
+    await expect(page.locator('[data-nextjs-dialog], #__next_error__')).not.toBeVisible();
 
     // No debe estar completamente en blanco
     const bodyText = await page.locator('body').textContent();

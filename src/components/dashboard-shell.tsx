@@ -49,13 +49,13 @@ export function DashboardShell({ email, plan, tenantNombre, productos, clientes,
 
       {/*
         Contenido principal.
-        - En POS mobile: sin padding-bottom (la bottom nav está oculta).
-        - En otras páginas: pb-16 para que el contenido no quede detrás del bottom nav.
+        - En POS mobile: overflow-hidden + pb-16 (reservar lugar para bottom nav)
+        - En otras páginas: scroll vertical + pb-16 para no quedar tapado por la nav
       */}
       <main
         className={cn(
-          'flex-1 relative min-h-0',
-          esPos ? 'overflow-hidden' : 'overflow-y-auto pb-16 md:pb-0',
+          'flex-1 relative min-h-0 pb-16 md:pb-0',
+          esPos ? 'overflow-hidden' : 'overflow-y-auto',
         )}
       >
         {children}

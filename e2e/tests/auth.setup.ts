@@ -10,9 +10,9 @@ const SESSION_FILE = path.join(__dirname, '../.auth/session.json');
 setup('login demo', async ({ page }) => {
   await page.goto('/login');
 
-  await page.getByLabel(/email/i).fill('prueba@gesto.app');
-  await page.getByLabel(/contraseña/i).fill('prueba1234');
-  await page.getByRole('button', { name: /iniciar sesión|entrar/i }).click();
+  await page.locator('#email').fill('prueba@gesto.app');
+  await page.locator('#password').fill('prueba1234');
+  await page.getByRole('button', { name: /ingresar/i }).click();
 
   // Esperar a que llegue al dashboard
   await page.waitForURL('**/dashboard', { timeout: 15_000 });
