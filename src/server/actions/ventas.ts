@@ -93,13 +93,21 @@ export async function crearVenta(
       }))
     );
 
-    // Descontar stock — un UPDATE por producto (crítico, en la transacción)
-    for (const l of input.lineas) {
-      if (!l.productoId) continue;
-      await tx
-        .update(productos)
-        .set({ stockActual: sql`${productos.stockActual} - ${l.cantidad}::numeric` })
-        .where(and(byTenant(session.tenantId, productos), eq(productos.id, l.productoId)));
+    // Descontar stock — 1 solo UPDATE con unnest (N productos → 1 query)
+    const lineasConProducto2 = input.lineas.filter((l) => l.productoId !== null);
+    if (lineasConProducto2.length > 0) {
+      const idChunks  = lineasConProducto2.map((l) => sql`${l.productoId as string}`);
+      const qtyChunks = lineasConProducto2.map((l) => sql`${l.cantidad}`);
+      await tx.execute(sql`
+        UPDATE productos
+        SET    stock_actual = productos.stock_actual - u.qty
+        FROM   unnest(
+                 ARRAY[${sql.join(idChunks,  sql`, `)}]::uuid[],
+                 ARRAY[${sql.join(qtyChunks, sql`, `)}]::numeric[]
+               ) AS u(id, qty)
+        WHERE  productos.id        = u.id
+          AND  productos.tenant_id = ${session.tenantId}::uuid
+      `);
     }
 
     if (!esCuentaCorriente && input.metodoPago) {
@@ -317,13 +325,21 @@ export async function anularVenta(id: string) {
       .set({ estado: 'anulada', anuladaAt: new Date() })
       .where(eq(ventas.id, id));
 
-    // 2. Revertir stock (sumar cantidad de vuelta)
-    for (const l of lineas) {
-      if (!l.productoId) continue;
-      await tx
-        .update(productos)
-        .set({ stockActual: sql`${productos.stockActual} + ${l.cantidad}::numeric` })
-        .where(and(byTenant(session.tenantId, productos), eq(productos.id, l.productoId)));
+    // 2. Revertir stock — 1 solo UPDATE con unnest
+    const lineasConStock = lineas.filter((l) => l.productoId !== null);
+    if (lineasConStock.length > 0) {
+      const idChunks  = lineasConStock.map((l) => sql`${l.productoId as string}`);
+      const qtyChunks = lineasConStock.map((l) => sql`${l.cantidad}`);
+      await tx.execute(sql`
+        UPDATE productos
+        SET    stock_actual = productos.stock_actual + u.qty
+        FROM   unnest(
+                 ARRAY[${sql.join(idChunks,  sql`, `)}]::uuid[],
+                 ARRAY[${sql.join(qtyChunks, sql`, `)}]::numeric[]
+               ) AS u(id, qty)
+        WHERE  productos.id        = u.id
+          AND  productos.tenant_id = ${session.tenantId}::uuid
+      `);
     }
 
     // 3. Si era cuenta corriente, emitir nota de crédito en el libro mayor

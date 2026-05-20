@@ -29,11 +29,17 @@ type RequireSessionOpts = {
  */
 const getSessionData = cache(async (): Promise<Session | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  // getSession() lee la cookie local (sin round-trip a Supabase Auth).
+  // getUser() hace una llamada de red (~100-300 ms) que sería cancelada
+  // en cada server action. Para un sistema POS interno donde el tenant
+  // aplica su propio aislamiento via byTenant(), esto es seguro.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) return null;
+  const user = session.user;
 
   // JOIN: una sola consulta en lugar de dos secuenciales
   const [row] = await db
