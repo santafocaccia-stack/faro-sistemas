@@ -9,20 +9,35 @@ import {
 } from 'lucide-react';
 import { cn, formatARS, formatKg } from '@/lib/utils';
 import { toggleActivoProducto } from '@/server/actions/productos';
-import type { Producto } from '@/server/db/schema';
+import type { Producto, Categoria } from '@/server/db/schema';
 
 type Props = {
   productos: Producto[];
+  categorias: Categoria[];
 };
 
 type Filtro = 'todos' | 'activos' | 'inactivos' | 'stock_bajo';
 
-export function ProductosListClient({ productos }: Props) {
+export function ProductosListClient({ productos, categorias }: Props) {
   const router = useRouter();
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('activos');
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string | null>(null);
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  /** Mapa { categoriaId → nombre } para mostrar el nombre en cada fila */
+  const mapaCategorias = useMemo(() => {
+    const m = new Map<string, string>();
+    categorias.forEach((c) => m.set(c.id, c.nombre));
+    return m;
+  }, [categorias]);
+
+  /** Categorías que tienen al menos un producto — para no mostrar chips vacíos */
+  const categoriasConProductos = useMemo(() => {
+    const usadas = new Set(productos.map((p) => p.categoriaId).filter(Boolean));
+    return categorias.filter((c) => usadas.has(c.id));
+  }, [categorias, productos]);
 
   const stockBajoCount = useMemo(() =>
     productos.filter((p) => p.stockMinimo && Number(p.stockActual) <= Number(p.stockMinimo)).length,
@@ -45,8 +60,12 @@ export function ProductosListClient({ productos }: Props) {
       (p) => p.activo && p.stockMinimo && Number(p.stockActual) <= Number(p.stockMinimo),
     );
 
+    if (categoriaFiltro) {
+      lista = lista.filter((p) => p.categoriaId === categoriaFiltro);
+    }
+
     return lista;
-  }, [productos, busqueda, filtro]);
+  }, [productos, busqueda, filtro, categoriaFiltro]);
 
   function handleToggleActivo(e: React.MouseEvent, id: string, nombre: string, activo: boolean) {
     e.stopPropagation();
@@ -114,6 +133,37 @@ export function ProductosListClient({ productos }: Props) {
         </div>
       </div>
 
+      {/* Chips de categoría — solo si hay categorías con productos */}
+      {categoriasConProductos.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mt-1">
+          <button
+            onClick={() => setCategoriaFiltro(null)}
+            className={cn(
+              'shrink-0 px-3 h-7 rounded-full text-[11px] font-medium transition-colors whitespace-nowrap',
+              categoriaFiltro === null
+                ? 'bg-foreground text-background'
+                : 'bg-card border border-border text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Todas las categorías
+          </button>
+          {categoriasConProductos.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setCategoriaFiltro(categoriaFiltro === c.id ? null : c.id)}
+              className={cn(
+                'shrink-0 px-3 h-7 rounded-full text-[11px] font-medium transition-colors whitespace-nowrap',
+                categoriaFiltro === c.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card border border-border text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {c.nombre}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Resultado vacío */}
       {filtrados.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-14 text-center">
@@ -178,9 +228,14 @@ export function ProductosListClient({ productos }: Props) {
                   {/* Nombre */}
                   <div className="pl-4 py-3 min-w-0">
                     <p className="text-[13px] font-medium truncate leading-tight">{p.nombre}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {p.codigo && (
                         <p className="text-[11px] text-muted-foreground font-mono">{p.codigo}</p>
+                      )}
+                      {p.categoriaId && mapaCategorias.has(p.categoriaId) && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary/90 leading-none">
+                          {mapaCategorias.get(p.categoriaId)}
+                        </span>
                       )}
                       {/* Stock en mobile */}
                       <p className={cn(

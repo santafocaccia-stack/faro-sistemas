@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
@@ -20,53 +21,62 @@ type RequireSessionOpts = {
   allowExpired?: boolean;
 };
 
-export async function requireSession(opts?: RequireSessionOpts): Promise<Session> {
+/**
+ * Obtiene la sesión del usuario autenticado.
+ * Memoizado con react/cache() para que múltiples llamadas en el mismo
+ * request tree (layout + page + server actions) ejecuten 1 sola vez.
+ * Un JOIN reemplaza las 2 consultas secuenciales originales.
+ */
+const getSessionData = cache(async (): Promise<Session | null> => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/login');
+  if (!user) return null;
 
-  const memberships = await db
-    .select()
+  // JOIN: una sola consulta en lugar de dos secuenciales
+  const [row] = await db
+    .select({
+      tenantId:     usersTenants.tenantId,
+      rol:          usersTenants.rol,
+      tenantNombre: tenants.nombre,
+      status:       tenants.status,
+      trialEnd:     tenants.trialEnd,
+      plan:         tenants.plan,
+    })
     .from(usersTenants)
+    .innerJoin(tenants, eq(tenants.id, usersTenants.tenantId))
     .where(eq(usersTenants.userId, user.id))
     .limit(1);
 
-  const membership = memberships[0];
-  if (!membership) redirect('/onboarding');
+  if (!row) return null;
 
-  const [tenant] = await db
-    .select({
-      nombre: tenants.nombre,
-      status: tenants.status,
-      trialEnd: tenants.trialEnd,
-      plan: tenants.plan,
-    })
-    .from(tenants)
-    .where(eq(tenants.id, membership.tenantId))
-    .limit(1);
+  return {
+    userId:       user.id,
+    email:        user.email!,
+    tenantId:     row.tenantId,
+    tenantNombre: row.tenantNombre,
+    rol:          row.rol,
+    plan:         row.plan as PlanId,
+    status:       row.status,
+    trialEnd:     row.trialEnd,
+  };
+});
 
-  if (!tenant) redirect('/onboarding');
+export async function requireSession(opts?: RequireSessionOpts): Promise<Session> {
+  const session = await getSessionData();
+
+  if (!session) redirect('/login');
 
   if (!opts?.allowExpired) {
     const now = new Date();
-    const trialExpired = tenant.status === 'trial' && tenant.trialEnd && tenant.trialEnd < now;
-    const blocked = tenant.status === 'suspendido' || tenant.status === 'cancelado';
+    const trialExpired = session.status === 'trial' && session.trialEnd && session.trialEnd < now;
+    const blocked = session.status === 'suspendido' || session.status === 'cancelado';
     if (trialExpired || blocked) redirect('/planes');
   }
 
-  return {
-    userId: user.id,
-    email: user.email!,
-    tenantId: membership.tenantId,
-    tenantNombre: tenant.nombre,
-    rol: membership.rol,
-    plan: tenant.plan as PlanId,
-    status: tenant.status,
-    trialEnd: tenant.trialEnd,
-  };
+  return session;
 }
 
 export async function requireRol(rolesPermitidos: Rol[]): Promise<Session> {

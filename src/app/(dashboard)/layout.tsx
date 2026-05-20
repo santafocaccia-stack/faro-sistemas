@@ -1,15 +1,9 @@
 import Link from 'next/link';
 import { requireSession } from '@/server/auth/session';
-import { listarProductos } from '@/server/actions/productos';
-import { listarClientes } from '@/server/actions/clientes';
 import { DashboardShell } from '@/components/dashboard-shell';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
-  const [productos, clientes] = await Promise.all([
-    listarProductos({ soloActivos: true }),
-    listarClientes(),
-  ]);
 
   const diasRestantes = session.trialEnd
     ? Math.ceil((new Date(session.trialEnd).getTime() - Date.now()) / 86_400_000)
@@ -39,8 +33,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           email={session.email}
           plan={session.plan}
           tenantNombre={session.tenantNombre}
-          productos={productos}
-          clientes={clientes}
         >
           {children}
         </DashboardShell>

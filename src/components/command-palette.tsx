@@ -9,17 +9,19 @@ import {
 } from 'lucide-react';
 import type { Producto, Cliente } from '@/server/db/schema';
 import { formatARS } from '@/lib/utils';
+import { listarProductos } from '@/server/actions/productos';
+import { listarClientes } from '@/server/actions/clientes';
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  productos: Producto[];
-  clientes: Cliente[];
 };
 
-export function CommandPalette({ open, onOpenChange, productos, clientes }: Props) {
+export function CommandPalette({ open, onOpenChange }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
 
   function go(path: string) {
     onOpenChange(false);
@@ -27,9 +29,21 @@ export function CommandPalette({ open, onOpenChange, productos, clientes }: Prop
     router.push(path);
   }
 
-  // Limpiar búsqueda al cerrar
+  // Limpiar búsqueda al cerrar; cargar datos al abrir (lazy)
   useEffect(() => {
-    if (!open) setSearch('');
+    if (!open) {
+      setSearch('');
+      return;
+    }
+    let cancelado = false;
+    Promise.all([listarProductos({ soloActivos: true }), listarClientes()])
+      .then(([prods, clis]) => {
+        if (cancelado) return;
+        setProductos(prods);
+        setClientes(clis);
+      })
+      .catch(() => { /* silencioso — el palette sigue funcionando para navegar */ });
+    return () => { cancelado = true; };
   }, [open]);
 
   if (!open) return null;

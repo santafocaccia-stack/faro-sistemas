@@ -1,25 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { MobileBottomNav } from './mobile-bottom-nav';
-import { CommandPalette } from './command-palette';
 import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
-import type { Producto, Cliente } from '@/server/db/schema';
 import type { PlanId } from '@/lib/planes';
+
+// CommandPalette se carga de forma lazy: el bundle principal no la incluye.
+// Los datos (productos/clientes) se cargan en el propio componente solo cuando se abre.
+const CommandPalette = dynamic(
+  () => import('./command-palette').then((m) => ({ default: m.CommandPalette })),
+  { ssr: false },
+);
 
 type Props = {
   email: string;
   plan: PlanId;
   tenantNombre: string;
-  productos: Producto[];
-  clientes: Cliente[];
   children: React.ReactNode;
 };
 
-export function DashboardShell({ email, plan, tenantNombre, productos, clientes, children }: Props) {
+export function DashboardShell({ email, plan, tenantNombre, children }: Props) {
   const [openCmd, setOpenCmd] = useState(false);
   const pathname = usePathname();
   const esPos = pathname === '/dashboard/ventas';
@@ -64,12 +68,13 @@ export function DashboardShell({ email, plan, tenantNombre, productos, clientes,
       {/* Bottom navigation — solo mobile, oculto en POS */}
       <MobileBottomNav email={email} />
 
-      <CommandPalette
-        open={openCmd}
-        onOpenChange={setOpenCmd}
-        productos={productos}
-        clientes={clientes}
-      />
+      {/* Solo se monta (y carga su chunk JS) cuando el usuario abre ⌘K */}
+      {openCmd && (
+        <CommandPalette
+          open={openCmd}
+          onOpenChange={setOpenCmd}
+        />
+      )}
       <Toaster />
     </div>
   );

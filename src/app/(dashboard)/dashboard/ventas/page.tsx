@@ -1,12 +1,14 @@
 import { listarProductos } from '@/server/actions/productos';
 import { listarClientes } from '@/server/actions/clientes';
+import { listarCategorias } from '@/server/actions/categorias';
 import { obtenerTenant } from '@/server/actions/config';
 import { PosContainer } from '@/components/pos/pos-container';
 
 export default async function VentasPage() {
-  const [productos, clientes, tenant] = await Promise.all([
+  const [productos, clientes, categorias, tenant] = await Promise.all([
     listarProductos({ soloActivos: true }),
     listarClientes(),
+    listarCategorias(),
     obtenerTenant(),
   ]);
 
@@ -16,6 +18,7 @@ export default async function VentasPage() {
     <PosContainer
       productos={productos}
       clientes={clientes}
+      categorias={categorias}
       consumidorFinalId={consumidorFinal?.id ?? null}
       negocio={{
         nombre: tenant?.nombre ?? 'Mi negocio',

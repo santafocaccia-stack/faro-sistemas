@@ -1,10 +1,14 @@
 import Link from 'next/link';
 import { Plus, Tags } from 'lucide-react';
 import { listarProductos } from '@/server/actions/productos';
+import { listarCategorias } from '@/server/actions/categorias';
 import { ProductosListClient } from '@/components/productos-list-client';
 
 export default async function ProductosPage() {
-  const productos = await listarProductos();
+  const [productos, categorias] = await Promise.all([
+    listarProductos(),
+    listarCategorias(),
+  ]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl mx-auto space-y-6 animate-fade-up">
@@ -36,7 +40,7 @@ export default async function ProductosPage() {
         </div>
       </div>
 
-      <ProductosListClient productos={productos} />
+      <ProductosListClient productos={productos} categorias={categorias} />
     </div>
   );
 }

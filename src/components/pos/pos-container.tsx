@@ -17,11 +17,12 @@ import { PosModalCobrar } from '@/components/pos/pos-modal-cobrar';
 import { PosModalLineaSuelta } from '@/components/pos/pos-modal-linea-suelta';
 import { PostVentaModal, type VentaCompletada } from '@/components/pos/pos-modal-post-venta';
 import { PosModalSinStock, type ConfirmacionSinStock } from '@/components/pos/pos-modal-sin-stock';
-import type { Producto, Cliente } from '@/server/db/schema';
+import type { Producto, Cliente, Categoria } from '@/server/db/schema';
 
 type Props = {
   productos: Producto[];
   clientes: Cliente[];
+  categorias: Categoria[];
   consumidorFinalId: string | null;
   negocio: {
     nombre: string;
@@ -51,7 +52,7 @@ type Props = {
  *  - flex ratios (58/42) en vez de h-Xvh: el layout se autoajusta a la
  *    altura real del contenedor sin depender del viewport.
  */
-export function PosContainer({ productos, clientes, consumidorFinalId, negocio }: Props) {
+export function PosContainer({ productos, clientes, categorias, consumidorFinalId, negocio }: Props) {
   // ── Store del carrito ────────────────────────────────────────
   const items = usePosCart((s) => s.items);
   const canal = usePosCart((s) => s.canal);
@@ -73,6 +74,8 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
 
   // ── Estado UI local ──────────────────────────────────────────
   const [busqueda, setBusqueda] = useState('');
+  const [busquedaFocused, setBusquedaFocused] = useState(false);
+  const [categoriaFiltroPos, setCategoriaFiltroPos] = useState<string | null>(null);
   const [modalCobrar, setModalCobrar] = useState(false);
   const [modalLineaSuelta, setModalLineaSuelta] = useState(false);
   const [ventaCompletada, setVentaCompletada] = useState<VentaCompletada | null>(null);
@@ -115,6 +118,19 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
     [productos],
   );
 
+  /** Mapa { categoriaId → nombre } */
+  const mapaCategorias = useMemo(() => {
+    const m = new Map<string, string>();
+    categorias.forEach((c) => m.set(c.id, c.nombre));
+    return m;
+  }, [categorias]);
+
+  /** Categorías que tienen al menos un producto activo */
+  const categoriasConProductos = useMemo(() => {
+    const usadas = new Set(productosActivos.map((p) => p.categoriaId).filter(Boolean));
+    return categorias.filter((c) => usadas.has(c.id));
+  }, [categorias, productosActivos]);
+
   /** Mapa { productoId → { minorista, mayorista } } para lookup rápido al cambiar canal */
   const mapaPrecios = useMemo(() => {
     const m = new Map<string, { minorista: number; mayorista: number }>();
@@ -144,15 +160,24 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
 
   const resultadosBusqueda = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    if (!q) return [] as Producto[];
-    return productosActivos
-      .filter((p) => {
+    // Sin texto ni categoría → no hay resultados que mostrar
+    if (!q && !categoriaFiltroPos) return [] as Producto[];
+    let lista = productosActivos;
+    if (categoriaFiltroPos) {
+      lista = lista.filter((p) => p.categoriaId === categoriaFiltroPos);
+    }
+    if (q) {
+      lista = lista.filter((p) => {
         const matchNombre = p.nombre.toLowerCase().includes(q);
         const matchCodigo = p.codigo?.toLowerCase().includes(q);
         return matchNombre || matchCodigo;
-      })
-      .slice(0, 8);
-  }, [productosActivos, busqueda]);
+      });
+    }
+    return lista.slice(0, 20);
+  }, [productosActivos, busqueda, categoriaFiltroPos]);
+
+  /** ¿Mostrar el panel de búsqueda? (chips + dropdown) */
+  const panelBusquedaVisible = busquedaFocused || busqueda.trim() !== '' || categoriaFiltroPos !== null;
 
   /**
    * Agrega un producto al carrito con chequeo de stock.
@@ -394,6 +419,8 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
               placeholder={modoEscaneo ? 'O buscá manualmente...' : 'Buscar producto o escanear código...'}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
+              onFocus={() => setBusquedaFocused(true)}
+              onBlur={() => setTimeout(() => setBusquedaFocused(false), 150)}
             />
             {/* Botón cámara — solo mobile */}
             <button
@@ -415,52 +442,106 @@ export function PosContainer({ productos, clientes, consumidorFinalId, negocio }
               <span>scanner USB</span>
             </span>
 
-            {/* Dropdown de resultados */}
+            {/* Panel de búsqueda — chips de categoría + resultados */}
             <AnimatePresence>
-              {busqueda.trim() && (
+              {panelBusquedaVisible && (
                 <motion.div
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-40 max-h-[280px] overflow-y-auto"
+                  className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-40 flex flex-col max-h-[55vh]"
+                  // Evita que el input pierda foco al tocar dentro del panel
+                  onMouseDown={(e) => e.preventDefault()}
                 >
-                  {resultadosBusqueda.length > 0 ? (
-                    resultadosBusqueda.map((p) => {
-                      const precio = Number(esMayorista ? p.precioMayorista : p.precioMinorista);
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => agregarDesdeResultado(p)}
-                          className="w-full flex items-center justify-between px-3.5 py-2.5 text-left hover:bg-muted/50 transition-colors border-b border-border/40 last:border-b-0"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[13px] font-medium truncate">{p.nombre}</p>
-                            {p.codigo && (
-                              <p className="text-[10px] text-muted-foreground/60 font-mono">{p.codigo}</p>
-                            )}
-                          </div>
-                          <p className="font-mono tabular-nums text-[13px] font-semibold ml-3">
-                            {formatARS(precio)}
-                          </p>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="p-3">
-                      <p className="text-xs text-muted-foreground text-center">
-                        Sin resultados para &quot;{busqueda}&quot;
-                      </p>
+                  {/* Chips de categoría */}
+                  {categoriasConProductos.length > 0 && (
+                    <div className="shrink-0 flex gap-1.5 overflow-x-auto no-scrollbar px-2.5 py-2 border-b border-border/50">
                       <button
                         type="button"
-                        onClick={() => { setModalLineaSuelta(true); setBusqueda(''); }}
-                        className="w-full mt-2 px-3 h-8 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        onClick={() => setCategoriaFiltroPos(null)}
+                        className={cn(
+                          'shrink-0 px-2.5 h-7 rounded-full text-[11px] font-medium transition-colors whitespace-nowrap',
+                          categoriaFiltroPos === null
+                            ? 'bg-foreground text-background'
+                            : 'bg-muted/60 text-muted-foreground hover:text-foreground',
+                        )}
                       >
-                        + Agregar como línea suelta
+                        Todas
                       </button>
+                      {categoriasConProductos.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setCategoriaFiltroPos(categoriaFiltroPos === c.id ? null : c.id)}
+                          className={cn(
+                            'shrink-0 px-2.5 h-7 rounded-full text-[11px] font-medium transition-colors whitespace-nowrap',
+                            categoriaFiltroPos === c.id
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted/60 text-muted-foreground hover:text-foreground',
+                          )}
+                        >
+                          {c.nombre}
+                        </button>
+                      ))}
                     </div>
                   )}
+
+                  {/* Resultados */}
+                  <div className="overflow-y-auto">
+                    {resultadosBusqueda.length > 0 ? (
+                      resultadosBusqueda.map((p) => {
+                        const precio = Number(esMayorista ? p.precioMayorista : p.precioMinorista);
+                        const catNombre = p.categoriaId ? mapaCategorias.get(p.categoriaId) : null;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => agregarDesdeResultado(p)}
+                            className="w-full flex items-center justify-between px-3.5 py-2.5 text-left hover:bg-muted/50 transition-colors border-b border-border/40 last:border-b-0"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[13px] font-medium truncate">{p.nombre}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                {p.codigo && (
+                                  <span className="text-[10px] text-muted-foreground/60 font-mono">{p.codigo}</span>
+                                )}
+                                {catNombre && (
+                                  <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary/80 leading-none">
+                                    {catNombre}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <p className="font-mono tabular-nums text-[13px] font-semibold ml-3">
+                              {formatARS(precio)}
+                            </p>
+                          </button>
+                        );
+                      })
+                    ) : busqueda.trim() ? (
+                      <div className="p-3">
+                        <p className="text-xs text-muted-foreground text-center">
+                          Sin resultados para &quot;{busqueda}&quot;
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => { setModalLineaSuelta(true); setBusqueda(''); }}
+                          className="w-full mt-2 px-3 h-8 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          + Agregar como línea suelta
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center">
+                        <p className="text-xs text-muted-foreground">
+                          {categoriaFiltroPos
+                            ? 'No hay productos en esta categoría'
+                            : 'Escribí para buscar o elegí una categoría'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
