@@ -5,6 +5,7 @@ import { db } from '@/server/db';
 import { users, usersTenants, type Rol } from '@/server/db/schema';
 import { requireSession, requireRol } from '@/server/auth/session';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
 
 /* ── Tipos ── */
@@ -66,8 +67,7 @@ export async function invitarMiembro(input: InviteInput) {
 
   // Usar Admin API para enviar la invitación
   const admin = createAdminClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) throw new Error('NEXT_PUBLIC_APP_URL no está configurada — los emails de invitación no pueden enviarse sin la URL de la app');
+  const appUrl = getAppUrl();
 
   // redirectTo apunta a /reset-password: tras hacer click en el email,
   // el invitado define su contraseña y recién entra al dashboard.

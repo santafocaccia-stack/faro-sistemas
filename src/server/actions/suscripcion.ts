@@ -7,9 +7,9 @@ import { db } from '@/server/db';
 import { tenants } from '@/server/db/schema';
 import { PLANES, type PlanId } from '@/lib/planes';
 import { getDolarMep } from '@/lib/dolar';
+import { getAppUrl } from '@/lib/app-url';
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!;
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://gesto.app';
 
 export async function crearSuscripcionMP(planId: PlanId) {
   const session = await requireSession({ allowExpired: true });
@@ -28,7 +28,7 @@ export async function crearSuscripcionMP(planId: PlanId) {
       transaction_amount: montoArs,
       currency_id: 'ARS',
     },
-    back_url: `${APP_URL}/planes/callback`,
+    back_url: `${getAppUrl()}/planes/callback`,
     status: 'pending',
   };
 

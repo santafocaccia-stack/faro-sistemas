@@ -3,10 +3,11 @@ import { eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/server/db';
 import { tenants, usersTenants } from '@/server/db/schema';
+import { getAppUrl } from '@/lib/app-url';
 
 const MP_APP_ID     = process.env.MP_APP_ID!;
 const MP_SECRET     = process.env.MP_CLIENT_SECRET!;
-const APP_URL       = process.env.NEXT_PUBLIC_APP_URL ?? 'https://gesto.app';
+const APP_URL       = getAppUrl();
 const REDIRECT_URI  = `${APP_URL}/api/mp-oauth/callback`;
 
 export async function GET(req: NextRequest) {
