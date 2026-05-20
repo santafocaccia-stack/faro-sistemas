@@ -91,7 +91,10 @@ export function EquipoForm({ equipo, miRol, miUserId }: Props) {
       {showInvite && (
         <form onSubmit={handleInvitar} className="px-5 py-4 border-b border-border/60 bg-muted/30 space-y-3">
           <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.06em]">Nueva invitación</p>
-          <div className="flex gap-2">
+
+          {/* Email — fila propia, ancho completo */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-medium text-muted-foreground">Email del nuevo miembro</label>
             <Input
               type="email"
               placeholder="email@ejemplo.com"
@@ -99,25 +102,44 @@ export function EquipoForm({ equipo, miRol, miUserId }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
-              className="h-8 text-sm bg-background/60 border-border/60 flex-1"
+              className="h-10 text-sm bg-background/60 border-border/60 w-full"
             />
-            <Select value={rolInvite} onValueChange={(v) => setRolInvite(v as Rol)}>
-              <SelectTrigger className="h-8 text-sm bg-background/60 border-border/60 w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="empleado">Empleado</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                {miRol === 'owner' && <SelectItem value="owner">Dueño</SelectItem>}
-              </SelectContent>
-            </Select>
-            <Button type="submit" size="sm" disabled={isPending} className="h-8 glow-primary">
-              Enviar
-            </Button>
-            <Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => setShowInvite(false)}>
-              Cancelar
-            </Button>
           </div>
+
+          {/* Rol + acciones */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="space-y-1.5 sm:w-40">
+              <label className="text-[11px] font-medium text-muted-foreground">Rol</label>
+              <Select value={rolInvite} onValueChange={(v) => setRolInvite(v as Rol)}>
+                <SelectTrigger className="h-10 text-sm bg-background/60 border-border/60 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="empleado">Empleado</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  {miRol === 'owner' && <SelectItem value="owner">Dueño</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 sm:flex-1 sm:items-end">
+              <Button
+                type="submit"
+                disabled={isPending || !email.trim()}
+                className="h-10 glow-primary flex-1 sm:flex-none"
+              >
+                {isPending ? 'Enviando...' : 'Enviar invitación'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-10"
+                onClick={() => setShowInvite(false)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+
           <p className="text-[11px] text-muted-foreground">
             El usuario recibirá un email para confirmar su cuenta y acceder al sistema.
           </p>
