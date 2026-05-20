@@ -60,15 +60,12 @@ function armarMensajePedido(
   return msg;
 }
 
-/** Extrae un teléfono usable para wa.me del campo contacto del proveedor */
-function telefonoParaWhatsApp(contacto: string | null): string {
-  if (!contacto) return '';
-  const digitos = contacto.replace(/\D/g, '');
-  // Solo pre-llenamos el destinatario si parece un número argentino
-  // completo (empieza con 54). Si no, abrimos WhatsApp sin destinatario
-  // y el usuario elige el contacto — evita mandar a un número equivocado.
-  if (digitos.startsWith('54') && digitos.length >= 12) return digitos;
-  return '';
+/** Normaliza el teléfono del proveedor para wa.me (solo dígitos) */
+function telefonoParaWhatsApp(telefono: string | null): string {
+  if (!telefono) return '';
+  const digitos = telefono.replace(/\D/g, '');
+  // El campo telefono ya viene en formato internacional con código de país.
+  return digitos.length >= 8 ? digitos : '';
 }
 
 export function PedidoDetalle({ data, negocioNombre }: Props) {
@@ -133,7 +130,7 @@ export function PedidoDetalle({ data, negocioNombre }: Props) {
       cantidades,
       notas,
     );
-    const telefono = telefonoParaWhatsApp(proveedor.contacto);
+    const telefono = telefonoParaWhatsApp(proveedor.telefono);
     const url = telefono
       ? `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`
       : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
@@ -314,7 +311,7 @@ export function PedidoDetalle({ data, negocioNombre }: Props) {
           </div>
           <p className="text-[11px] text-muted-foreground/70">
             Al enviar por WhatsApp el pedido se arma como mensaje y se marca como enviado.
-            {!proveedor.contacto && ' Como el proveedor no tiene teléfono cargado, vas a elegir el contacto en WhatsApp.'}
+            {!proveedor.telefono && ' El proveedor no tiene teléfono cargado — vas a elegir el contacto en WhatsApp. Podés agregarlo desde la ficha del proveedor.'}
           </p>
         </div>
       )}

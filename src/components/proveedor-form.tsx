@@ -3,9 +3,10 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Truck, Phone, Calendar, Percent } from 'lucide-react';
+import { Truck, Phone, Calendar, Percent, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { crearProveedor, actualizarProveedor, desactivarProveedor } from '@/server/actions/proveedores';
 import type { Proveedor } from '@/server/db/schema';
 
@@ -28,6 +29,7 @@ export function ProveedorForm({ proveedor }: Props) {
 
   const [nombre, setNombre] = useState(proveedor?.nombre ?? '');
   const [contacto, setContacto] = useState(proveedor?.contacto ?? '');
+  const [telefono, setTelefono] = useState(proveedor?.telefono ?? '');
   const [dias, setDias] = useState<string[]>(proveedor?.diasPedido ?? []);
   const [markupMay, setMarkupMay] = useState(proveedor?.markupMayorista ?? '0');
   const [markupMin, setMarkupMin] = useState(proveedor?.markupMinorista ?? '0');
@@ -48,6 +50,7 @@ export function ProveedorForm({ proveedor }: Props) {
     const input = {
       nombre,
       contacto: contacto || null,
+      telefono: telefono || null,
       diasPedido: dias,
       markupMayorista: markupMay || '0',
       markupMinorista: markupMin || '0',
@@ -106,14 +109,25 @@ export function ProveedorForm({ proveedor }: Props) {
 
         <div className="space-y-1.5">
           <label className={labelCls}>
+            <MessageCircle className="inline h-3 w-3 mr-1" />
+            Teléfono / WhatsApp
+          </label>
+          <PhoneInput value={telefono} onChange={setTelefono} />
+          <p className="text-[11px] text-muted-foreground/60">
+            Se usa para enviar los pedidos directo por WhatsApp.
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className={labelCls}>
             <Phone className="inline h-3 w-3 mr-1" />
-            Contacto
-            <span className="ml-1 normal-case text-muted-foreground/40">(teléfono o mail)</span>
+            Persona de contacto
+            <span className="ml-1 normal-case text-muted-foreground/40">(opcional)</span>
           </label>
           <Input
             value={contacto}
             onChange={(e) => setContacto(e.target.value)}
-            placeholder="11 1234-5678"
+            placeholder="Ej: Juan — encargado de ventas"
             className={inputCls}
           />
         </div>

@@ -15,6 +15,9 @@ export const proveedores = pgTable(
 
     nombre: text('nombre').notNull(),
     contacto: text('contacto'),
+    // Teléfono en formato internacional (dígitos con código de país, ej: 5491112345678)
+    // Listo para armar links de WhatsApp.
+    telefono: text('telefono'),
 
     // Días de la semana para pedir: ['lunes', 'miercoles', ...]
     diasPedido: text('dias_pedido').array().notNull().default(sql`ARRAY[]::text[]`),

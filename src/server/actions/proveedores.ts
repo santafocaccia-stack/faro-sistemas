@@ -12,6 +12,7 @@ import { requireSession } from '@/server/auth/session';
 export type ProveedorInput = {
   nombre: string;
   contacto?: string | null;
+  telefono?: string | null;
   diasPedido: string[];
   markupMayorista: string;
   markupMinorista: string;
@@ -57,6 +58,7 @@ export async function crearProveedor(input: ProveedorInput) {
       tenantId: session.tenantId,
       nombre: input.nombre.trim(),
       contacto: input.contacto?.trim() || null,
+      telefono: input.telefono?.trim() || null,
       diasPedido: input.diasPedido,
       markupMayorista: input.markupMayorista,
       markupMinorista: input.markupMinorista,
@@ -73,6 +75,7 @@ export async function actualizarProveedor(id: string, input: ProveedorInput) {
     .set({
       nombre: input.nombre.trim(),
       contacto: input.contacto?.trim() || null,
+      telefono: input.telefono?.trim() || null,
       diasPedido: input.diasPedido,
       markupMayorista: input.markupMayorista,
       markupMinorista: input.markupMinorista,
