@@ -69,8 +69,11 @@ export async function invitarMiembro(input: InviteInput) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (!appUrl) throw new Error('NEXT_PUBLIC_APP_URL no está configurada — los emails de invitación no pueden enviarse sin la URL de la app');
 
+  // redirectTo apunta a /reset-password: tras hacer click en el email,
+  // el invitado define su contraseña y recién entra al dashboard.
+  // Sin esto, el invitado solo podría entrar con el link de un solo uso.
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${appUrl}/auth/callback?next=/dashboard`,
+    redirectTo: `${appUrl}/auth/callback?next=/reset-password`,
     data: {
       invited_tenant_id: session.tenantId,
       invited_rol: input.rol,
