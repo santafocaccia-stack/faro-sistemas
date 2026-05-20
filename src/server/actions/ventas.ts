@@ -41,7 +41,9 @@ async function siguienteNumero(tenantId: string, canal: CanalVenta, tx: any): Pr
   return (row?.max ?? 0) + 1;
 }
 
-export async function crearVenta(input: NuevaVentaInput) {
+export async function crearVenta(
+  input: NuevaVentaInput,
+): Promise<{ id: string; numero: number; total: string }> {
   const session = await requireSession();
   const parsed = nuevaVentaSchema.safeParse(input);
   if (!parsed.success) throw new Error(formatZodError(parsed.error));
@@ -51,6 +53,8 @@ export async function crearVenta(input: NuevaVentaInput) {
     input.lineas,
     Number(input.descuento ?? 0),
   );
+
+  let ventaCreada: { id: string; numero: number } | null = null;
 
   await db.transaction(async (tx) => {
     const numero = await siguienteNumero(session.tenantId, input.canal, tx);
@@ -73,6 +77,7 @@ export async function crearVenta(input: NuevaVentaInput) {
     }).returning({ id: ventas.id });
 
     if (!venta) throw new Error('No se pudo crear la venta');
+    ventaCreada = { id: venta.id, numero };
 
     // Líneas
     await tx.insert(ventasLineas).values(
@@ -212,6 +217,13 @@ export async function crearVenta(input: NuevaVentaInput) {
 
   revalidatePath(`/dashboard/ventas/${input.canal}`);
   revalidatePath('/dashboard/clientes');
+
+  if (!ventaCreada) throw new Error('No se pudo crear la venta');
+  return {
+    id: (ventaCreada as { id: string; numero: number }).id,
+    numero: (ventaCreada as { id: string; numero: number }).numero,
+    total: total.toFixed(2),
+  };
 }
 
 const PAGE_SIZE = 30;

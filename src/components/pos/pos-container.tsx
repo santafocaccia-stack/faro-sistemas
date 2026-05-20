@@ -15,12 +15,19 @@ import { beep, beepError, vibrar, sonidoHabilitado, setSonidoHabilitado } from '
 import { PosScanner } from '@/components/pos/pos-scanner';
 import { PosModalCobrar } from '@/components/pos/pos-modal-cobrar';
 import { PosModalLineaSuelta } from '@/components/pos/pos-modal-linea-suelta';
+import { PostVentaModal, type VentaCompletada } from '@/components/pos/pos-modal-post-venta';
 import type { Producto, Cliente } from '@/server/db/schema';
 
 type Props = {
   productos: Producto[];
   clientes: Cliente[];
   consumidorFinalId: string | null;
+  negocio: {
+    nombre: string;
+    cuit: string | null;
+    direccion: string | null;
+    telefono: string | null;
+  };
 };
 
 /**
@@ -43,7 +50,7 @@ type Props = {
  *  - flex ratios (58/42) en vez de h-Xvh: el layout se autoajusta a la
  *    altura real del contenedor sin depender del viewport.
  */
-export function PosContainer({ productos, clientes, consumidorFinalId }: Props) {
+export function PosContainer({ productos, clientes, consumidorFinalId, negocio }: Props) {
   // ── Store del carrito ────────────────────────────────────────
   const items = usePosCart((s) => s.items);
   const canal = usePosCart((s) => s.canal);
@@ -67,6 +74,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
   const [busqueda, setBusqueda] = useState('');
   const [modalCobrar, setModalCobrar] = useState(false);
   const [modalLineaSuelta, setModalLineaSuelta] = useState(false);
+  const [ventaCompletada, setVentaCompletada] = useState<VentaCompletada | null>(null);
   const [sonido, setSonido] = useState(true);
   const [isPending, startTransition] = useTransition();
   const enviandoRef = useRef(false);
@@ -230,9 +238,18 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
       subtotal: String(it.precio * it.cantidad),
     }));
 
+    // Snapshot del carrito antes de vaciar — usado por el modal post-venta
+    const lineasSnapshot = items.map((it) => ({
+      descripcion: it.nombre,
+      cantidad: it.cantidad,
+      precioUnitario: it.precio,
+      subtotal: it.precio * it.cantidad,
+    }));
+    const totalSnapshot = total - Number(payload.descuento ?? 0);
+
     startTransition(async () => {
       try {
-        await crearVenta({
+        const result = await crearVenta({
           canal,
           clienteId,
           tipoPago: payload.tipoPago,
@@ -243,12 +260,23 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
           descuento: payload.descuento,
           notas: payload.notas,
         });
-        toast.success('¡Venta registrada!', { icon: '✓' });
+
         beep({ frecuencia: 1320, duracion: 0.1 });
         setTimeout(() => beep({ frecuencia: 1760, duracion: 0.12 }), 100);
-        vaciar();
+
+        // Cerrar modal cobrar y abrir modal post-venta con datos del ticket
         setModalCobrar(false);
-        searchRef.current?.focus();
+        setVentaCompletada({
+          id: result.id,
+          numero: result.numero,
+          total: totalSnapshot,
+          canal,
+          clienteNombre: clienteSeleccionado?.razonSocial ?? 'Consumidor final',
+          metodoPago: payload.tipoPago === 'contado' ? payload.metodoPago : 'cuenta corriente',
+          fecha: new Date(),
+          lineas: lineasSnapshot,
+          negocio,
+        });
       } catch (err) {
         beepError();
         toast.error(err instanceof Error ? err.message : 'Error al cobrar');
@@ -256,6 +284,13 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
         enviandoRef.current = false;
       }
     });
+  }
+
+  /** Cerrar modal post-venta y limpiar carrito para próxima venta */
+  function handleSeguirVendiendo() {
+    setVentaCompletada(null);
+    vaciar();
+    searchRef.current?.focus();
   }
 
   function toggleSonido() {
@@ -269,7 +304,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
   // RENDER
   // ─────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="screen-only flex flex-col h-full bg-background">
 
       {/* ═══════════════════════════════════════════════════════
           HEADER STICKY — canal + cliente + búsqueda
@@ -526,6 +561,13 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
           beep();
           searchRef.current?.focus();
         }}
+      />
+
+      {/* Modal post-venta — ticket + imprimir + compartir */}
+      <PostVentaModal
+        venta={ventaCompletada}
+        onCerrar={() => setVentaCompletada(null)}
+        onSeguirVendiendo={handleSeguirVendiendo}
       />
     </div>
   );
