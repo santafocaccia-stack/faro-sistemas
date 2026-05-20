@@ -13,8 +13,13 @@ test.describe('Reportes', () => {
   });
 
   test('muestra KPIs del período', async ({ page }) => {
-    // Debe haber al menos un número con formato de pesos
-    await expect(page.locator('text=/\\$[0-9]/').first()).toBeVisible({ timeout: 10_000 });
+    // formatARS() usa Intl con 'es-AR': inserta   (non-breaking space) entre $ y el número.
+    // Buscamos los <p> con class font-mono y tabular-nums que contienen los valores KPI.
+    const kpiVal = page.locator('p.font-mono.tabular-nums').first();
+    await expect(kpiVal).toBeVisible({ timeout: 10_000 });
+    // Debe contener el símbolo $ (cualquier formato de espacio)
+    const text = await kpiVal.textContent();
+    expect(text).toContain('$');
   });
 
   test('botón exportar CSV existe', async ({ page }) => {

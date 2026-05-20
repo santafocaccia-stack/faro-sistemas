@@ -33,7 +33,7 @@ test.describe('Clientes', () => {
     await expect(firstClientLink).toBeVisible({ timeout: 8_000 });
     await firstClientLink.click();
     await expect(page).toHaveURL(/\/clientes\/.+/, { timeout: 8_000 });
-    // La ficha muestra la columna "Saldo" o "Cuenta corriente"
-    await expect(page.locator('text=/saldo|cuenta corriente/i')).toBeVisible({ timeout: 8_000 });
+    // La ficha muestra un label "Saldo deudor" (p con clase uppercase)
+    await expect(page.locator('p').filter({ hasText: /Saldo/i }).first()).toBeVisible({ timeout: 8_000 });
   });
 });

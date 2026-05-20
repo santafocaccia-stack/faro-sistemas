@@ -11,10 +11,11 @@ test.describe('Dashboard', () => {
   });
 
   test('muestra los 3 KPI cards (Hoy / Semana / Cobros)', async ({ page }) => {
-    // Cada card tiene un <p> con label "Hoy", "Semana" o "Cobros" en uppercase
-    await expect(page.locator('p').filter({ hasText: /^Hoy$/ })).toBeVisible({ timeout: 8_000 });
-    await expect(page.locator('p').filter({ hasText: /^Semana$/ })).toBeVisible();
-    await expect(page.locator('p').filter({ hasText: /^Cobros$/ })).toBeVisible();
+    // Cada card tiene un <p> con label. Usamos .first() para evitar strict-mode
+    // si por casualidad hay más de un elemento con ese texto en la página.
+    await expect(page.locator('p').filter({ hasText: /^Hoy$/ }).first()).toBeVisible({ timeout: 8_000 });
+    await expect(page.locator('p').filter({ hasText: /^Semana$/ }).first()).toBeVisible();
+    await expect(page.locator('p').filter({ hasText: /^Cobros$/ }).first()).toBeVisible();
   });
 
   test('botón VENDER está visible y lleva al POS', async ({ page }) => {

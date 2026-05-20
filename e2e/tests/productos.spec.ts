@@ -32,11 +32,13 @@ test.describe('Productos', () => {
 
   test('form de nuevo producto tiene los campos requeridos', async ({ page }) => {
     await page.goto('/dashboard/productos/nuevo');
-    await page.waitForLoadState('networkidle');
+    // Esperar a que el cliente hidrate y el formulario esté listo
+    await page.waitForSelector('#nombre', { timeout: 10_000 });
 
     await expect(page.locator('#nombre')).toBeVisible();
     // Los campos de precio tienen id precioMayorista / precioMinorista
-    await expect(page.locator('#precioMayorista').or(page.locator('#precioMinorista'))).toBeVisible();
+    await expect(page.locator('#precioMayorista')).toBeVisible();
+    await expect(page.locator('#precioMinorista')).toBeVisible();
     await expect(page.getByRole('button', { name: /guardar|crear/i })).toBeVisible();
   });
 
