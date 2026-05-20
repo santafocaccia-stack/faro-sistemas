@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  Search, ScanLine, Store, Users2, ShoppingCart, X,
+  Search, ScanLine, Store, Users2, ShoppingCart,
   Plus, Minus, Trash2, User, Settings2, Volume2, VolumeX,
+  ChevronDown,
 } from 'lucide-react';
 import { usePosCart, selectTotal, selectCantidadItems, type LineaCart } from '@/lib/stores/pos-cart';
 import { crearVenta, type LineaVenta } from '@/server/actions/ventas';
@@ -22,6 +23,26 @@ type Props = {
   consumidorFinalId: string | null;
 };
 
+/**
+ * POS principal — layout flex determinístico mobile-first.
+ *
+ * Estructura del DOM (de arriba abajo):
+ *   ┌─ Header sticky (canal + cliente + búsqueda)         shrink-0
+ *   ├─ Cuerpo (flex-col, flex-1, min-h-0)
+ *   │    ├─ Lista de carrito (flex-1 cuando no escaneo,
+ *   │    │                    flex-[58] cuando escaneo)
+ *   │    │  overflow-y-auto + min-h-0  ← KEY para scroll correcto
+ *   │    └─ Cámara (flex-[42], relative, sólo si modoEscaneo)
+ *   └─ Footer sticky (total + COBRAR)                     shrink-0
+ *
+ * Decisiones técnicas clave:
+ *  - min-h-0 en la lista: permite que el overflow-y-auto se active dentro
+ *    de un flex container (sin esto, el child crece infinito y rompe el layout).
+ *  - Sin AnimatePresence en la cámara: animaciones de altura sobre childs
+ *    con altura propia crean inconsistencias temporales. Snap directo.
+ *  - flex ratios (58/42) en vez de h-Xvh: el layout se autoajusta a la
+ *    altura real del contenedor sin depender del viewport.
+ */
 export function PosContainer({ productos, clientes, consumidorFinalId }: Props) {
   // ── Store del carrito ────────────────────────────────────────
   const items = usePosCart((s) => s.items);
@@ -49,6 +70,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
   const [isPending, startTransition] = useTransition();
   const enviandoRef = useRef(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const listaRef = useRef<HTMLDivElement>(null);
 
   // Cliente por defecto = CF
   useEffect(() => {
@@ -62,17 +84,22 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
     setSonido(sonidoHabilitado());
   }, []);
 
+  // Auto-scroll al tope cuando se agrega un item nuevo (con cámara activa)
+  useEffect(() => {
+    if (modoEscaneo && listaRef.current) {
+      listaRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [ultimaLineaId, modoEscaneo]);
+
   // ── Derivados ────────────────────────────────────────────────
   const esMayorista = canal === 'mayorista';
   const clienteSeleccionado = clientes.find((c) => c.id === clienteId);
 
-  // Productos activos filtrables (por unidad solo, V1)
   const productosActivos = useMemo(
     () => productos.filter((p) => p.activo),
     [productos],
   );
 
-  // Resultados de búsqueda manual
   const resultadosBusqueda = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     if (!q) return [] as Producto[];
@@ -124,9 +151,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
     const MIN_LEN = 3;
 
     function onKey(e: KeyboardEvent) {
-      // Si estamos en modo cámara (mobile) ignoramos el listener de teclado
       if (modoEscaneo) return;
-      // Si hay modal abierto, no interceptar
       if (modalCobrar || modalLineaSuelta) return;
       const target = e.target as HTMLElement;
       const enInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
@@ -183,7 +208,9 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
           canal,
           clienteId,
           tipoPago: payload.tipoPago,
-          metodoPago: payload.tipoPago === 'contado' ? (payload.metodoPago as 'efectivo' | 'transferencia' | 'tarjeta_debito' | 'tarjeta_credito' | 'mercado_pago') : undefined,
+          metodoPago: payload.tipoPago === 'contado'
+            ? (payload.metodoPago as 'efectivo' | 'transferencia' | 'tarjeta_debito' | 'tarjeta_credito' | 'mercado_pago')
+            : undefined,
           lineas,
           descuento: payload.descuento,
           notas: payload.notas,
@@ -210,14 +237,19 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
     if (nuevo) beep();
   }
 
-  // ── Render ───────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)] md:h-[100dvh] bg-background">
+    <div className="flex flex-col h-full bg-background">
 
-      {/* ═══ Header sticky: canal + cliente ═══════════════════════ */}
-      <div className="shrink-0 border-b border-border/60 bg-card/80 backdrop-blur-md">
+      {/* ═══════════════════════════════════════════════════════
+          HEADER STICKY — canal + cliente + búsqueda
+         ═══════════════════════════════════════════════════════ */}
+      <header className="shrink-0 border-b border-border/60 bg-card/90 backdrop-blur-md relative z-30">
         <div className="px-3 sm:px-5 pt-3 pb-2.5 space-y-2.5 max-w-3xl mx-auto w-full">
-          {/* Canal + sonido */}
+
+          {/* Canal + toggle sonido */}
           <div className="flex items-center gap-2">
             <div className="flex gap-1 p-1 bg-muted/70 rounded-xl flex-1">
               {(['minorista', 'mayorista'] as const).map((c) => (
@@ -256,7 +288,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
             esMayorista={esMayorista}
           />
 
-          {/* Barra de búsqueda + toggle cámara */}
+          {/* Búsqueda + toggle cámara */}
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 pointer-events-none" />
             <input
@@ -264,13 +296,12 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
               id="pos-busqueda"
               type="text"
               autoComplete="off"
-              autoFocus={!modoEscaneo}
               className="w-full h-11 pl-10 pr-12 rounded-xl text-sm bg-background border border-border/60 placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
               placeholder={modoEscaneo ? 'O buscá manualmente...' : 'Buscar producto o escanear código...'}
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
-            {/* Toggle cámara — solo mobile */}
+            {/* Botón cámara — solo mobile */}
             <button
               type="button"
               onClick={() => setModoEscaneo(!modoEscaneo)}
@@ -282,7 +313,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
               )}
               aria-label={modoEscaneo ? 'Cerrar cámara' : 'Abrir cámara'}
             >
-              {modoEscaneo ? <X className="h-4 w-4" /> : <ScanLine className="h-4 w-4" />}
+              <ScanLine className="h-4 w-4" />
             </button>
             {/* Indicador desktop scanner USB */}
             <span className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-1 text-[10px] text-muted-foreground/50 pointer-events-none select-none">
@@ -290,70 +321,72 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
               <span>scanner USB</span>
             </span>
 
-            {/* Dropdown de resultados de búsqueda */}
+            {/* Dropdown de resultados */}
             <AnimatePresence>
-              {busqueda.trim() && resultadosBusqueda.length > 0 && (
+              {busqueda.trim() && (
                 <motion.div
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-30 max-h-[280px] overflow-y-auto"
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-40 max-h-[280px] overflow-y-auto"
                 >
-                  {resultadosBusqueda.map((p) => {
-                    const precio = Number(esMayorista ? p.precioMayorista : p.precioMinorista);
-                    return (
+                  {resultadosBusqueda.length > 0 ? (
+                    resultadosBusqueda.map((p) => {
+                      const precio = Number(esMayorista ? p.precioMayorista : p.precioMinorista);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => agregarDesdeResultado(p)}
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 text-left hover:bg-muted/50 transition-colors border-b border-border/40 last:border-b-0"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13px] font-medium truncate">{p.nombre}</p>
+                            {p.codigo && (
+                              <p className="text-[10px] text-muted-foreground/60 font-mono">{p.codigo}</p>
+                            )}
+                          </div>
+                          <p className="font-mono tabular-nums text-[13px] font-semibold ml-3">
+                            {formatARS(precio)}
+                          </p>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="p-3">
+                      <p className="text-xs text-muted-foreground text-center">
+                        Sin resultados para &quot;{busqueda}&quot;
+                      </p>
                       <button
-                        key={p.id}
                         type="button"
-                        onClick={() => agregarDesdeResultado(p)}
-                        className="w-full flex items-center justify-between px-3.5 py-2.5 text-left hover:bg-muted/50 transition-colors border-b border-border/40 last:border-b-0"
+                        onClick={() => { setModalLineaSuelta(true); setBusqueda(''); }}
+                        className="w-full mt-2 px-3 h-8 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                       >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-medium truncate">{p.nombre}</p>
-                          {p.codigo && (
-                            <p className="text-[10px] text-muted-foreground/60 font-mono">{p.codigo}</p>
-                          )}
-                        </div>
-                        <p className="font-mono tabular-nums text-[13px] font-semibold ml-3">
-                          {formatARS(precio)}
-                        </p>
+                        + Agregar como línea suelta
                       </button>
-                    );
-                  })}
-                </motion.div>
-              )}
-              {busqueda.trim() && resultadosBusqueda.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-30 p-3"
-                >
-                  <p className="text-xs text-muted-foreground text-center">
-                    Sin resultados para &quot;{busqueda}&quot;
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => { setModalLineaSuelta(true); setBusqueda(''); }}
-                    className="w-full mt-2 px-3 h-8 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                  >
-                    + Agregar como línea suelta
-                  </button>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* ═══ Contenido principal: lista de carrito + (cámara si modoEscaneo) ═══ */}
-      <div className="flex-1 flex flex-col overflow-hidden max-w-3xl mx-auto w-full">
+      {/* ═══════════════════════════════════════════════════════
+          CUERPO — lista + cámara (split cuando modoEscaneo)
+         ═══════════════════════════════════════════════════════ */}
+      <div className="flex-1 flex flex-col min-h-0 max-w-3xl mx-auto w-full">
 
-        {/* Lista del carrito */}
+        {/* Lista del carrito — scrollable
+            min-h-0 es CRÍTICO: sin esto el child crecería sin límite y
+            el overflow-y-auto no funcionaría dentro del flex container. */}
         <div
+          ref={listaRef}
           className={cn(
-            'overflow-y-auto px-3 sm:px-5 py-3 transition-all',
-            modoEscaneo ? 'flex-[55]' : 'flex-1',
+            'overflow-y-auto px-3 sm:px-5 py-3 min-h-0',
+            modoEscaneo ? 'flex-[58]' : 'flex-1',
           )}
         >
           {items.length === 0 ? (
@@ -375,8 +408,8 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
             </motion.ul>
           )}
 
-          {/* Línea suelta CTA — siempre visible */}
-          {items.length > 0 && !modoEscaneo && (
+          {/* Línea suelta CTA */}
+          {items.length > 0 && (
             <button
               type="button"
               onClick={() => setModalLineaSuelta(true)}
@@ -387,32 +420,29 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
           )}
         </div>
 
-        {/* Cámara — solo si modoEscaneo activo */}
-        <AnimatePresence>
-          {modoEscaneo && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="shrink-0 overflow-hidden"
-            >
-              <div className="flex-[45] h-[42vh] sm:h-[280px] border-t border-border/60">
-                <PosScanner onCodigo={manejarCodigo} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Cámara — sección inferior fija cuando modoEscaneo
+            flex-[42] = ~42% del cuerpo
+            shrink-0 = nunca se achica
+            relative = contiene el video con position absolute */}
+        {modoEscaneo && (
+          <div className="flex-[42] shrink-0 relative border-t-2 border-primary/30 overflow-hidden bg-black">
+            <PosScanner onCodigo={manejarCodigo} />
+          </div>
+        )}
       </div>
 
-      {/* ═══ Footer: total + cobrar ═══════════════════════════════ */}
-      <div className="shrink-0 border-t border-border/60 bg-card/95 backdrop-blur-md">
+      {/* ═══════════════════════════════════════════════════════
+          FOOTER STICKY — total + COBRAR (siempre visible, z-50)
+         ═══════════════════════════════════════════════════════ */}
+      <footer className="shrink-0 border-t border-border/60 bg-card/95 backdrop-blur-md relative z-50 safe-area-pb">
         <div className="px-3 sm:px-5 py-3 space-y-2 max-w-3xl mx-auto w-full">
           <div className="flex items-baseline justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Total</p>
               <p className="text-[11px] text-muted-foreground">
-                {cantidadItems === 0 ? 'Sin items' : `${cantidadItems} ${cantidadItems === 1 ? 'item' : 'items'}`}
+                {cantidadItems === 0
+                  ? 'Sin items'
+                  : `${cantidadItems} ${cantidadItems === 1 ? 'item' : 'items'}`}
               </p>
             </div>
             <TotalAnimado valor={total} />
@@ -433,9 +463,11 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
             {isPending ? 'Procesando...' : 'COBRAR'}
           </button>
         </div>
-      </div>
+      </footer>
 
-      {/* ═══ Modales ═══════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════
+          MODALES
+         ═══════════════════════════════════════════════════════ */}
       <PosModalCobrar
         open={modalCobrar}
         onClose={() => setModalCobrar(false)}
@@ -462,7 +494,7 @@ export function PosContainer({ productos, clientes, consumidorFinalId }: Props) 
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Sub-componente: Item del carrito
+// Item del carrito — con stepper animado
 // ─────────────────────────────────────────────────────────────────
 function CarritoItem({
   item, esUltimo, onMas, onMenos, onQuitar,
@@ -488,63 +520,59 @@ function CarritoItem({
           : 'border-border/60',
       )}
     >
-      <div className="flex items-stretch">
-        {/* Info producto */}
-        <div className="flex-1 min-w-0 px-3.5 py-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-[14px] font-semibold truncate leading-tight">{item.nombre}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5 font-mono tabular-nums">
-                {formatARS(item.precio)} c/u
-              </p>
-            </div>
+      <div className="px-3.5 py-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[14px] font-semibold truncate leading-tight">{item.nombre}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 font-mono tabular-nums">
+              {formatARS(item.precio)} c/u
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onQuitar}
+            className="shrink-0 h-7 w-7 -mt-0.5 -mr-1 flex items-center justify-center rounded-md text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
+            aria-label="Quitar"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between mt-2.5">
+          <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5">
             <button
               type="button"
-              onClick={onQuitar}
-              className="shrink-0 h-7 w-7 -mt-0.5 -mr-1 flex items-center justify-center rounded-md text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
-              aria-label="Quitar"
+              onClick={onMenos}
+              className="h-9 w-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-card transition-colors active:scale-95"
+              aria-label="Restar"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <AnimatePresence mode="popLayout">
+              <motion.span
+                key={item.cantidad}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 1.4, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="min-w-[2rem] text-center font-mono tabular-nums text-[14px] font-semibold"
+              >
+                {item.cantidad}
+              </motion.span>
+            </AnimatePresence>
+            <button
+              type="button"
+              onClick={onMas}
+              className="h-9 w-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-card transition-colors active:scale-95"
+              aria-label="Sumar"
+            >
+              <Plus className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          {/* Stepper + subtotal */}
-          <div className="flex items-center justify-between mt-2.5">
-            <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5">
-              <button
-                type="button"
-                onClick={onMenos}
-                className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-card transition-colors active:scale-95"
-                aria-label="Restar"
-              >
-                <Minus className="h-3.5 w-3.5" />
-              </button>
-              <AnimatePresence mode="popLayout">
-                <motion.span
-                  key={item.cantidad}
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 1.4, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="min-w-[2rem] text-center font-mono tabular-nums text-[13px] font-semibold"
-                >
-                  {item.cantidad}
-                </motion.span>
-              </AnimatePresence>
-              <button
-                type="button"
-                onClick={onMas}
-                className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-card transition-colors active:scale-95"
-                aria-label="Sumar"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-            </div>
-
-            <p className="font-mono tabular-nums text-[15px] font-bold text-foreground">
-              {formatARS(subtotal)}
-            </p>
-          </div>
+          <p className="font-mono tabular-nums text-[15px] font-bold text-foreground">
+            {formatARS(subtotal)}
+          </p>
         </div>
       </div>
     </motion.li>
@@ -552,7 +580,7 @@ function CarritoItem({
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Sub-componente: Selector de cliente compacto
+// Selector de cliente compacto
 // ─────────────────────────────────────────────────────────────────
 function ClienteSelector({
   clientes, clienteId, onChange, esMayorista,
@@ -566,7 +594,6 @@ function ClienteSelector({
   const seleccionado = clientes.find((c) => c.id === clienteId);
   const esCF = seleccionado?.esConsumidorFinal ?? false;
 
-  // Filtrar clientes según canal
   const lista = useMemo(() => {
     if (esMayorista) return clientes.filter((c) => c.tipo === 'mayorista' || c.tipo === 'ambos');
     return clientes;
@@ -600,7 +627,12 @@ function ClienteSelector({
             </p>
           </div>
         </div>
-        <Settings2 className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 text-muted-foreground/50 shrink-0 transition-transform',
+            abierto && 'rotate-180',
+          )}
+        />
       </button>
 
       <AnimatePresence>
@@ -611,6 +643,7 @@ function ClienteSelector({
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
               className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-30 max-h-[300px] overflow-y-auto"
             >
               {lista.map((c) => (
@@ -638,7 +671,7 @@ function ClienteSelector({
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Sub-componente: Empty state
+// Empty state
 // ─────────────────────────────────────────────────────────────────
 function EmptyState({ modoEscaneo }: { modoEscaneo: boolean }) {
   return (
@@ -657,7 +690,7 @@ function EmptyState({ modoEscaneo }: { modoEscaneo: boolean }) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Sub-componente: Total que anima cuando cambia
+// Total animado al cambiar
 // ─────────────────────────────────────────────────────────────────
 function TotalAnimado({ valor }: { valor: number }) {
   return (
@@ -668,7 +701,7 @@ function TotalAnimado({ valor }: { valor: number }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.18 }}
-        className="text-[26px] font-bold font-mono tabular-nums tracking-tight"
+        className="text-[28px] font-bold font-mono tabular-nums tracking-tight"
       >
         {formatARS(valor)}
       </motion.p>

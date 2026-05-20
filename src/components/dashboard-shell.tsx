@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { MobileBottomNav } from './mobile-bottom-nav';
 import { CommandPalette } from './command-palette';
 import { Toaster } from '@/components/ui/sonner';
+import { cn } from '@/lib/utils';
 import type { Producto, Cliente } from '@/server/db/schema';
 import type { PlanId } from '@/lib/planes';
 
@@ -19,6 +21,8 @@ type Props = {
 
 export function DashboardShell({ email, plan, tenantNombre, productos, clientes, children }: Props) {
   const [openCmd, setOpenCmd] = useState(false);
+  const pathname = usePathname();
+  const esPos = pathname === '/dashboard/ventas';
 
   // Atajo ⌘K / Ctrl+K
   useEffect(() => {
@@ -34,7 +38,7 @@ export function DashboardShell({ email, plan, tenantNombre, productos, clientes,
   }, []);
 
   return (
-    <div className="min-h-screen flex relative">
+    <div className="h-[100dvh] flex relative overflow-hidden">
       {/* Sidebar — solo desktop */}
       <DashboardSidebar
         email={email}
@@ -43,12 +47,21 @@ export function DashboardShell({ email, plan, tenantNombre, productos, clientes,
         onOpenCommand={() => setOpenCmd(true)}
       />
 
-      {/* Contenido principal — padding bottom en mobile para no quedar detrás del bottom nav */}
-      <main className="flex-1 overflow-y-auto relative pb-16 md:pb-0">
+      {/*
+        Contenido principal.
+        - En POS mobile: sin padding-bottom (la bottom nav está oculta).
+        - En otras páginas: pb-16 para que el contenido no quede detrás del bottom nav.
+      */}
+      <main
+        className={cn(
+          'flex-1 relative',
+          esPos ? 'overflow-hidden' : 'overflow-y-auto pb-16 md:pb-0',
+        )}
+      >
         {children}
       </main>
 
-      {/* Bottom navigation — solo mobile */}
+      {/* Bottom navigation — solo mobile, oculto en POS */}
       <MobileBottomNav email={email} />
 
       <CommandPalette

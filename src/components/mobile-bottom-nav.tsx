@@ -48,6 +48,10 @@ export function MobileBottomNav({ email }: { email: string }) {
     return () => { document.body.style.overflow = ''; };
   }, [masOpen]);
 
+  // POS full-screen — la barra inferior molestaría al cobrar
+  const ocultarEnPos = pathname === '/dashboard/ventas';
+  if (ocultarEnPos) return null;
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
