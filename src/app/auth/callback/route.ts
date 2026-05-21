@@ -1,30 +1,52 @@
 /**
- * Auth Callback — exchange del código PKCE que Supabase pone en la URL
- * cuando el usuario hace click en un email de confirmación/reset/invite.
+ * Auth Callback — procesa los links que Supabase manda por email
+ * (confirmación de cuenta, invitación de equipo, reset de contraseña)
+ * y los logins OAuth.
  *
- * Flujo:
- *  1. Supabase envía email con link → `https://proyecto.supabase.co/auth/v1/verify?...&redirect_to=https://app.com/auth/callback?next=/reset-password`
- *  2. Supabase redirige aquí con `?code=xxx&next=/reset-password`
- *  3. Este handler intercambia el code por una sesión válida
- *  4. Redirige al usuario a `next` (ej: /reset-password) ya autenticado
+ * Soporta DOS flujos, porque Supabase usa distintos según el caso:
+ *
+ *  1. PKCE (`?code=...`)
+ *     - Lo usa OAuth y el signup iniciado desde este mismo browser.
+ *     - Requiere un "code verifier" en cookie, seteado cuando el flujo
+ *       arrancó en este dispositivo.
+ *
+ *  2. Token hash (`?token_hash=...&type=...`)
+ *     - Lo usan las invitaciones, el recovery y la confirmación de email.
+ *     - NO requiere code verifier → funciona desde cualquier dispositivo.
+ *     - Necesita que el template de email apunte acá con token_hash + type.
+ *
+ * Tras autenticar, redirige a `next` (ej: /reset-password para invitados).
  */
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import type { EmailOtpType } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  const tokenHash = searchParams.get('token_hash');
+  const type = searchParams.get('type') as EmailOtpType | null;
   const next = searchParams.get('next') ?? '/dashboard';
 
+  const supabase = await createClient();
+
+  // ── Flujo 1: PKCE (OAuth / signup desde este browser) ──────────
   if (code) {
-    const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // Si algo salió mal, volver al login con error
+  // ── Flujo 2: token_hash (invitación / recovery / confirmación) ──
+  if (tokenHash && type) {
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  }
+
+  // Algo falló — volver al login con error
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);
 }
