@@ -5,7 +5,7 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { presupuestos, presupuestosLineas, clientes, type PresupuestoEstado } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireSession } from '@/server/auth/session';
+import { requireAdmin } from '@/server/auth/session';
 
 export type LineaPresupuesto = {
   productoId?: string | null;
@@ -27,7 +27,7 @@ export type PresupuestoInput = {
 // ── Listar ────────────────────────────────────────────────────────────────────
 
 export async function listarPresupuestos() {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const { tenantId } = session;
 
   const rows = await db
@@ -56,7 +56,7 @@ export async function listarPresupuestos() {
 // ── Obtener uno ───────────────────────────────────────────────────────────────
 
 export async function obtenerPresupuesto(id: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const { tenantId } = session;
 
   const [pres] = await db
@@ -95,7 +95,7 @@ export async function obtenerPresupuesto(id: string) {
 // ── Crear ─────────────────────────────────────────────────────────────────────
 
 export async function crearPresupuesto(input: PresupuestoInput) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const { tenantId } = session;
 
   // Calcular subtotal y total
@@ -152,7 +152,7 @@ export async function crearPresupuesto(input: PresupuestoInput) {
 // ── Editar ────────────────────────────────────────────────────────────────────
 
 export async function editarPresupuesto(id: string, input: PresupuestoInput) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const { tenantId } = session;
 
   const subtotal  = input.lineas.reduce((acc, l) => acc + Number(l.subtotal), 0);
@@ -208,7 +208,7 @@ export async function editarPresupuesto(id: string, input: PresupuestoInput) {
 // ── Cambiar estado ────────────────────────────────────────────────────────────
 
 export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEstado) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const result = await db
     .update(presupuestos)
     .set({ estado })
@@ -222,7 +222,7 @@ export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEs
 // ── Eliminar ──────────────────────────────────────────────────────────────────
 
 export async function eliminarPresupuesto(id: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const result = await db
     .delete(presupuestos)
     .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))

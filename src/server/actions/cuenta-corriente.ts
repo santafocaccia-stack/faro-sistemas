@@ -7,11 +7,11 @@ import {
   type MetodoPago,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireSession } from '@/server/auth/session';
+import { requireAdmin } from '@/server/auth/session';
 import { revalidatePath } from 'next/cache';
 
 export async function listarMovimientosCliente(clienteId: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
 
   // Verificar que el cliente pertenece a este tenant antes de retornar sus movimientos
   const [clienteExiste] = await db
@@ -42,7 +42,7 @@ export async function registrarPago(input: {
   referencia?: string;
   notas?: string;
 }) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const monto = Number(input.monto);
   if (isNaN(monto) || monto <= 0) throw new Error('Monto inválido');
 

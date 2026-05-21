@@ -3,7 +3,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { tenants } from '@/server/db/schema';
-import { requireSession } from '@/server/auth/session';
+import { requireSession, requireAdmin } from '@/server/auth/session';
 import { revalidatePath } from 'next/cache';
 
 export async function obtenerTenant() {
@@ -27,7 +27,7 @@ export type ConfigInput = {
 };
 
 export async function actualizarConfig(input: ConfigInput) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   if (!input.nombre.trim()) throw new Error('El nombre del negocio es obligatorio');
 
   await db

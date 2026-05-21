@@ -7,10 +7,10 @@ import {
   pedidosProveedores, pedidosLineas, proveedores, productos,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireSession } from '@/server/auth/session';
+import { requireAdmin } from '@/server/auth/session';
 
 export async function listarPedidos() {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const rows = await db
     .select({
       pedido: pedidosProveedores,
@@ -25,7 +25,7 @@ export async function listarPedidos() {
 }
 
 export async function obtenerPedido(id: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
 
   const [row] = await db
     .select({
@@ -54,7 +54,7 @@ export async function obtenerPedido(id: string) {
 }
 
 export async function actualizarLineaPedido(lineaId: string, cantidad: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   await db
     .update(pedidosLineas)
     .set({ cantidadPedida: cantidad })
@@ -63,7 +63,7 @@ export async function actualizarLineaPedido(lineaId: string, cantidad: string) {
 }
 
 export async function eliminarLineaPedido(lineaId: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   await db
     .delete(pedidosLineas)
     .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.id, lineaId)));
@@ -71,7 +71,7 @@ export async function eliminarLineaPedido(lineaId: string) {
 }
 
 export async function confirmarPedido(id: string, notas?: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   await db
     .update(pedidosProveedores)
     .set({
@@ -88,7 +88,7 @@ export async function recibirPedido(
   id: string,
   lineas: { lineaId: string; cantidadRecibida: string }[],
 ) {
-  const session = await requireSession();
+  const session = await requireAdmin();
 
   await db.transaction(async (tx) => {
     // Marcar el pedido como recibido

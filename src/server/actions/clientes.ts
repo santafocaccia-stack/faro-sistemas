@@ -5,7 +5,7 @@ import { eq, and, ilike, desc } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { clientes, type TipoCliente, type CondicionIva } from '@/server/db/schema';
 import { byTenant, byTenantAnd } from '@/server/db/tenant-context';
-import { requireSession } from '@/server/auth/session';
+import { requireAdmin } from '@/server/auth/session';
 
 export type ClienteInput = {
   tipo: TipoCliente;
@@ -25,7 +25,7 @@ export type ClienteInput = {
 };
 
 export async function listarClientes(filtros?: { busqueda?: string; tipo?: TipoCliente }) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const conditions = [
     byTenant(session.tenantId, clientes),
     eq(clientes.activo, true),
@@ -42,7 +42,7 @@ export async function listarClientes(filtros?: { busqueda?: string; tipo?: TipoC
 }
 
 export async function obtenerCliente(id: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const [cliente] = await db
     .select()
     .from(clientes)
@@ -52,7 +52,7 @@ export async function obtenerCliente(id: string) {
 }
 
 export async function crearCliente(input: ClienteInput) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const [creado] = await db
     .insert(clientes)
     .values({
@@ -78,7 +78,7 @@ export async function crearCliente(input: ClienteInput) {
 }
 
 export async function actualizarCliente(id: string, input: ClienteInput) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   // No se puede modificar el Consumidor Final
   await db
     .update(clientes)
@@ -104,7 +104,7 @@ export async function actualizarCliente(id: string, input: ClienteInput) {
 }
 
 export async function desactivarCliente(id: string) {
-  const session = await requireSession();
+  const session = await requireAdmin();
   await db
     .update(clientes)
     .set({ activo: false })

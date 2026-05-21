@@ -5,7 +5,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { ventas, ventasLineas, pagos, productos } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireSession } from '@/server/auth/session';
+import { requireAdmin } from '@/server/auth/session';
 
 export type Periodo = 'hoy' | 'semana' | 'mes' | 'tres_meses';
 
@@ -98,7 +98,7 @@ const fetchReporteData = unstable_cache(
 );
 
 export async function obtenerReporte(periodo: Periodo = 'mes') {
-  const session = await requireSession();
+  const session = await requireAdmin();
   const { tenantId } = session;
 
   // fetchReporteData está cacheada por (tenantId, periodo) — 5 min TTL
