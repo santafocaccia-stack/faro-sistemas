@@ -32,14 +32,14 @@ export function EquipoForm({ equipo, miRol, miUserId }: Props) {
   function handleInvitar(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      try {
-        await invitarMiembro({ email, rol: rolInvite });
-        toast.success(`Invitación enviada a ${email}`);
-        setEmail('');
-        setShowInvite(false);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Error al invitar');
+      const result = await invitarMiembro({ email, rol: rolInvite });
+      if (!result.ok) {
+        toast.error(result.error, { duration: 6000 });
+        return;
       }
+      toast.success(result.mensaje, { duration: 5000 });
+      setEmail('');
+      setShowInvite(false);
     });
   }
 

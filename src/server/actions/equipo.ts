@@ -43,15 +43,29 @@ export type InviteInput = {
   rol: Rol;
 };
 
-export async function invitarMiembro(input: InviteInput) {
+export type InvitarResult =
+  | { ok: true; mensaje: string }
+  | { ok: false; error: string };
+
+/** Busca un usuario en Supabase Auth por email (case-insensitive) */
+async function buscarUsuarioAuthPorEmail(
+  admin: ReturnType<typeof createAdminClient>,
+  email: string,
+): Promise<{ id: string } | null> {
+  const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const found = data?.users.find((u) => u.email?.toLowerCase() === email);
+  return found ? { id: found.id } : null;
+}
+
+export async function invitarMiembro(input: InviteInput): Promise<InvitarResult> {
   // Solo owners y admins pueden invitar
   const session = await requireRol(['owner', 'admin']);
 
   const email = input.email.trim().toLowerCase();
-  if (!email) throw new Error('El email es obligatorio');
+  if (!email) return { ok: false, error: 'El email es obligatorio' };
 
-  // Verificar que no sea ya miembro
-  const [existente] = await db
+  // Verificar que no sea ya miembro de ESTE tenant
+  const [yaMiembro] = await db
     .select({ userId: usersTenants.userId })
     .from(usersTenants)
     .innerJoin(users, eq(usersTenants.userId, users.id))
@@ -63,15 +77,17 @@ export async function invitarMiembro(input: InviteInput) {
     )
     .limit(1);
 
-  if (existente) throw new Error('Ese email ya es miembro del equipo');
+  if (yaMiembro) return { ok: false, error: 'Ese email ya es miembro del equipo' };
 
-  // Usar Admin API para enviar la invitación
   const admin = createAdminClient();
   const appUrl = getAppUrl();
 
-  // redirectTo apunta a /reset-password: tras hacer click en el email,
-  // el invitado define su contraseña y recién entra al dashboard.
-  // Sin esto, el invitado solo podría entrar con el link de un solo uso.
+  let userId: string | null = null;
+  let mensaje = `Invitación enviada a ${email}`;
+
+  // Intentar crear el usuario + enviar email de invitación.
+  // redirectTo apunta a /reset-password: el invitado define su contraseña
+  // antes de entrar.
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${appUrl}/auth/callback?next=/reset-password`,
     data: {
@@ -80,27 +96,43 @@ export async function invitarMiembro(input: InviteInput) {
     },
   });
 
-  if (error) throw new Error(`Error al invitar: ${error.message}`);
+  if (data?.user) {
+    // Usuario nuevo creado + email enviado
+    userId = data.user.id;
+  } else {
+    // inviteUserByEmail falla si el email ya existe en Supabase Auth
+    // (ej: lo invitaron antes). Lo buscamos para sumarlo al equipo igual.
+    const existente = await buscarUsuarioAuthPorEmail(admin, email);
+    if (existente) {
+      userId = existente.id;
+      mensaje = `${email} ya tenía cuenta — se sumó al equipo. Puede entrar con su contraseña.`;
+    } else {
+      console.error('[invitarMiembro] inviteUserByEmail:', error);
+      return {
+        ok: false,
+        error: `No se pudo invitar: ${error?.message ?? 'error desconocido'}`,
+      };
+    }
+  }
 
-  // Si el usuario ya existe en Supabase Auth pero no en nuestra tabla,
-  // lo registramos ahora mismo (no necesita confirmar el email)
-  if (data.user) {
-    const userId = data.user.id;
+  if (!userId) {
+    return { ok: false, error: 'No se pudo determinar el usuario a agregar' };
+  }
 
-    // Upsert en tabla users
-    await db
-      .insert(users)
-      .values({ id: userId, email })
-      .onConflictDoNothing();
-
-    // Agregar al tenant
+  // Registrar en nuestras tablas
+  try {
+    await db.insert(users).values({ id: userId, email }).onConflictDoNothing();
     await db
       .insert(usersTenants)
       .values({ userId, tenantId: session.tenantId, rol: input.rol })
       .onConflictDoNothing();
+  } catch (err) {
+    console.error('[invitarMiembro] DB insert:', err);
+    return { ok: false, error: 'No se pudo registrar el miembro en el equipo' };
   }
 
   revalidatePath('/dashboard/config/equipo');
+  return { ok: true, mensaje };
 }
 
 /* ── Cambiar rol de un miembro ── */
