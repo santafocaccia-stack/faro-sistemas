@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { useState, useTransition, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Tag, Boxes, DollarSign, ScanBarcode, Camera, Truck, Plus, Trash2, Star } from 'lucide-react';
+import { Tag, Boxes, DollarSign, ScanBarcode, Camera, Truck, Plus, Trash2, Star, Lightbulb, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { crearProducto, actualizarProducto, desactivarProducto, type ProductoInput } from '@/server/actions/productos';
+import { buscarVariantesSugeridas, crearGrupoVariante } from '@/server/actions/categorias';
 import type { Producto, Categoria, GrupoVariante, Proveedor, ProductoProveedor } from '@/server/db/schema';
 import type { VinculoProveedorInput } from '@/server/actions/proveedores';
 import { BarcodeScannerModal } from '@/components/barcode-scanner-modal';
@@ -36,9 +37,15 @@ export function ProductoForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!producto;
+  const [gruposLocales, setGruposLocales] = useState(gruposVariantes);
   const [codigoFocused, setCodigoFocused] = useState(false);
   const codigoRef = useRef<HTMLInputElement>(null);
   const [scannerAbierto, setScannerAbierto] = useState(false);
+
+  type Sugerencia = Awaited<ReturnType<typeof buscarVariantesSugeridas>>;
+  const [sugerencia, setSugerencia] = useState<Sugerencia>(null);
+  const [sugerenciaDescartada, setSugerenciaDescartada] = useState(false);
+  const [isPendingSugerencia, startSugerencia] = useTransition();
 
   const [form, setForm] = useState<Omit<ProductoInput, 'vinculos'>>({
     codigo: producto?.codigo ?? '',
@@ -73,6 +80,41 @@ export function ProductoForm({
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const handleNombreBlur = useCallback((nombre: string) => {
+    const normalizado = normalizarNombre(nombre);
+    update('nombre', normalizado);
+    if (isEdit || sugerenciaDescartada || !normalizado) return;
+
+    startSugerencia(async () => {
+      const resultado = await buscarVariantesSugeridas(normalizado, producto?.id);
+      setSugerencia(resultado);
+    });
+  }, [isEdit, sugerenciaDescartada, producto?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleAceptarSugerencia() {
+    if (!sugerencia) return;
+    if (sugerencia.grupoExistente) {
+      update('grupoVarianteId', sugerencia.grupoExistente.id);
+      setSugerencia(null);
+      setSugerenciaDescartada(true);
+      toast.success(`Grupo "${sugerencia.grupoExistente.nombre}" asignado`);
+    } else {
+      startTransition(async () => {
+        const nuevoGrupo = await crearGrupoVariante(sugerencia.primeraWord);
+        setGruposLocales((prev) => [...prev, nuevoGrupo]);
+        update('grupoVarianteId', nuevoGrupo.id);
+        setSugerencia(null);
+        setSugerenciaDescartada(true);
+        toast.success(`Grupo "${nuevoGrupo.nombre}" creado`);
+      });
+    }
+  }
+
+  function handleDescartarSugerencia() {
+    setSugerencia(null);
+    setSugerenciaDescartada(true);
   }
 
   function agregarVinculo() {
@@ -196,7 +238,7 @@ export function ProductoForm({
               required
               value={form.nombre}
               onChange={(e) => update('nombre', e.target.value)}
-              onBlur={(e) => update('nombre', normalizarNombre(e.target.value))}
+              onBlur={(e) => handleNombreBlur(e.target.value)}
               placeholder="Bola de lomo"
               className={inputCls}
             />
@@ -233,6 +275,49 @@ export function ProductoForm({
           </Field>
         </div>
 
+        {/* Sugerencia de variantes */}
+        {sugerencia && (
+          <div className="flex items-start gap-3 px-3.5 py-3 rounded-lg border border-amber-500/25 bg-amber-500/8 text-[13px]">
+            <Lightbulb className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" strokeWidth={1.75} />
+            <div className="flex-1 min-w-0">
+              <p className="text-amber-300 font-medium leading-snug">
+                {sugerencia.productos.length === 1
+                  ? `"${sugerencia.productos[0]!.nombre}" también empieza con "${sugerencia.primeraWord}"`
+                  : `${sugerencia.productos.length} productos empiezan con "${sugerencia.primeraWord}"`}
+              </p>
+              <p className="text-amber-400/60 text-[11px] mt-0.5">
+                {sugerencia.grupoExistente
+                  ? `Usar el grupo existente "${sugerencia.grupoExistente.nombre}" para agruparlos como variantes`
+                  : `Crear el grupo "${sugerencia.primeraWord}" para agruparlos como variantes`}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={handleAceptarSugerencia}
+                  disabled={isPending}
+                  className="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[12px] font-medium transition-colors"
+                >
+                  {sugerencia.grupoExistente ? `Usar "${sugerencia.grupoExistente.nombre}"` : `Crear grupo "${sugerencia.primeraWord}"`}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDescartarSugerencia}
+                  className="px-2.5 py-1 rounded-md text-amber-400/50 hover:text-amber-400 text-[12px] transition-colors"
+                >
+                  Ignorar
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleDescartarSugerencia}
+              className="shrink-0 text-amber-400/40 hover:text-amber-400 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Categoría" htmlFor="categoriaId">
             <Select
@@ -261,7 +346,7 @@ export function ProductoForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none">Sin grupo</SelectItem>
-                {gruposVariantes.map((g) => (
+                {gruposLocales.map((g) => (
                   <SelectItem key={g.id} value={g.id}>{g.nombre}</SelectItem>
                 ))}
               </SelectContent>

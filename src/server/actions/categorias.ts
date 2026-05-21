@@ -1,9 +1,9 @@
 'use server';
 
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, ilike, isNotNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/server/db';
-import { categorias, gruposVariantes } from '@/server/db/schema';
+import { categorias, gruposVariantes, productos } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
 
@@ -75,6 +75,54 @@ export async function actualizarGrupoVariante(id: string, nombre: string) {
     .set({ nombre: nombre.trim() })
     .where(and(byTenant(session.tenantId, gruposVariantes), eq(gruposVariantes.id, id)));
   revalidatePath('/dashboard/productos');
+}
+
+export async function buscarVariantesSugeridas(nombre: string, excluirId?: string): Promise<{
+  primeraWord: string;
+  productos: { id: string; nombre: string }[];
+  grupoExistente: { id: string; nombre: string } | null;
+} | null> {
+  const session = await requireSession();
+
+  const primeraWord = nombre.trim().split(/\s+/)[0] ?? '';
+  if (primeraWord.length < 3) return null;
+
+  const filas = await db
+    .select({
+      id: productos.id,
+      nombre: productos.nombre,
+      grupoVarianteId: productos.grupoVarianteId,
+    })
+    .from(productos)
+    .where(
+      and(
+        byTenant(session.tenantId, productos),
+        eq(productos.activo, true),
+        ilike(productos.nombre, `${primeraWord}%`),
+      ),
+    )
+    .limit(10);
+
+  const coincidencias = filas.filter((p) => p.id !== excluirId);
+  if (coincidencias.length === 0) return null;
+
+  // Buscar si alguno ya tiene grupo de variantes
+  const idGrupo = coincidencias.find((p) => p.grupoVarianteId)?.grupoVarianteId ?? null;
+  let grupoExistente: { id: string; nombre: string } | null = null;
+  if (idGrupo) {
+    const [g] = await db
+      .select({ id: gruposVariantes.id, nombre: gruposVariantes.nombre })
+      .from(gruposVariantes)
+      .where(and(byTenant(session.tenantId, gruposVariantes), eq(gruposVariantes.id, idGrupo)))
+      .limit(1);
+    grupoExistente = g ?? null;
+  }
+
+  return {
+    primeraWord,
+    productos: coincidencias.map(({ id, nombre }) => ({ id, nombre })),
+    grupoExistente,
+  };
 }
 
 export async function eliminarGrupoVariante(id: string) {
