@@ -10,6 +10,7 @@ import {
   UsersRound, Settings, LogOut, X, Truck, ClipboardList,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { HREFS_EMPLEADO } from '@/lib/nav';
 import type { Rol } from '@/server/db/schema';
 
 /* ── Tabs laterales (Vender va al centro como FAB elevado) ──── */
@@ -38,19 +39,16 @@ function isActive(href: string, pathname: string, exactMatch?: boolean) {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-/** El empleado solo accede al POS y al historial de ventas */
-const HREFS_EMPLEADO = ['/dashboard/ventas', '/dashboard/ventas/historial'];
-
 export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
   const pathname = usePathname();
   const router   = useRouter();
   const [masOpen, setMasOpen] = useState(false);
 
   const esGestor = rol === 'owner' || rol === 'admin';
-  // Filtrado por rol: el empleado solo ve tabs de ventas
+  // Filtrado por rol: el empleado solo ve las rutas de HREFS_EMPLEADO
   const leftTabs  = esGestor ? LEFT_TABS  : LEFT_TABS.filter((t) => HREFS_EMPLEADO.includes(t.href));
   const rightTabs = esGestor ? RIGHT_TABS : RIGHT_TABS.filter((t) => HREFS_EMPLEADO.includes(t.href));
-  const masItems  = esGestor ? MAS_ITEMS  : [];
+  const masItems  = esGestor ? MAS_ITEMS  : MAS_ITEMS.filter((t) => HREFS_EMPLEADO.includes(t.href));
 
   useEffect(() => { setMasOpen(false); }, [pathname]);
   useEffect(() => {

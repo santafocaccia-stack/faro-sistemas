@@ -114,15 +114,27 @@ export const POS_HREF = '/dashboard/ventas';
 /* ─────────────────────────────────────────────────────────────
    Navegación filtrada por ROL.
 
-   - empleado: solo puede usar el POS y ver el historial de ventas.
-     No ve Inicio, Productos, Clientes, CC, Reportes ni Configuración.
+   - empleado: puede usar el POS, ver el historial de ventas y
+     gestionar productos (cargar/editar/quitar). No ve Inicio,
+     Clientes, CC, Presupuestos, Proveedores, Pedidos, Reportes
+     ni Configuración.
    - admin / owner: navegación completa según el plan.
 ───────────────────────────────────────────────────────────── */
+
+/** Rutas a las que el rol 'empleado' tiene acceso */
+export const HREFS_EMPLEADO = [
+  '/dashboard/ventas',
+  '/dashboard/ventas/historial',
+  '/dashboard/productos',
+];
+
 export function navParaRol(plan: PlanId, rol: Rol): NavPlan {
   const base = NAV_POR_PLAN[plan];
   if (rol === 'empleado') {
     return {
-      primary: base.primary.filter((i) => i.href === HISTORIAL.href),
+      primary: base.primary.filter(
+        (i) => i.href === HISTORIAL.href || i.href === PRODUCTOS.href,
+      ),
       secondary: [],
     };
   }
