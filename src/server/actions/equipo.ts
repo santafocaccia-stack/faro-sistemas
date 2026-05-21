@@ -121,6 +121,20 @@ export async function invitarMiembro(input: InviteInput): Promise<InvitarResult>
 
   // Registrar en nuestras tablas
   try {
+    // Limpiar fila huérfana: si quedó una fila en public.users con este
+    // email pero otro id (el usuario fue borrado de Auth y recreado, sin
+    // trigger que sincronice), la eliminamos para no chocar el UNIQUE(email).
+    const [filaVieja] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (filaVieja && filaVieja.id !== userId) {
+      await db.delete(usersTenants).where(eq(usersTenants.userId, filaVieja.id));
+      await db.delete(users).where(eq(users.id, filaVieja.id));
+    }
+
     await db.insert(users).values({ id: userId, email }).onConflictDoNothing();
     await db
       .insert(usersTenants)
