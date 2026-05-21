@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Plus, Tags } from 'lucide-react';
+import { Plus, Tags, Zap } from 'lucide-react';
 import { listarProductos } from '@/server/actions/productos';
 import { listarCategorias } from '@/server/actions/categorias';
 import { ProductosListClient } from '@/components/productos-list-client';
@@ -28,6 +28,14 @@ export default async function ProductosPage() {
           >
             <Tags className="h-3.5 w-3.5" strokeWidth={1.75} />
             <span className="hidden sm:inline">Categorías</span>
+          </Link>
+          <Link
+            href="/dashboard/productos/carga-rapida"
+            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-border bg-card text-[13px] font-medium text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
+            title="Cargar varios productos rápidamente"
+          >
+            <Zap className="h-3.5 w-3.5" strokeWidth={1.75} />
+            <span className="hidden sm:inline">Carga rápida</span>
           </Link>
           <Link
             href="/dashboard/productos/nuevo"
