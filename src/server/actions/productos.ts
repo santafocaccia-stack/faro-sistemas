@@ -1,9 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { eq, and, ilike, desc, sql } from 'drizzle-orm';
+import { eq, and, ilike, desc, sql, asc } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { productos, productoProveedores, proveedores, type TipoUnidad } from '@/server/db/schema';
+import { productos, productoProveedores, proveedores, categorias, type TipoUnidad } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
 import {
@@ -277,4 +277,109 @@ export async function ajustarStock(input: {
   revalidatePath('/dashboard/productos');
   revalidatePath(`/dashboard/productos/${input.productoId}`);
   revalidatePath('/dashboard');
+}
+
+// ── Importación masiva CSV ────────────────────────────────────────────────────
+
+export type CsvFila = {
+  nombre: string;
+  precioMinorista: string;
+  precioMayorista?: string;
+  codigo?: string;
+  categoriaNombre?: string;
+};
+
+export type ImportarCsvResult = {
+  ok: boolean;
+  insertados: number;
+  errores: { fila: number; error: string }[];
+};
+
+export async function importarProductosCSV(filas: CsvFila[]): Promise<ImportarCsvResult> {
+  const session = await requireSession();
+
+  if (filas.length === 0) return { ok: false, insertados: 0, errores: [{ fila: 0, error: 'El archivo no tiene filas' }] };
+  if (filas.length > 500) return { ok: false, insertados: 0, errores: [{ fila: 0, error: 'Máximo 500 filas por importación' }] };
+
+  // Resolver categorías por nombre (crear las que no existen)
+  const categoriasUnicas = [...new Set(
+    filas.map((f) => f.categoriaNombre?.trim()).filter(Boolean) as string[]
+  )];
+
+  const mapaCategoria: Record<string, string> = {};
+
+  if (categoriasUnicas.length > 0) {
+    const existentes = await db
+      .select({ id: categorias.id, nombre: categorias.nombre })
+      .from(categorias)
+      .where(and(byTenant(session.tenantId, categorias), eq(categorias.activo, true)))
+      .orderBy(asc(categorias.nombre));
+
+    for (const nombre of categoriasUnicas) {
+      const encontrada = existentes.find(
+        (c) => c.nombre.toLowerCase() === nombre.toLowerCase()
+      );
+      if (encontrada) {
+        mapaCategoria[nombre] = encontrada.id;
+      } else {
+        const [nueva] = await db
+          .insert(categorias)
+          .values({ tenantId: session.tenantId, nombre })
+          .returning({ id: categorias.id });
+        if (nueva) mapaCategoria[nombre] = nueva.id;
+      }
+    }
+  }
+
+  const errores: { fila: number; error: string }[] = [];
+  const valoresValidos: (typeof productos.$inferInsert)[] = [];
+
+  for (let i = 0; i < filas.length; i++) {
+    const fila = filas[i]!;
+    const numero = i + 2; // +2 porque la fila 1 es el header
+
+    const nombreTrimmed = fila.nombre.trim();
+    if (!nombreTrimmed) { errores.push({ fila: numero, error: 'Nombre vacío' }); continue; }
+
+    const precioMin = Number(fila.precioMinorista);
+    if (isNaN(precioMin) || precioMin < 0) { errores.push({ fila: numero, error: 'Precio minorista inválido' }); continue; }
+
+    const precioMay = fila.precioMayorista ? Number(fila.precioMayorista) : precioMin;
+    if (isNaN(precioMay) || precioMay < 0) { errores.push({ fila: numero, error: 'Precio mayorista inválido' }); continue; }
+
+    const categoriaId = fila.categoriaNombre ? (mapaCategoria[fila.categoriaNombre.trim()] ?? null) : null;
+
+    valoresValidos.push({
+      tenantId: session.tenantId,
+      nombre: nombreTrimmed,
+      codigo: fila.codigo?.trim() || null,
+      categoriaId,
+      tipoUnidad: 'por_unidad',
+      stockActual: '0',
+      costoPromedio: '0',
+      precioMayorista: precioMay.toFixed(2),
+      precioMinorista: precioMin.toFixed(2),
+      activo: true,
+    });
+  }
+
+  let insertados = 0;
+  if (valoresValidos.length > 0) {
+    try {
+      const LOTE = 100;
+      for (let i = 0; i < valoresValidos.length; i += LOTE) {
+        await db.insert(productos).values(valoresValidos.slice(i, i + LOTE));
+        insertados += Math.min(LOTE, valoresValidos.length - i);
+      }
+    } catch (e) {
+      return {
+        ok: false,
+        insertados,
+        errores: [{ fila: 0, error: e instanceof Error ? e.message : 'Error al insertar en la base de datos' }],
+      };
+    }
+  }
+
+  revalidatePath('/dashboard/productos');
+  return { ok: true, insertados, errores };
 }
