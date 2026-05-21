@@ -155,63 +155,67 @@ export function EquipoForm({ equipo, miRol, miUserId }: Props) {
           const puedeEditar = puedeGestionar && !esMiCuenta;
 
           return (
-            <div key={miembro.userId} className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/[0.02] transition-colors group">
-              {/* Avatar */}
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                <span className="text-[11px] font-semibold text-primary uppercase">
-                  {miembro.email.charAt(0)}
-                </span>
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-[13px] font-medium truncate">
-                    {miembro.nombreCompleto ?? miembro.email}
-                  </p>
-                  {esMiCuenta && (
-                    <span className="text-[10px] text-muted-foreground/60 font-normal">(vos)</span>
+            <div key={miembro.userId} className="px-4 sm:px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
+              {/* Fila superior: avatar + info */}
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <span className="text-[12px] font-semibold text-primary uppercase">
+                    {miembro.email.charAt(0)}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[13px] font-medium truncate">
+                      {miembro.nombreCompleto ?? miembro.email}
+                    </p>
+                    {esMiCuenta && (
+                      <span className="text-[10px] text-muted-foreground/60 font-normal shrink-0">(vos)</span>
+                    )}
+                  </div>
+                  {miembro.nombreCompleto && (
+                    <p className="text-[11px] text-muted-foreground truncate">{miembro.email}</p>
                   )}
                 </div>
-                {miembro.nombreCompleto && (
-                  <p className="text-[11px] text-muted-foreground truncate">{miembro.email}</p>
-                )}
               </div>
 
-              {/* Rol */}
-              {puedeEditar ? (
-                <Select
-                  value={miembro.rol}
-                  onValueChange={(v) => handleCambiarRol(miembro.userId, v as Rol)}
-                  disabled={isPending}
-                >
-                  <SelectTrigger className="h-7 text-xs bg-transparent border-border/40 w-28 gap-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="empleado">Empleado</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    {miRol === 'owner' && <SelectItem value="owner">Dueño</SelectItem>}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${config.badge}`}>
-                  <Icon className="h-3 w-3" strokeWidth={1.75} />
-                  {config.label}
-                </span>
-              )}
+              {/* Fila inferior: rol + eliminar */}
+              <div className="flex items-center justify-between gap-2 mt-2.5 pl-12">
+                {puedeEditar ? (
+                  <Select
+                    value={miembro.rol}
+                    onValueChange={(v) => handleCambiarRol(miembro.userId, v as Rol)}
+                    disabled={isPending}
+                  >
+                    <SelectTrigger className="h-9 text-[13px] bg-background/60 border-border/60 w-36 gap-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="empleado">Empleado</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      {miRol === 'owner' && <SelectItem value="owner">Dueño</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium border ${config.badge}`}>
+                    <Icon className="h-3 w-3" strokeWidth={1.75} />
+                    {config.label}
+                    {esMiCuenta && miRol !== 'owner' && (
+                      <span className="text-muted-foreground/50 ml-0.5">· tu rol</span>
+                    )}
+                  </span>
+                )}
 
-              {/* Eliminar */}
-              {puedeEditar && (
-                <button
-                  onClick={() => handleEliminar(miembro.userId, miembro.email)}
-                  disabled={isPending}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  title="Eliminar del equipo"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              )}
+                {puedeEditar && (
+                  <button
+                    onClick={() => handleEliminar(miembro.userId, miembro.email)}
+                    disabled={isPending}
+                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Quitar
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
