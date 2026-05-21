@@ -4,6 +4,7 @@ import {
   UtensilsCrossed, Scale, type LucideIcon,
 } from 'lucide-react';
 import type { PlanId } from './planes';
+import type { Rol } from '@/server/db/schema';
 
 export type NavItem = {
   href: string;
@@ -109,3 +110,26 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
 /* Ruta del POS por plan (todos usan la misma hoy, pero queda
    centralizado por si en el futuro algún plan tiene su propio flujo). */
 export const POS_HREF = '/dashboard/ventas';
+
+/* ─────────────────────────────────────────────────────────────
+   Navegación filtrada por ROL.
+
+   - empleado: solo puede usar el POS y ver el historial de ventas.
+     No ve Inicio, Productos, Clientes, CC, Reportes ni Configuración.
+   - admin / owner: navegación completa según el plan.
+───────────────────────────────────────────────────────────── */
+export function navParaRol(plan: PlanId, rol: Rol): NavPlan {
+  const base = NAV_POR_PLAN[plan];
+  if (rol === 'empleado') {
+    return {
+      primary: base.primary.filter((i) => i.href === HISTORIAL.href),
+      secondary: [],
+    };
+  }
+  return base;
+}
+
+/** ¿El rol puede acceder a secciones de gestión (config, equipo, etc.)? */
+export function puedeGestionar(rol: Rol): boolean {
+  return rol === 'owner' || rol === 'admin';
+}

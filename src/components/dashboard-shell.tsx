@@ -8,6 +8,7 @@ import { MobileBottomNav } from './mobile-bottom-nav';
 import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 import type { PlanId } from '@/lib/planes';
+import type { Rol } from '@/server/db/schema';
 
 // CommandPalette se carga de forma lazy: el bundle principal no la incluye.
 // Los datos (productos/clientes) se cargan en el propio componente solo cuando se abre.
@@ -19,11 +20,12 @@ const CommandPalette = dynamic(
 type Props = {
   email: string;
   plan: PlanId;
+  rol: Rol;
   tenantNombre: string;
   children: React.ReactNode;
 };
 
-export function DashboardShell({ email, plan, tenantNombre, children }: Props) {
+export function DashboardShell({ email, plan, rol, tenantNombre, children }: Props) {
   const [openCmd, setOpenCmd] = useState(false);
   const pathname = usePathname();
   const esPos = pathname === '/dashboard/ventas';
@@ -47,6 +49,7 @@ export function DashboardShell({ email, plan, tenantNombre, children }: Props) {
       <DashboardSidebar
         email={email}
         plan={plan}
+        rol={rol}
         tenantNombre={tenantNombre}
         onOpenCommand={() => setOpenCmd(true)}
       />
@@ -65,8 +68,8 @@ export function DashboardShell({ email, plan, tenantNombre, children }: Props) {
         {children}
       </main>
 
-      {/* Bottom navigation — solo mobile, oculto en POS */}
-      <MobileBottomNav email={email} />
+      {/* Bottom navigation — solo mobile */}
+      <MobileBottomNav email={email} rol={rol} />
 
       {/* Solo se monta (y carga su chunk JS) cuando el usuario abre ⌘K */}
       {openCmd && (

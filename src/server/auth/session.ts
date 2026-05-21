@@ -88,7 +88,17 @@ export async function requireSession(opts?: RequireSessionOpts): Promise<Session
 export async function requireRol(rolesPermitidos: Rol[]): Promise<Session> {
   const session = await requireSession();
   if (!rolesPermitidos.includes(session.rol)) {
-    redirect('/sin-permiso');
+    // El empleado no tiene acceso → lo mandamos a su pantalla: el POS.
+    redirect('/dashboard/ventas');
   }
   return session;
+}
+
+/**
+ * Guard para páginas de gestión (owner + admin).
+ * El rol 'empleado' es redirigido al POS — su única pantalla permitida.
+ * Usar al inicio de cada page.tsx de gestión.
+ */
+export async function requireAdmin(): Promise<Session> {
+  return requireRol(['owner', 'admin']);
 }

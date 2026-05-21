@@ -10,6 +10,7 @@ import {
   UsersRound, Settings, LogOut, X, Truck, ClipboardList,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import type { Rol } from '@/server/db/schema';
 
 /* ── Tabs laterales (Vender va al centro como FAB elevado) ──── */
 const LEFT_TABS = [
@@ -37,10 +38,19 @@ function isActive(href: string, pathname: string, exactMatch?: boolean) {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-export function MobileBottomNav({ email }: { email: string }) {
+/** El empleado solo accede al POS y al historial de ventas */
+const HREFS_EMPLEADO = ['/dashboard/ventas', '/dashboard/ventas/historial'];
+
+export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
   const pathname = usePathname();
   const router   = useRouter();
   const [masOpen, setMasOpen] = useState(false);
+
+  const esGestor = rol === 'owner' || rol === 'admin';
+  // Filtrado por rol: el empleado solo ve tabs de ventas
+  const leftTabs  = esGestor ? LEFT_TABS  : LEFT_TABS.filter((t) => HREFS_EMPLEADO.includes(t.href));
+  const rightTabs = esGestor ? RIGHT_TABS : RIGHT_TABS.filter((t) => HREFS_EMPLEADO.includes(t.href));
+  const masItems  = esGestor ? MAS_ITEMS  : [];
 
   useEffect(() => { setMasOpen(false); }, [pathname]);
   useEffect(() => {
@@ -55,7 +65,7 @@ export function MobileBottomNav({ email }: { email: string }) {
     router.refresh();
   }
 
-  const masActive = MAS_ITEMS.some((i) => isActive(i.href, pathname)) ||
+  const masActive = masItems.some((i) => isActive(i.href, pathname)) ||
     pathname.startsWith('/dashboard/config');
   const venderActive = isActive('/dashboard/ventas', pathname, true);
 
@@ -90,7 +100,7 @@ export function MobileBottomNav({ email }: { email: string }) {
         <div className="relative flex items-stretch h-16">
 
           {/* Tabs izquierda */}
-          {LEFT_TABS.map(renderTab)}
+          {leftTabs.map(renderTab)}
 
           {/* FAB Vender — elevado cuando NO estás en /ventas,
               aplanado cuando ya estás ahí (evita choque con COBRAR) */}
@@ -123,7 +133,7 @@ export function MobileBottomNav({ email }: { email: string }) {
           )}
 
           {/* Tabs derecha */}
-          {RIGHT_TABS.map(renderTab)}
+          {rightTabs.map(renderTab)}
 
           {/* Botón Más */}
           <button
@@ -189,7 +199,7 @@ export function MobileBottomNav({ email }: { email: string }) {
 
         {/* Nav items */}
         <div className="px-4 py-3 grid grid-cols-2 gap-1">
-          {MAS_ITEMS.map((item) => {
+          {masItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href, pathname);
             return (

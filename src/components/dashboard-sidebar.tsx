@@ -9,21 +9,24 @@ import {
   ShoppingCart, ChevronDown, MoreHorizontal, ArrowRight,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { NAV_POR_PLAN, POS_HREF, type NavItem } from '@/lib/nav';
+import { navParaRol, puedeGestionar, POS_HREF, type NavItem } from '@/lib/nav';
 import { PLANES, type PlanId } from '@/lib/planes';
+import type { Rol } from '@/server/db/schema';
 
 type Props = {
   email: string;
   plan: PlanId;
+  rol: Rol;
   tenantNombre: string;
   onOpenCommand: () => void;
 };
 
-export function DashboardSidebar({ email, plan, tenantNombre, onOpenCommand }: Props) {
+export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
-  const navPlan  = NAV_POR_PLAN[plan];
+  const navPlan  = navParaRol(plan, rol);
   const planInfo = PLANES[plan];
+  const esGestor = puedeGestionar(rol);
 
   /* "Más" dropdown */
   const [masOpen, setMasOpen] = useState(false);
@@ -181,7 +184,8 @@ export function DashboardSidebar({ email, plan, tenantNombre, onOpenCommand }: P
           </div>
         )}
 
-        {/* ── Sistema (al fondo del nav) ───────────────── */}
+        {/* ── Sistema (al fondo del nav) — solo owner/admin ──── */}
+        {esGestor && (
         <div className="pt-5 space-y-0.5">
           <p className="px-2.5 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/40 select-none">
             Sistema
@@ -212,6 +216,7 @@ export function DashboardSidebar({ email, plan, tenantNombre, onOpenCommand }: P
             );
           })}
         </div>
+        )}
       </nav>
 
       {/* ── Footer usuario ───────────────────────────────── */}
