@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Printer, Share2, Download, X, Loader2 } from 'lucide-react';
+import { CheckCircle2, Printer, Share2, Download, X, Loader2, Clock } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -40,6 +40,8 @@ export type VentaCompletada = {
     direccion?: string | null;
     telefono?: string | null;
   };
+  /** true mientras el server action todavía no respondió */
+  procesando?: boolean;
 };
 
 type Props = {
@@ -187,14 +189,26 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
                 initial={{ scale: 0, rotate: -90 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', stiffness: 250, damping: 18, delay: 0.1 }}
-                className="h-14 w-14 mx-auto rounded-full bg-success/15 border-2 border-success/30 flex items-center justify-center mb-3"
+                className={`h-14 w-14 mx-auto rounded-full flex items-center justify-center mb-3 ${
+                  venta.procesando
+                    ? 'bg-muted border-2 border-border'
+                    : 'bg-success/15 border-2 border-success/30'
+                }`}
               >
-                <CheckCircle2 className="h-7 w-7 text-success" strokeWidth={2.25} />
+                {venta.procesando
+                  ? <Loader2 className="h-7 w-7 text-muted-foreground animate-spin" />
+                  : <CheckCircle2 className="h-7 w-7 text-success" strokeWidth={2.25} />
+                }
               </motion.div>
 
-              <h2 className="text-lg font-bold tracking-tight">¡Venta registrada!</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Ticket #{String(venta.numero).padStart(5, '0')} · {formatARS(venta.total)}
+              <h2 className="text-lg font-bold tracking-tight">
+                {venta.procesando ? 'Guardando venta...' : '¡Venta registrada!'}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-1">
+                {venta.procesando
+                  ? <><Clock className="h-3 w-3" /> Asignando número de ticket...</>
+                  : <>Ticket #{String(venta.numero).padStart(5, '0')} · {formatARS(venta.total)}</>
+                }
               </p>
             </div>
 
@@ -213,7 +227,13 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
                 <div className="my-2 border-t border-dashed border-border" />
 
                 <div className="flex justify-between text-[10px] text-muted-foreground">
-                  <span>Ticket #{String(venta.numero).padStart(5, '0')}</span>
+                  <span className="flex items-center gap-1">
+                    Ticket #
+                    {venta.procesando
+                      ? <Loader2 className="h-2.5 w-2.5 animate-spin inline" />
+                      : String(venta.numero).padStart(5, '0')
+                    }
+                  </span>
                   <span>{formatFechaAR(venta.fecha)}</span>
                 </div>
 
@@ -254,7 +274,8 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
                 <button
                   type="button"
                   onClick={imprimir}
-                  className="h-11 rounded-lg flex items-center justify-center gap-1.5 bg-muted/50 hover:bg-muted text-foreground font-semibold text-[13px] transition-colors press-scale"
+                  disabled={!!venta.procesando}
+                  className="h-11 rounded-lg flex items-center justify-center gap-1.5 bg-muted/50 hover:bg-muted text-foreground font-semibold text-[13px] transition-colors press-scale disabled:opacity-40"
                 >
                   <Printer className="h-4 w-4" strokeWidth={2} />
                   Imprimir
@@ -262,8 +283,8 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
                 <button
                   type="button"
                   onClick={compartirOPdf}
-                  disabled={descargandoPdf}
-                  className="h-11 rounded-lg flex items-center justify-center gap-1.5 bg-muted/50 hover:bg-muted text-foreground font-semibold text-[13px] transition-colors press-scale disabled:opacity-60"
+                  disabled={descargandoPdf || !!venta.procesando}
+                  className="h-11 rounded-lg flex items-center justify-center gap-1.5 bg-muted/50 hover:bg-muted text-foreground font-semibold text-[13px] transition-colors press-scale disabled:opacity-40"
                 >
                   {descargandoPdf
                     ? <Loader2 className="h-4 w-4 animate-spin" />

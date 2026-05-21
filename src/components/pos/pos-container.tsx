@@ -301,6 +301,23 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
     }));
     const totalSnapshot = total - Number(payload.descuento ?? 0);
 
+    // Mostrar ticket inmediatamente con los datos que ya tenemos en cliente.
+    // El número de ticket (asignado por el servidor) se completa en background.
+    const ticketBase: VentaCompletada = {
+      id: '',
+      numero: 0,
+      total: totalSnapshot,
+      canal,
+      clienteNombre: clienteSeleccionado?.razonSocial ?? 'Consumidor final',
+      metodoPago: payload.tipoPago === 'contado' ? payload.metodoPago : 'cuenta corriente',
+      fecha: new Date(),
+      lineas: lineasSnapshot,
+      negocio,
+      procesando: true,
+    };
+    setModalCobrar(false);
+    setVentaCompletada(ticketBase);
+
     startTransition(async () => {
       try {
         const result = await crearVenta({
@@ -318,21 +335,15 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
         beep({ frecuencia: 1320, duracion: 0.1 });
         setTimeout(() => beep({ frecuencia: 1760, duracion: 0.12 }), 100);
 
-        // Cerrar modal cobrar y abrir modal post-venta con datos del ticket
-        setModalCobrar(false);
-        setVentaCompletada({
-          id: result.id,
-          numero: result.numero,
-          total: totalSnapshot,
-          canal,
-          clienteNombre: clienteSeleccionado?.razonSocial ?? 'Consumidor final',
-          metodoPago: payload.tipoPago === 'contado' ? payload.metodoPago : 'cuenta corriente',
-          fecha: new Date(),
-          lineas: lineasSnapshot,
-          negocio,
-        });
+        // Completar con número e id reales
+        setVentaCompletada((prev) =>
+          prev ? { ...prev, id: result.id, numero: result.numero, procesando: false } : null,
+        );
       } catch (err) {
         beepError();
+        // Si falla, cerrar ticket y volver al modal de cobro con el error
+        setVentaCompletada(null);
+        setModalCobrar(true);
         toast.error(err instanceof Error ? err.message : 'Error al cobrar');
       } finally {
         enviandoRef.current = false;
