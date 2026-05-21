@@ -28,7 +28,21 @@ export default async function PlanesPage() {
 
       {/* Header */}
       <div className="text-center mb-10 max-w-xl">
-        {trialVencido ? (
+        {session.status === 'suspendido' ? (
+          <>
+            <h1 className="text-2xl font-semibold tracking-tight">Tu cuenta está suspendida</h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Elegí un plan para reactivar tu cuenta. Todos tus datos siguen intactos.
+            </p>
+          </>
+        ) : session.status === 'moroso' ? (
+          <>
+            <h1 className="text-2xl font-semibold tracking-tight">Hay un problema con tu pago</h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Tu último pago no pudo procesarse. Suscribite de nuevo para evitar la suspensión.
+            </p>
+          </>
+        ) : trialVencido ? (
           <>
             <h1 className="text-2xl font-semibold tracking-tight">Tu prueba gratuita venció</h1>
             <p className="text-sm text-muted-foreground mt-2">

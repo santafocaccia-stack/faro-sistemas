@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { actualizarConfig } from '@/server/actions/config';
+import { cancelarSuscripcion } from '@/server/actions/suscripcion';
 import { desconectarMP } from '@/server/actions/mp-negocio';
 import { getUrlConectarMP } from '@/lib/mp-url';
 import type { Tenant } from '@/server/db/schema';
@@ -46,20 +47,17 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      try {
-        await actualizarConfig({
-          nombre,
-          cuit: cuit || null,
-          direccion: direccion || null,
-          telefono: telefono || null,
-          emailNegocio: emailNegocio || null,
-          habilitaMayorista,
-          habilitaMinorista,
-        });
-        toast.success('Configuración guardada');
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Error al guardar');
-      }
+      const result = await actualizarConfig({
+        nombre,
+        cuit: cuit || null,
+        direccion: direccion || null,
+        telefono: telefono || null,
+        emailNegocio: emailNegocio || null,
+        habilitaMayorista,
+        habilitaMinorista,
+      });
+      if (!result.ok) { toast.error(result.error ?? 'Error al guardar'); return; }
+      toast.success('Configuración guardada');
     });
   }
 
@@ -174,13 +172,16 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
             </InfoCell>
           )}
         </div>
-        {tenant.status === 'trial' && (
+        {(tenant.status === 'trial' || tenant.status === 'moroso' || tenant.status === 'suspendido') && (
           <Link
             href="/planes"
             className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:brightness-110 transition-all"
           >
-            Ver planes y suscribirse
+            {tenant.status === 'trial' ? 'Ver planes y suscribirse' : 'Regularizar suscripción'}
           </Link>
+        )}
+        {tenant.status === 'activo' && tenant.mpSubscriptionId && (
+          <CancelarSuscripcionBtn />
         )}
       </FormSection>
 
@@ -197,6 +198,30 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
 
     <MPSection tenant={tenant} mpStatus={mpStatus} />
     </>
+  );
+}
+
+function CancelarSuscripcionBtn() {
+  const [isPending, startTransition] = useTransition();
+
+  function handleCancelar() {
+    if (!confirm('¿Cancelar la suscripción? Tu cuenta se desactivará al final del período. Esta acción no se puede deshacer.')) return;
+    startTransition(async () => {
+      const result = await cancelarSuscripcion();
+      if (!result.ok) { toast.error(result.error ?? 'Error al cancelar'); return; }
+      toast.success('Suscripción cancelada');
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCancelar}
+      disabled={isPending}
+      className="text-xs text-muted-foreground/60 hover:text-destructive transition-colors underline underline-offset-2"
+    >
+      {isPending ? 'Cancelando...' : 'Cancelar suscripción'}
+    </button>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { requireSession } from '@/server/auth/session';
 import { db } from '@/server/db';
 import { tenants } from '@/server/db/schema';
@@ -57,33 +58,40 @@ export async function crearSuscripcionMP(planId: PlanId) {
   redirect(data.init_point);
 }
 
-export async function cancelarSuscripcion() {
-  const session = await requireSession();
+export async function cancelarSuscripcion(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const session = await requireSession();
 
-  const [tenant] = await db
-    .select({ mpSubscriptionId: tenants.mpSubscriptionId })
-    .from(tenants)
-    .where(eq(tenants.id, session.tenantId))
-    .limit(1);
+    const [tenant] = await db
+      .select({ mpSubscriptionId: tenants.mpSubscriptionId })
+      .from(tenants)
+      .where(eq(tenants.id, session.tenantId))
+      .limit(1);
 
-  if (!tenant?.mpSubscriptionId) throw new Error('No hay suscripción activa');
+    if (!tenant?.mpSubscriptionId) return { ok: false, error: 'No hay suscripción activa' };
 
-  const res = await fetch(
-    `https://api.mercadopago.com/preapproval/${tenant.mpSubscriptionId}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+    const res = await fetch(
+      `https://api.mercadopago.com/preapproval/${tenant.mpSubscriptionId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+        },
+        body: JSON.stringify({ status: 'cancelled' }),
       },
-      body: JSON.stringify({ status: 'cancelled' }),
-    },
-  );
+    );
 
-  if (!res.ok) throw new Error('Error al cancelar la suscripción');
+    if (!res.ok) return { ok: false, error: 'Error al cancelar la suscripción en Mercado Pago' };
 
-  await db
-    .update(tenants)
-    .set({ status: 'cancelado', mpSubscriptionId: null })
-    .where(eq(tenants.id, session.tenantId));
+    await db
+      .update(tenants)
+      .set({ status: 'cancelado', mpSubscriptionId: null })
+      .where(eq(tenants.id, session.tenantId));
+
+    revalidatePath('/dashboard/config');
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Error al cancelar' };
+  }
 }

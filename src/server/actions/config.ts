@@ -26,22 +26,27 @@ export type ConfigInput = {
   habilitaMinorista: boolean;
 };
 
-export async function actualizarConfig(input: ConfigInput) {
-  const session = await requireAdmin();
-  if (!input.nombre.trim()) throw new Error('El nombre del negocio es obligatorio');
+export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const session = await requireAdmin();
+    if (!input.nombre.trim()) return { ok: false, error: 'El nombre del negocio es obligatorio' };
 
-  await db
-    .update(tenants)
-    .set({
-      nombre:            input.nombre.trim(),
-      cuit:              input.cuit?.trim() || null,
-      direccion:         input.direccion?.trim() || null,
-      telefono:          input.telefono?.trim() || null,
-      emailNegocio:      input.emailNegocio?.trim() || null,
-      habilitaMayorista: input.habilitaMayorista,
-      habilitaMinorista: input.habilitaMinorista,
-    })
-    .where(eq(tenants.id, session.tenantId));
+    await db
+      .update(tenants)
+      .set({
+        nombre:            input.nombre.trim(),
+        cuit:              input.cuit?.trim() || null,
+        direccion:         input.direccion?.trim() || null,
+        telefono:          input.telefono?.trim() || null,
+        emailNegocio:      input.emailNegocio?.trim() || null,
+        habilitaMayorista: input.habilitaMayorista,
+        habilitaMinorista: input.habilitaMinorista,
+      })
+      .where(eq(tenants.id, session.tenantId));
 
-  revalidatePath('/dashboard/config');
+    revalidatePath('/dashboard/config');
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Error al guardar' };
+  }
 }
