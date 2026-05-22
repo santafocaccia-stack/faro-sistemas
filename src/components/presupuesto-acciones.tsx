@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -44,7 +45,6 @@ export function PresupuestoAcciones({ id, estadoActual }: Props) {
   }
 
   function handleEliminar() {
-    if (!confirm('¿Eliminar este presupuesto? Esta acción no se puede deshacer.')) return;
     startTransition(async () => {
       try {
         await eliminarPresupuesto(id);
@@ -69,15 +69,22 @@ export function PresupuestoAcciones({ id, estadoActual }: Props) {
         </SelectContent>
       </Select>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleEliminar}
-        disabled={isPending}
-        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <ConfirmDialog
+        trigger={
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={isPending}
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        }
+        title="¿Eliminar este presupuesto?"
+        description="Esta acción no se puede deshacer."
+        confirmLabel="Sí, eliminar"
+        onConfirm={handleEliminar}
+      />
     </div>
   );
 }

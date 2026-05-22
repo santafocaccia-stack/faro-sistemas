@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { HREFS_EMPLEADO } from '@/lib/nav';
+import { usePosCart, selectCantidadItems } from '@/lib/stores/pos-cart';
 import type { Rol } from '@/server/db/schema';
 
 /* ── Tabs laterales (Vender va al centro como FAB elevado) ──── */
@@ -43,6 +44,7 @@ export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
   const pathname = usePathname();
   const router   = useRouter();
   const [masOpen, setMasOpen] = useState(false);
+  const cantidadItems = usePosCart(selectCantidadItems);
 
   const esGestor = rol === 'owner' || rol === 'admin';
   // Filtrado por rol: el empleado solo ve las rutas de HREFS_EMPLEADO
@@ -123,6 +125,11 @@ export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
                 aria-label="Nueva venta"
               >
                 <ShoppingCart className="h-6 w-6" strokeWidth={2.25} />
+                {cantidadItems > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 flex items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white leading-none shadow-sm">
+                    {cantidadItems > 99 ? '99+' : cantidadItems}
+                  </span>
+                )}
               </Link>
               <span className="absolute bottom-2 text-[10px] font-semibold text-muted-foreground">
                 Vender

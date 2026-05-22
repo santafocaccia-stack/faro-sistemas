@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Tag, Boxes, DollarSign, ScanBarcode, Camera, Truck, Plus, Trash2, Star, Lightbulb, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -216,7 +217,6 @@ export function ProductoForm({
 
   function handleDesactivar() {
     if (!isEdit) return;
-    if (!confirm('¿Desactivar este producto? No aparecerá más en las ventas.')) return;
     startTransition(async () => {
       await desactivarProducto(producto.id);
       toast.success('Producto desactivado');
@@ -630,15 +630,22 @@ export function ProductoForm({
       {/* Acciones */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
         {isEdit ? (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleDesactivar}
-            disabled={isPending}
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 order-last sm:order-first"
-          >
-            Desactivar producto
-          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isPending}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 order-last sm:order-first"
+              >
+                Desactivar producto
+              </Button>
+            }
+            title="¿Desactivar este producto?"
+            description="No aparecerá más en las ventas ni en el POS. Podés reactivarlo después."
+            confirmLabel="Sí, desactivar"
+            onConfirm={handleDesactivar}
+          />
         ) : <div className="hidden sm:block" />}
 
         <div className="flex gap-2">

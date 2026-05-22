@@ -271,6 +271,47 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productosActivos, esMayorista, modoEscaneo, modalCobrar, modalLineaSuelta, items, confirmSinStock]);
 
+  // ── Atajos de teclado del POS ────────────────────────────────
+  // F2 → abrir COBRAR · Escape → cerrar modal/limpiar búsqueda
+  // Supr → quitar el último ítem agregado (solo fuera de inputs)
+  useEffect(() => {
+    function onShortcut(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      const enInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+
+      // Escape: cierra modales en cascada; si no hay modal, limpia búsqueda
+      if (e.key === 'Escape') {
+        if (modalCobrar)       { setModalCobrar(false);       return; }
+        if (modalLineaSuelta)  { setModalLineaSuelta(false);  return; }
+        if (confirmSinStock)   { setConfirmSinStock(null);    return; }
+        if (ventaCompletada)   return; // post-venta lo maneja su propio botón
+        if (busqueda)          { setBusqueda('');             return; }
+        return;
+      }
+
+      // No activar F2/Supr si hay un modal abierto
+      if (modalCobrar || modalLineaSuelta || confirmSinStock || ventaCompletada) return;
+
+      // F2 → abrir cobrar (funciona incluso dentro de inputs)
+      if (e.key === 'F2') {
+        e.preventDefault();
+        if (items.length > 0 && !isPending) setModalCobrar(true);
+        return;
+      }
+
+      // Supr → quitar último ítem (solo si no estás escribiendo)
+      if (e.key === 'Delete' && !enInput && items.length > 0) {
+        e.preventDefault();
+        const idAQuitar = ultimaLineaId ?? items[items.length - 1]?.id;
+        if (idAQuitar) { quitar(idAQuitar); vibrar(20); }
+      }
+    }
+
+    window.addEventListener('keydown', onShortcut);
+    return () => window.removeEventListener('keydown', onShortcut);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalCobrar, modalLineaSuelta, confirmSinStock, ventaCompletada, busqueda, items, ultimaLineaId, isPending]);
+
   // ── Cobrar ────────────────────────────────────────────────────
   async function handleCobrar(payload: {
     tipoPago: 'contado' | 'cuenta_corriente';
@@ -648,6 +689,7 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
             type="button"
             onClick={() => setModalCobrar(true)}
             disabled={items.length === 0 || isPending}
+            title="Abrir cobro (F2)"
             className={cn(
               'w-full h-12 rounded-xl text-base font-bold tracking-tight transition-all duration-150 press-scale flex items-center justify-center gap-2',
               items.length === 0 || isPending

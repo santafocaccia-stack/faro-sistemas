@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Truck, Phone, Calendar, Percent, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { crearProveedor, actualizarProveedor, desactivarProveedor } from '@/server/actions/proveedores';
@@ -74,7 +75,6 @@ export function ProveedorForm({ proveedor }: Props) {
 
   function handleDesactivar() {
     if (!isEdit) return;
-    if (!confirm('¿Desactivar este proveedor?')) return;
     startTransition(async () => {
       await desactivarProveedor(proveedor.id);
       toast.success('Proveedor desactivado');
@@ -210,15 +210,22 @@ export function ProveedorForm({ proveedor }: Props) {
       {/* Acciones */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
         {isEdit ? (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleDesactivar}
-            disabled={isPending}
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 order-last sm:order-first"
-          >
-            Desactivar proveedor
-          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isPending}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 order-last sm:order-first"
+              >
+                Desactivar proveedor
+              </Button>
+            }
+            title="¿Desactivar este proveedor?"
+            description="El proveedor no aparecerá en nuevos pedidos. Podés reactivarlo después."
+            confirmLabel="Sí, desactivar"
+            onConfirm={handleDesactivar}
+          />
         ) : <div className="hidden sm:block" />}
 
         <div className="flex gap-2">

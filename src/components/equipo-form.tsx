@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { UserPlus, Trash2, ShieldCheck, Shield, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { invitarMiembro, cambiarRol, eliminarMiembro, type MiembroEquipo } from '@/server/actions/equipo';
@@ -54,8 +55,7 @@ export function EquipoForm({ equipo, miRol, miUserId }: Props) {
     });
   }
 
-  function handleEliminar(userId: string, email: string) {
-    if (!confirm(`¿Eliminar a ${email} del equipo?`)) return;
+  function handleEliminar(userId: string) {
     startTransition(async () => {
       try {
         await eliminarMiembro(userId);
@@ -206,14 +206,21 @@ export function EquipoForm({ equipo, miRol, miUserId }: Props) {
                 )}
 
                 {puedeEditar && (
-                  <button
-                    onClick={() => handleEliminar(miembro.userId, miembro.email)}
-                    disabled={isPending}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Quitar
-                  </button>
+                  <ConfirmDialog
+                    trigger={
+                      <button
+                        disabled={isPending}
+                        className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[12px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Quitar
+                      </button>
+                    }
+                    title={`¿Quitar a ${miembro.email} del equipo?`}
+                    description="El miembro perderá acceso a la plataforma. Podés volver a invitarlo."
+                    confirmLabel="Sí, quitar"
+                    onConfirm={() => handleEliminar(miembro.userId)}
+                  />
                 )}
               </div>
             </div>

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Check, X, Tags, Layers } from 'lucide-react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import {
   crearCategoria, actualizarCategoria, eliminarCategoria,
   crearGrupoVariante, actualizarGrupoVariante, eliminarGrupoVariante,
@@ -111,7 +112,6 @@ function Section({
   }
 
   function handleEliminar(item: Item) {
-    if (!confirm(`¿Eliminar "${item.nombre}"?\n\nLos productos que la usen quedarán sin categoría.`)) return;
     setPendingId(item.id);
     startTransition(async () => {
       try {
@@ -215,13 +215,20 @@ function Section({
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    <button
-                      onClick={() => handleEliminar(item)}
-                      className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <ConfirmDialog
+                      trigger={
+                        <button
+                          className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      }
+                      title={`¿Eliminar "${item.nombre}"?`}
+                      description="Los productos que la usen quedarán sin categoría."
+                      confirmLabel="Sí, eliminar"
+                      onConfirm={() => handleEliminar(item)}
+                    />
                   </>
                 )}
               </li>

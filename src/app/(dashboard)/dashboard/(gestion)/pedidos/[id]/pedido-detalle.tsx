@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Check, Send, Trash2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import {
   confirmarPedido, recibirPedido, actualizarLineaPedido, eliminarLineaPedido,
@@ -97,7 +98,6 @@ export function PedidoDetalle({ data, negocioNombre }: Props) {
   }
 
   function handleEliminarLinea(lineaId: string) {
-    if (!confirm('¿Eliminar esta línea del pedido?')) return;
     startTransition(async () => {
       await eliminarLineaPedido(lineaId);
       toast.success('Línea eliminada');
@@ -257,13 +257,19 @@ export function PedidoDetalle({ data, negocioNombre }: Props) {
                   </div>
 
                   {esBorrador && (
-                    <button
-                      onClick={() => handleEliminarLinea(linea.id)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
-                      disabled={isPending}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <ConfirmDialog
+                      trigger={
+                        <button
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          disabled={isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      }
+                      title="¿Eliminar esta línea del pedido?"
+                      confirmLabel="Sí, eliminar"
+                      onConfirm={() => handleEliminarLinea(linea.id)}
+                    />
                   )}
                 </div>
               );

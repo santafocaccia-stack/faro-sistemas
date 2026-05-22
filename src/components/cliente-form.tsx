@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { User, Phone, BookOpen, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -57,7 +58,6 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
 
   function handleDesactivar() {
     if (!isEdit) return;
-    if (!confirm('¿Desactivar este cliente?')) return;
     startTransition(async () => {
       await desactivarCliente(cliente.id);
       toast.success('Cliente desactivado');
@@ -185,15 +185,22 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
       {/* Acciones */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
         {isEdit ? (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleDesactivar}
-            disabled={isPending}
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 order-last sm:order-first"
-          >
-            Desactivar cliente
-          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isPending}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 order-last sm:order-first"
+              >
+                Desactivar cliente
+              </Button>
+            }
+            title="¿Desactivar este cliente?"
+            description="El cliente no aparecerá en nuevas ventas. Podés reactivarlo después."
+            confirmLabel="Sí, desactivar"
+            onConfirm={handleDesactivar}
+          />
         ) : <div className="hidden sm:block" />}
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending} className="flex-1 sm:flex-none">

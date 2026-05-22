@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Building2, ShoppingBag, CreditCard, Wallet, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { actualizarConfig } from '@/server/actions/config';
@@ -205,7 +206,6 @@ function CancelarSuscripcionBtn() {
   const [isPending, startTransition] = useTransition();
 
   function handleCancelar() {
-    if (!confirm('¿Cancelar la suscripción? Tu cuenta se desactivará al final del período. Esta acción no se puede deshacer.')) return;
     startTransition(async () => {
       const result = await cancelarSuscripcion();
       if (!result.ok) { toast.error(result.error ?? 'Error al cancelar'); return; }
@@ -214,14 +214,21 @@ function CancelarSuscripcionBtn() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleCancelar}
-      disabled={isPending}
-      className="text-xs text-muted-foreground/60 hover:text-destructive transition-colors underline underline-offset-2"
-    >
-      {isPending ? 'Cancelando...' : 'Cancelar suscripción'}
-    </button>
+    <ConfirmDialog
+      trigger={
+        <button
+          type="button"
+          disabled={isPending}
+          className="text-xs text-muted-foreground/60 hover:text-destructive transition-colors underline underline-offset-2"
+        >
+          {isPending ? 'Cancelando...' : 'Cancelar suscripción'}
+        </button>
+      }
+      title="¿Cancelar la suscripción?"
+      description="Tu cuenta se desactivará al final del período de facturación. Esta acción no se puede deshacer."
+      confirmLabel="Sí, cancelar"
+      onConfirm={handleCancelar}
+    />
   );
 }
 
