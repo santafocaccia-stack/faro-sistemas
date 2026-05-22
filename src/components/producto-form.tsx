@@ -85,13 +85,15 @@ export function ProductoForm({
   const handleNombreBlur = useCallback((nombre: string) => {
     const normalizado = normalizarNombre(nombre);
     update('nombre', normalizado);
+    // Solo corre en modo creación — en edición ya hay producto y no tiene sentido sugerir
     if (isEdit || sugerenciaDescartada || !normalizado) return;
 
     startSugerencia(async () => {
-      const resultado = await buscarVariantesSugeridas(normalizado, producto?.id);
+      // excluirId no aplica en creación (no hay producto aún)
+      const resultado = await buscarVariantesSugeridas(normalizado, undefined);
       setSugerencia(resultado);
     });
-  }, [isEdit, sugerenciaDescartada, producto?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isEdit, sugerenciaDescartada]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleAceptarSugerencia() {
     if (!sugerencia) return;
