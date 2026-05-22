@@ -8,6 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { FormPago } from './form-pago';
+import { RevertirMovimientoBtn } from './revertir-movimiento-btn';
 
 type Props = { params: Promise<{ clienteId: string }> };
 
@@ -92,6 +93,7 @@ export default async function DetalleCCPage({ params }: Props) {
                   <TableHead className="hidden sm:table-cell h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Debe</TableHead>
                   <TableHead className="hidden sm:table-cell h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Haber</TableHead>
                   <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right pr-4">Saldo</TableHead>
+                  <TableHead className="h-10 w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -124,6 +126,16 @@ export default async function DetalleCCPage({ params }: Props) {
                       </TableCell>
                       <TableCell className="pr-4 py-2.5 text-right font-mono tabular-nums text-[13px] font-semibold">
                         {formatARS(Number(m.saldoPosterior))}
+                      </TableCell>
+                      <TableCell className="pr-2 py-2.5 text-right">
+                        {/* Mostrar botón solo en tipos revertibles y si no es ya una reversión */}
+                        {(['pago', 'ajuste_haber', 'nota_credito'] as const).includes(m.tipo as any)
+                          && !m.descripcion.startsWith('REV-') && (
+                          <RevertirMovimientoBtn
+                            movimientoId={m.id}
+                            descripcion={m.descripcion}
+                          />
+                        )}
                       </TableCell>
                     </TableRow>
                   );
