@@ -61,6 +61,11 @@ comida, servicios). Integra mayorista + minorista en un sistema. Deploy en Verce
 - **Configuración negocio**: datos fiscales, canales, Mercado Pago (conectar/desconectar)
 - **Planes y suscripción**: 4 planes, MP preapproval, webhook de activación/suspensión
 - **Hardening server actions**: gestión → `requireAdmin()`, empleado solo accede a POS + Historial + Productos
+- **Cuenta corriente — reversión de movimientos**: `revertirMovimiento` con transacción atómica + `FOR UPDATE`; botón en tabla de CC con motivo obligatorio
+- **`registrarPago` — transacción atómica**: `FOR UPDATE` en el `SELECT` del cliente para evitar race conditions
+- **`ConfirmDialog` reutilizable**: reemplaza `window.confirm()` en 9 componentes (venta, presupuesto, cliente, producto, proveedor, equipo, categorías, pedido, suscripción)
+- **POS — atajos de teclado**: `F2` abre cobrar, `Escape` cierra modales en cascada, `Supr` quita último ítem
+- **Mobile nav — badge de carrito**: muestra cantidad de ítems sobre el FAB de Vender al navegar fuera del POS
 
 ---
 
@@ -83,7 +88,7 @@ comida, servicios). Integra mayorista + minorista en un sistema. Deploy en Verce
 | 6 | **Descuentos en POS** | Descuento % o $ por total de venta — muy pedido en kioscos/carnicerías |
 | 7 | **Alertas de stock bajo** | Email/banner cuando `stockActual ≤ stockMinimo` — hoy el campo existe pero no dispara nada |
 | 8 | **Facturación AFIP** (Tusfacturas.app) | Emisión de facturas A/B — bloqueante para el segmento servicios/mayorista |
-| 9 | **Devoluciones / notas de crédito** | Reversar una venta total o parcial |
+| 9 | **Devoluciones / notas de crédito** | ~~Reversar movimientos CC~~ ✅ hecho — falta reversar venta completa con ajuste de stock |
 | 10 | **Export de datos** | CSV de ventas, inventario — para que el cliente no sienta que queda "encerrado" |
 | 11 | **Historial de auditoría básico** | Quién creó/modificó qué — mínimo en productos y ventas |
 
