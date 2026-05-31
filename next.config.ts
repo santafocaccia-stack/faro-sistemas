@@ -1,6 +1,27 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+// F5 — Content Security Policy.
+// Arranca en modo Report-Only: NO bloquea, solo registra violaciones en la
+// consola del navegador. Permite validar en un preview de Vercel que ninguna
+// dependencia legítima (Supabase, Mercado Pago, Sentry, scanner ZXing) se
+// rompe. Una vez confirmado sin violaciones, cambiar la key a
+// "Content-Security-Policy" (enforcing) para que efectivamente mitigue XSS.
+// 'unsafe-inline'/'unsafe-eval' son necesarios mientras Next no use nonces.
+const cspDirectives = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co https://api.mercadopago.com https://*.sentry.io https://*.ingest.sentry.io",
+  "frame-src 'self' https://*.mercadopago.com https://*.mercadopago.com.ar",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -14,6 +35,8 @@ const securityHeaders = [
     // interest-cohort=(): bloquea FLoC (privacidad)
     value: "camera=(self), microphone=(), geolocation=(), interest-cohort=()",
   },
+  // Report-Only por ahora — cambiar a "Content-Security-Policy" tras validar en preview.
+  { key: "Content-Security-Policy-Report-Only", value: cspDirectives },
 ];
 
 const nextConfig: NextConfig = {
