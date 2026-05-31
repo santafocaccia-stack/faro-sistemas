@@ -26,6 +26,7 @@ type Props = {
   gruposVariantes: GrupoVariante[];
   proveedoresDisponibles: Proveedor[];
   vinculosIniciales?: { rel: ProductoProveedor; proveedor: Proveedor }[];
+  plan?: string;
 };
 
 export function ProductoForm({
@@ -34,7 +35,9 @@ export function ProductoForm({
   gruposVariantes,
   proveedoresDisponibles,
   vinculosIniciales = [],
+  plan,
 }: Props) {
+  const esBalanza = plan === 'balanza';
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!producto;
@@ -50,6 +53,7 @@ export function ProductoForm({
 
   const [form, setForm] = useState<Omit<ProductoInput, 'vinculos'>>({
     codigo: producto?.codigo ?? '',
+    codigoPlu: producto?.codigoPlu ?? '',
     nombre: producto?.nombre ?? '',
     descripcion: producto?.descripcion ?? '',
     categoriaId: producto?.categoriaId ?? '',
@@ -275,6 +279,20 @@ export function ProductoForm({
               </button>
             </div>
           </Field>
+          {esBalanza && (
+            <Field label="Código PLU" htmlFor="codigoPlu" hint="código de balanza (ej: 0045)">
+              <Input
+                id="codigoPlu"
+                value={form.codigoPlu ?? ''}
+                onChange={(e) => update('codigoPlu', e.target.value.replace(/\D/g, '').slice(0, 8))}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                placeholder="Número corto para la balanza"
+                className={`${inputCls} font-mono`}
+                maxLength={8}
+                inputMode="numeric"
+              />
+            </Field>
+          )}
         </div>
 
         {/* Sugerencia de variantes */}

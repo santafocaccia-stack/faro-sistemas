@@ -3,9 +3,11 @@ import { ChevronLeft } from 'lucide-react';
 import { ProductoForm } from '@/components/producto-form';
 import { listarCategorias, listarGruposVariantes } from '@/server/actions/categorias';
 import { listarProveedores } from '@/server/actions/proveedores';
+import { requireSession } from '@/server/auth/session';
 
 export default async function NuevoProductoPage() {
-  const [categorias, gruposVariantes, proveedoresDisponibles] = await Promise.all([
+  const [session, categorias, gruposVariantes, proveedoresDisponibles] = await Promise.all([
+    requireSession(),
     listarCategorias(),
     listarGruposVariantes(),
     listarProveedores(),
@@ -30,6 +32,7 @@ export default async function NuevoProductoPage() {
         categorias={categorias}
         gruposVariantes={gruposVariantes}
         proveedoresDisponibles={proveedoresDisponibles}
+        plan={session.plan}
       />
     </div>
   );

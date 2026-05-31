@@ -16,6 +16,7 @@ import type { VinculoProveedorInput } from './proveedores';
 
 export type ProductoInput = {
   codigo?: string | null;
+  codigoPlu?: string | null;
   nombre: string;
   descripcion?: string | null;
   categoriaId?: string | null;
@@ -77,6 +78,7 @@ export async function crearProducto(input: ProductoInput): Promise<CrearProducto
       .values({
         tenantId: session.tenantId,
         codigo: data.codigo || null,
+        codigoPlu: data.codigoPlu || null,
         nombre: data.nombre,
         descripcion: data.descripcion || null,
         categoriaId: data.categoriaId || null,
@@ -145,6 +147,7 @@ export async function actualizarProducto(
         .update(productos)
         .set({
           codigo: data.codigo || null,
+          codigoPlu: data.codigoPlu || null,
           nombre: data.nombre,
           descripcion: data.descripcion || null,
           categoriaId: data.categoriaId || null,

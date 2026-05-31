@@ -9,20 +9,22 @@ import {
 } from 'lucide-react';
 import { cn, formatARS, formatKg } from '@/lib/utils';
 import { toggleActivoProducto } from '@/server/actions/productos';
-import type { Producto, Categoria } from '@/server/db/schema';
+import type { Producto, Categoria, GrupoVariante } from '@/server/db/schema';
 
 type Props = {
   productos: Producto[];
   categorias: Categoria[];
+  gruposVariantes?: GrupoVariante[];
 };
 
 type Filtro = 'todos' | 'activos' | 'inactivos' | 'stock_bajo';
 
-export function ProductosListClient({ productos, categorias }: Props) {
+export function ProductosListClient({ productos, categorias, gruposVariantes = [] }: Props) {
   const router = useRouter();
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('activos');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string | null>(null);
+  const [grupoFiltro, setGrupoFiltro] = useState<string | null>(null);
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -38,6 +40,15 @@ export function ProductosListClient({ productos, categorias }: Props) {
     const usadas = new Set(productos.map((p) => p.categoriaId).filter(Boolean));
     return categorias.filter((c) => usadas.has(c.id));
   }, [categorias, productos]);
+
+  /** Grupos de variantes con al menos 2 productos (si tiene 1 solo no tiene sentido filtrar) */
+  const gruposConProductos = useMemo(() => {
+    const conteo = new Map<string, number>();
+    productos.forEach((p) => {
+      if (p.grupoVarianteId) conteo.set(p.grupoVarianteId, (conteo.get(p.grupoVarianteId) ?? 0) + 1);
+    });
+    return gruposVariantes.filter((g) => (conteo.get(g.id) ?? 0) >= 2);
+  }, [gruposVariantes, productos]);
 
   const stockBajoCount = useMemo(() =>
     productos.filter((p) => p.stockMinimo && Number(p.stockActual) <= Number(p.stockMinimo)).length,
@@ -62,6 +73,10 @@ export function ProductosListClient({ productos, categorias }: Props) {
 
     if (categoriaFiltro) {
       lista = lista.filter((p) => p.categoriaId === categoriaFiltro);
+    }
+
+    if (grupoFiltro) {
+      lista = lista.filter((p) => p.grupoVarianteId === grupoFiltro);
     }
 
     return lista;
@@ -159,6 +174,29 @@ export function ProductosListClient({ productos, categorias }: Props) {
               )}
             >
               {c.nombre}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Chips de grupos de variantes — solo si hay grupos con ≥2 productos */}
+      {gruposConProductos.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mt-1">
+          <span className="shrink-0 px-2 h-7 flex items-center text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/50">
+            Variantes
+          </span>
+          {gruposConProductos.map((g) => (
+            <button
+              key={g.id}
+              onClick={() => setGrupoFiltro(grupoFiltro === g.id ? null : g.id)}
+              className={cn(
+                'shrink-0 inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-medium transition-colors whitespace-nowrap',
+                grupoFiltro === g.id
+                  ? 'bg-primary/15 text-primary border border-primary/30'
+                  : 'bg-card border border-border text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {g.nombre}
             </button>
           ))}
         </div>

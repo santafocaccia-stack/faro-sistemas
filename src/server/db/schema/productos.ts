@@ -38,6 +38,7 @@ export const productos = pgTable(
 
     // Identificación
     codigo: text('codigo'),
+    codigoPlu: text('codigo_plu'),     // código PLU para balanza (4 dígitos)
     nombre: text('nombre').notNull(),
     descripcion: text('descripcion'),
     categoriaId: uuid('categoria_id').references(() => categorias.id, { onDelete: 'set null' }),
