@@ -66,6 +66,13 @@ comida, servicios). Integra mayorista + minorista en un sistema. Deploy en Verce
 - **`ConfirmDialog` reutilizable**: reemplaza `window.confirm()` en 9 componentes (venta, presupuesto, cliente, producto, proveedor, equipo, categorías, pedido, suscripción)
 - **POS — atajos de teclado**: `F2` abre cobrar, `Escape` cierra modales en cascada, `Supr` quita último ítem
 - **Mobile nav — badge de carrito**: muestra cantidad de ítems sobre el FAB de Vender al navegar fuera del POS
+- **Bug fix — loop pantalla de planes**: usuarios con trial vencido quedaban atrapados sin poder ni volver al dashboard ni contratar; `plan-card.tsx` + `planes/page.tsx`
+- **Bug fix — unidades proveedores**: cantidades `por_unidad` mostraban "1.000" (Drizzle numeric con scale 3); normalización en `pedido-detalle.tsx`
+- **Variantes — filtro por grupo**: chips de grupo de variantes en `productos-list-client.tsx`; filtro funcional
+- **Variantes — otras variantes en detalle**: card "Otras variantes" en `/productos/[id]` muestra productos del mismo grupo con links, stock y precio
+- **Balanza — Código PLU**: campo `codigoPlu` en schema + migración aplicada; visible en el formulario de producto solo cuando el plan es `balanza`
+- **Plantillas de servicios**: campo `esPlantilla`/`nombrePlantilla` en presupuestos + actions `guardarComoPlantilla`, `listarPlantillas`, `usarPlantilla`; botón en detalle del presupuesto; sección de plantillas en lista de presupuestos
+- **Reporte semanal por mail**: cron `vercel.json` (lunes 10am ARG), ruta `/api/cron/reporte-semanal`, template HTML Brasas; requiere `RESEND_API_KEY` + `CRON_SECRET` en Vercel env vars
 
 ---
 

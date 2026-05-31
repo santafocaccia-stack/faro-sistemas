@@ -132,3 +132,37 @@ export async function eliminarGrupoVariante(id: string) {
     .where(and(byTenant(session.tenantId, gruposVariantes), eq(gruposVariantes.id, id)));
   revalidatePath('/dashboard/productos');
 }
+
+/**
+ * Devuelve todos los productos activos de un mismo grupo de variantes,
+ * excluyendo opcionalmente el producto actual.
+ */
+export async function listarProductosDeGrupo(
+  grupoVarianteId: string,
+  excluirProductoId?: string,
+) {
+  const session = await requireSession();
+  const filas = await db
+    .select({
+      id:              productos.id,
+      nombre:          productos.nombre,
+      codigo:          productos.codigo,
+      precioMinorista: productos.precioMinorista,
+      precioMayorista: productos.precioMayorista,
+      stockActual:     productos.stockActual,
+      tipoUnidad:      productos.tipoUnidad,
+    })
+    .from(productos)
+    .where(
+      and(
+        byTenant(session.tenantId, productos),
+        eq(productos.activo, true),
+        eq(productos.grupoVarianteId, grupoVarianteId),
+      ),
+    )
+    .orderBy(asc(productos.nombre));
+
+  return excluirProductoId
+    ? filas.filter((p) => p.id !== excluirProductoId)
+    : filas;
+}
