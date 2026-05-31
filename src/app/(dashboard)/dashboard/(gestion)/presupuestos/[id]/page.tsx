@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table';
 import { PresupuestoPDFButton } from '@/components/pdf-download-button';
 import { PresupuestoAcciones } from '@/components/presupuesto-acciones';
+import { GuardarPlantillaButton } from '@/components/plantilla-button';
 
 const ESTADO_BADGE: Record<string, { label: string; cls: string }> = {
   borrador:  { label: 'Borrador',  cls: 'bg-muted text-muted-foreground border-border/40' },
@@ -44,7 +45,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
           Volver a presupuestos
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <PresupuestoAcciones id={pres.id} estadoActual={pres.estado} />
           <Link
             href={`/dashboard/presupuestos/${pres.id}/editar`}
@@ -53,6 +54,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
             <Pencil className="h-3.5 w-3.5" />
             Editar
           </Link>
+          {!pres.esPlantilla && <GuardarPlantillaButton presupuestoId={pres.id} />}
           <PresupuestoPDFButton presupuestoId={pres.id} />
         </div>
       </div>

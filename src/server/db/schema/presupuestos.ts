@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   numeric,
+  boolean,
   timestamp,
   pgEnum,
   integer,
@@ -44,6 +45,10 @@ export const presupuestos = pgTable(
     // Contenido
     notas: text('notas'),
 
+    // Plantillas de servicio — se pueden duplicar como presupuesto nuevo
+    esPlantilla: boolean('es_plantilla').notNull().default(false),
+    nombrePlantilla: text('nombre_plantilla'), // ej: "Instalación eléctrica básica"
+
     // Totales calculados
     subtotal: numeric('subtotal', { precision: 12, scale: 2 }).notNull().default('0'),
     descuento: numeric('descuento', { precision: 12, scale: 2 }).notNull().default('0'),
@@ -78,3 +83,4 @@ export type Presupuesto      = typeof presupuestos.$inferSelect;
 export type NewPresupuesto   = typeof presupuestos.$inferInsert;
 export type PresupuestoLinea = typeof presupuestosLineas.$inferSelect;
 export type PresupuestoEstado = (typeof presupuestoEstadoEnum.enumValues)[number];
+
