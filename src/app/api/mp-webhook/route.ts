@@ -1,12 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { tenants } from '@/server/db/schema';
 import type { PlanId } from '@/lib/planes';
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!;
+const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET;
+
+/**
+ * Verifica la firma del webhook de Mercado Pago (F2).
+ *
+ * Algoritmo oficial de MP:
+ *   - Header `x-signature`: "ts=<timestamp>,v1=<hmac-sha256>"
+ *   - Header `x-request-id`
+ *   - `data.id` viene del query param (minúsculas si es alfanumérico)
+ *   - manifest = `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`
+ *   - HMAC-SHA256(secret, manifest) === v1   (comparación timing-safe)
+ */
+function verificarFirmaMP(req: NextRequest, secret: string): boolean {
+  const xSignature = req.headers.get('x-signature');
+  const xRequestId = req.headers.get('x-request-id');
+  if (!xSignature || !xRequestId) return false;
+
+  let ts: string | undefined;
+  let v1: string | undefined;
+  for (const parte of xSignature.split(',')) {
+    const [clave, valor] = parte.split('=').map((s) => s.trim());
+    if (clave === 'ts') ts = valor;
+    else if (clave === 'v1') v1 = valor;
+  }
+  if (!ts || !v1) return false;
+
+  const dataId =
+    req.nextUrl.searchParams.get('data.id') ??
+    req.nextUrl.searchParams.get('id') ??
+    '';
+
+  const manifest = `id:${dataId.toLowerCase()};request-id:${xRequestId};ts:${ts};`;
+  const esperado = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+
+  // timingSafeEqual exige buffers de igual longitud (si no, lanza)
+  const recibidoBuf = Buffer.from(v1, 'hex');
+  const esperadoBuf = Buffer.from(esperado, 'hex');
+  if (recibidoBuf.length !== esperadoBuf.length) return false;
+  return crypto.timingSafeEqual(recibidoBuf, esperadoBuf);
+}
 
 export async function POST(req: NextRequest) {
+  // F2 — verificación de firma. Si el secret está configurado, se exige firma
+  // válida. Si no está configurado, se procesa con un warning (rollout sin
+  // romper pagos) — cargar MP_WEBHOOK_SECRET en Vercel activa la verificación.
+  if (MP_WEBHOOK_SECRET) {
+    if (!verificarFirmaMP(req, MP_WEBHOOK_SECRET)) {
+      console.warn('[mp-webhook] firma inválida o ausente — request rechazado');
+      return NextResponse.json({ ok: false }, { status: 401 });
+    }
+  } else {
+    console.warn(
+      '[mp-webhook] MP_WEBHOOK_SECRET no configurado — webhook procesado SIN verificación de firma',
+    );
+  }
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ ok: false }, { status: 400 });
 
