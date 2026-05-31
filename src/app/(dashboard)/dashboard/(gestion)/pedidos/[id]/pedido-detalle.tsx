@@ -74,12 +74,21 @@ export function PedidoDetalle({ data, negocioNombre }: Props) {
   const [isPending, startTransition] = useTransition();
   const { pedido, proveedor, lineas } = data;
 
+  /**
+   * Drizzle devuelve numeric(12,3) siempre con 3 decimales ("1.000").
+   * Para por_unidad mostramos entero; para por_kg dejamos los decimales.
+   */
+  function normalizarCantidad(cantidad: string, tipoUnidad: 'por_kg' | 'por_unidad'): string {
+    if (tipoUnidad === 'por_unidad') return String(Math.round(Number(cantidad)));
+    return cantidad;
+  }
+
   // Estado local de cantidades para modo edición
   const [cantidades, setCantidades] = useState<Record<string, string>>(
-    Object.fromEntries(lineas.map((l) => [l.linea.id, l.linea.cantidadPedida]))
+    Object.fromEntries(lineas.map((l) => [l.linea.id, normalizarCantidad(l.linea.cantidadPedida, l.tipoUnidad)]))
   );
   const [cantidadesRecibidas, setCantidadesRecibidas] = useState<Record<string, string>>(
-    Object.fromEntries(lineas.map((l) => [l.linea.id, l.linea.cantidadPedida]))
+    Object.fromEntries(lineas.map((l) => [l.linea.id, normalizarCantidad(l.linea.cantidadPedida, l.tipoUnidad)]))
   );
   const [notas, setNotas] = useState(pedido.notas ?? '');
 
@@ -227,7 +236,7 @@ export function PedidoDetalle({ data, negocioNombre }: Props) {
                     ) : esEnviado ? (
                       <>
                         <span className="text-sm text-muted-foreground tabular-nums">
-                          {esKg ? formatKg(Number(linea.cantidadPedida)) : `${linea.cantidadPedida} un`}
+                          {esKg ? formatKg(Number(linea.cantidadPedida)) : `${Math.round(Number(linea.cantidadPedida))} un`}
                         </span>
                         <span className="text-muted-foreground/40">/</span>
                         <Input
@@ -245,11 +254,11 @@ export function PedidoDetalle({ data, negocioNombre }: Props) {
                     ) : (
                       <div className="text-right">
                         <p className="text-sm tabular-nums">
-                          {esKg ? formatKg(Number(linea.cantidadPedida)) : `${linea.cantidadPedida} un`}
+                          {esKg ? formatKg(Number(linea.cantidadPedida)) : `${Math.round(Number(linea.cantidadPedida))} un`}
                         </p>
                         {linea.cantidadRecibida && (
                           <p className="text-xs text-emerald-400 tabular-nums">
-                            Rec: {esKg ? formatKg(Number(linea.cantidadRecibida)) : `${linea.cantidadRecibida} un`}
+                            Rec: {esKg ? formatKg(Number(linea.cantidadRecibida)) : `${Math.round(Number(linea.cantidadRecibida))} un`}
                           </p>
                         )}
                       </div>

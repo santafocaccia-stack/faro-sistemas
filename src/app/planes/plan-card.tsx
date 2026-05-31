@@ -10,10 +10,12 @@ type Props = {
   plan: Plan;
   dolarMep: number;
   esPlanActual: boolean;
+  /** true = ya está pagando, el botón se deshabilita. false = trial vencido/suspendido, puede re-suscribirse */
+  suscripcionActiva: boolean;
   onContratar: (planId: PlanId) => Promise<void>;
 };
 
-export function PlanCard({ plan, dolarMep, esPlanActual, onContratar }: Props) {
+export function PlanCard({ plan, dolarMep, esPlanActual, suscripcionActiva, onContratar }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +31,9 @@ export function PlanCard({ plan, dolarMep, esPlanActual, onContratar }: Props) {
       }
     });
   }
+
+  // Deshabilitar solo si ya tiene suscripción activa en este plan
+  const deshabilitado = isPending || (esPlanActual && suscripcionActiva);
 
   return (
     <div className={`relative flex flex-col rounded-xl border bg-card p-5 transition-all ${
@@ -76,14 +81,20 @@ export function PlanCard({ plan, dolarMep, esPlanActual, onContratar }: Props) {
 
       <button
         onClick={handleContratar}
-        disabled={isPending || esPlanActual}
+        disabled={deshabilitado}
         className={`w-full h-9 rounded-lg text-sm font-medium transition-all ${
-          esPlanActual
+          deshabilitado
             ? 'bg-muted text-muted-foreground cursor-default'
             : 'bg-primary text-primary-foreground hover:brightness-110'
         }`}
       >
-        {isPending ? 'Redirigiendo...' : esPlanActual ? 'Plan activo' : 'Contratar'}
+        {isPending
+          ? 'Redirigiendo...'
+          : esPlanActual && suscripcionActiva
+            ? 'Plan activo'
+            : esPlanActual
+              ? 'Continuar con este plan'
+              : 'Contratar'}
       </button>
     </div>
   );

@@ -80,6 +80,7 @@ export default async function PlanesPage() {
             plan={plan}
             dolarMep={dolarMep}
             esPlanActual={session.plan === plan.id}
+            suscripcionActiva={session.status === 'activo'}
             onContratar={crearSuscripcionMP}
           />
         ))}
@@ -92,7 +93,8 @@ export default async function PlanesPage() {
           <span className="flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Sin permanencia</span>
           <span className="flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Soporte por WhatsApp</span>
         </div>
-        {!trialVencido && (
+        {/* Siempre mostrar escape si el status es activo o moroso (ya paga) */}
+        {(session.status === 'activo' || session.status === 'moroso' || !trialVencido) && (
           <a href="/dashboard" className="text-xs text-muted-foreground/60 hover:text-muted-foreground mt-2 transition-colors">
             Volver al dashboard
           </a>
