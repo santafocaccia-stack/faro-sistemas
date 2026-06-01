@@ -1,4 +1,4 @@
-export type PlanId = 'servicios' | 'market' | 'food' | 'balanza';
+export type PlanId = 'servicios' | 'market' | 'food' | 'balanza' | 'prestamista';
 
 export const PLANES = {
   servicios: {
@@ -53,6 +53,19 @@ export const PLANES = {
       'Categorías y grupos de variantes',
     ],
     color: 'oklch(0.62 0.16 320)',
+  },
+  prestamista: {
+    id: 'prestamista' as PlanId,
+    nombre: 'Gesto Prestamista',
+    precioUsd: 28,
+    descripcion: 'Para prestamistas y financieras: gestión de créditos y cobranzas',
+    features: [
+      'Deudores y préstamos en un solo lugar',
+      'Cronograma de cuotas automático (sistema francés)',
+      'Registro de pagos con cálculo de mora',
+      'Cartera: total prestado, a cobrar y en mora',
+    ],
+    color: 'oklch(0.6 0.15 160)',
   },
 } as const;
 
