@@ -3,6 +3,7 @@ import { requireSession } from '@/server/auth/session';
 import { getDolarMep } from '@/lib/dolar';
 import { PLANES_ARRAY } from '@/lib/planes';
 import { PlanCard } from './plan-card';
+import { PlanesAcciones } from './planes-acciones';
 import { crearSuscripcionMP } from '@/server/actions/suscripcion';
 
 export default async function PlanesPage() {
@@ -93,12 +94,11 @@ export default async function PlanesPage() {
           <span className="flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Sin permanencia</span>
           <span className="flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Soporte por WhatsApp</span>
         </div>
-        {/* Siempre mostrar escape si el status es activo o moroso (ya paga) */}
-        {(session.status === 'activo' || session.status === 'moroso' || !trialVencido) && (
-          <a href="/dashboard" className="text-xs text-muted-foreground/60 hover:text-muted-foreground mt-2 transition-colors">
-            Volver al dashboard
-          </a>
-        )}
+        {/* "Volver al dashboard" solo si la cuenta puede usar la app.
+            "Cerrar sesión" SIEMPRE visible (única salida si la prueba venció). */}
+        <PlanesAcciones
+          mostrarDashboard={session.status === 'activo' || session.status === 'moroso' || !trialVencido}
+        />
       </div>
     </div>
   );
