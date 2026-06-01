@@ -16,11 +16,19 @@ export default async function PlanesPage() {
 
   const trialVencido = diasRestantes !== null && diasRestantes <= 0;
 
+  const mostrarDashboard =
+    session.status === 'activo' || session.status === 'moroso' || !trialVencido;
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 py-16">
 
+      {/* Barra superior con acciones de escape — siempre visible (mobile incluido) */}
+      <div className="fixed top-0 inset-x-0 z-20 flex justify-end gap-2 p-3 sm:p-4 bg-gradient-to-b from-background via-background/80 to-transparent">
+        <PlanesAcciones mostrarDashboard={mostrarDashboard} />
+      </div>
+
       {/* Logo */}
-      <div className="flex items-center gap-2.5 mb-10">
+      <div className="flex items-center gap-2.5 mb-10 mt-12 sm:mt-8">
         <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
           <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>
         </div>
@@ -94,11 +102,6 @@ export default async function PlanesPage() {
           <span className="flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Sin permanencia</span>
           <span className="flex items-center gap-1"><Check className="h-3 w-3 text-success" /> Soporte por WhatsApp</span>
         </div>
-        {/* "Volver al dashboard" solo si la cuenta puede usar la app.
-            "Cerrar sesión" SIEMPRE visible (única salida si la prueba venció). */}
-        <PlanesAcciones
-          mostrarDashboard={session.status === 'activo' || session.status === 'moroso' || !trialVencido}
-        />
       </div>
     </div>
   );
