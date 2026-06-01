@@ -116,8 +116,8 @@ export function MobileBottomNav({ email, plan, rol }: { email: string; plan: Pla
               <Link
                 href={POS_HREF}
                 className={cn(
-                  'absolute -top-5 h-14 w-14 rounded-2xl flex items-center justify-center',
-                  'bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0.70_0.22_43_/_45%)]',
+                  'glow-primary absolute -top-5 h-14 w-14 rounded-2xl flex items-center justify-center',
+                  'bg-primary text-primary-foreground',
                   'transition-all duration-150 active:scale-95',
                 )}
                 aria-label="Nueva venta"

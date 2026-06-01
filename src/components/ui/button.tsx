@@ -18,6 +18,10 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        /* Tratamiento "A": tinte suave del color del plan. Sutil, para
+           acciones secundarias frecuentes (toma --primary de cada plan). */
+        soft:
+          "bg-primary/12 text-primary border border-primary/25 hover:bg-primary/20 hover:border-primary/40",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
