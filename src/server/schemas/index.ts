@@ -47,6 +47,7 @@ export const vinculoProveedorSchema = z.object({
 
 export const productoInputSchema = z.object({
   codigo: z.string().trim().max(60).nullable().optional(),
+  codigoPlu: z.string().trim().max(8).nullable().optional(),
   nombre: z.string().trim().min(1, 'El nombre es requerido').max(120, 'Máximo 120 caracteres'),
   descripcion: z.string().trim().max(500).nullable().optional(),
   categoriaId: uuid.nullable().optional(),

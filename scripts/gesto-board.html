@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gesto — Board</title>
+<style>
+  :root {
+    --bg:       #0f0d0b;
+    --surface:  #1a1714;
+    --card:     #231f1b;
+    --border:   #2e2a25;
+    --orange:   oklch(0.72 0.18 43);
+    --orange2:  #f97316;
+    --text:     #e8e2d9;
+    --muted:    #7a6f65;
+    --red:      #ef4444;
+    --yellow:   #eab308;
+    --green:    #22c55e;
+    --blue:     #3b82f6;
+    --purple:   #a855f7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 20px 60px;
+  }
+
+  /* ── Header ─── */
+  header {
+    max-width: 1100px;
+    margin: 0 auto 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo {
+    width: 40px; height: 40px;
+    background: var(--orange2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 18px; color: #fff;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+  header p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Stats bar ─── */
+  .stats {
+    max-width: 1100px;
+    margin: 0 auto 28px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .stat b { color: var(--text); font-size: 18px; font-weight: 700; margin-right: 2px; }
+
+  /* ── Grid de columnas ─── */
+  .grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+    align-items: start;
+  }
+
+  /* ── Columna ─── */
+  .col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .col-header {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .col-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .col-title { font-size: 14px; font-weight: 600; flex: 1; }
+  .col-count {
+    font-size: 11px; font-weight: 600;
+    background: var(--border);
+    color: var(--muted);
+    border-radius: 99px;
+    padding: 2px 8px;
+  }
+
+  /* ── Cards ─── */
+  .cards { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 13px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .card:hover { border-color: #3e3830; background: #271f1a; }
+  .card.done  { opacity: .45; }
+  .card.done .card-text { text-decoration: line-through; }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .card-cb {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s;
+    cursor: pointer;
+  }
+  .card.done .card-cb {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .card-cb svg { display: none; }
+  .card.done .card-cb svg { display: block; }
+
+  .card-text  { font-size: 13px; line-height: 1.45; flex: 1; }
+  .card-meta  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  /* ── Badges ─── */
+  .badge {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .badge-red    { background: #ef44441a; color: #ef9090; }
+  .badge-yellow { background: #eab3081a; color: #d4aa40; }
+  .badge-orange { background: #f973161a; color: #f97316; }
+  .badge-green  { background: #22c55e1a; color: #22c55e; }
+  .badge-blue   { background: #3b82f61a; color: #7fb3f5; }
+  .badge-purple { background: #a855f71a; color: #c084fc; }
+  .badge-gray   { background: #ffffff0d; color: var(--muted); }
+
+  /* ── Prioridad dot ─── */
+  .prio {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .prio-high   { background: var(--red); }
+  .prio-mid    { background: var(--yellow); }
+  .prio-low    { background: var(--muted); }
+
+  /* ── Nota expandible ─── */
+  .card-note {
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+    margin-top: 2px;
+    display: none;
+  }
+  .card.open .card-note { display: block; }
+  .card-note-toggle {
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    align-self: flex-start;
+    padding: 1px 0;
+    user-select: none;
+  }
+  .card-note-toggle:hover { color: var(--orange2); }
+
+  /* ── Filtros top ─── */
+  .filters {
+    max-width: 1100px;
+    margin: 0 auto 22px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-size: 12px; font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--orange2);
+    border-color: var(--orange2);
+    color: #fff;
+  }
+
+  /* ── Responsive ─── */
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    .filters { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">G</div>
+  <div>
+    <h1>Gesto — Board</h1>
+    <p id="fecha">Actualizando…</p>
+  </div>
+</header>
+
+<div class="stats" id="stats"></div>
+
+<div class="filters">
+  <button class="filter-btn active" onclick="filtrar('all')">Todo</button>
+  <button class="filter-btn" onclick="filtrar('pendiente')">Pendiente</button>
+  <button class="filter-btn" onclick="filtrar('hecho')">Completado</button>
+  <button class="filter-btn" onclick="filtrar('alta')">Alta prioridad</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   DATOS DEL BOARD — editá acá para agregar / mover
+═══════════════════════════════════════════════════ */
+const COLS = [
+  {
+    id: 'bugs',
+    icon: '🐛',
+    color: '#ef444420',
+    iconColor: '#ef4444',
+    title: 'Bugs',
+    cards: [
+      {
+        id: 'bug-1',
+        text: 'Loop en pantalla de planes — no se puede ir para atrás ni seleccionar plan actual',
+        prio: 'high',
+        badge: { label: 'Bloqueante', color: 'red' },
+        note: 'Si se cambia la URL borrando /planes, redirige al mismo lugar. El usuario queda atrapado sin poder continuar trabajando.',
+        done: false,
+      },
+      {
+        id: 'bug-2',
+        text: 'Unidades de proveedores: muestra "1.000" cuando se ingresa uno (problema con formato de peso)',
+        prio: 'mid',
+        badge: { label: 'UX', color: 'yellow' },
+        note: 'Quedó mal de cuando se podía ingresar peso. Revisar el formateo numérico en el form de líneas de pedido.',
+        done: false,
+      },
+    ],
+  },
+
+  {
+    id: 'pendientes',
+    icon: '⏳',
+    color: '#f9731620',
+    iconColor: '#f97316',
+    title: 'Pendientes',
+    cards: [
+      {
+        id: 'pend-1',
+        text: 'Terminar categorías y variantes',
+        prio: 'high',
+        badge: { label: 'Core', color: 'orange' },
+        done: false,
+      },
+    ],
+  },
+
+  {
+    id: 'ideas',
+    icon: '💡',
+    color: '#a855f720',
+    iconColor: '#a855f7',
+    title: 'Ideas a implementar',
+    cards: [
+      {
+        id: 'idea-1',
+        text: 'Reporte por mail al dueño al final del día (ventas, stock crítico, etc.)',
+        prio: 'mid',
+        badge: { label: 'Notificaciones', color: 'blue' },
+        done: false,
+      },
+      {
+        id: 'idea-2',
+        text: 'Balanza: código interno para productos sin código de barras (fiambres, frutos secos por kg)',
+        prio: 'mid',
+        badge: { label: 'Balanza', color: 'purple' },
+        note: 'Útil para dietéticas y fiambrerías. Código interno alfanumérico asignado manualmente.',
+        done: false,
+      },
+      {
+        id: 'idea-3',
+        text: 'Servicios: guardar servicios como plantillas para reutilizarlos en futuros presupuestos/ventas',
+        prio: 'mid',
+        badge: { label: 'Servicios', color: 'blue' },
+        note: 'Una vez agregado un servicio, poder elegirlo de una lista predefinida la próxima vez.',
+        done: false,
+      },
+      {
+        id: 'idea-4',
+        text: 'Usar la carga de productos con código de barras de los clientes como base de datos para armar catálogo propio',
+        prio: 'low',
+        badge: { label: 'Catálogo', color: 'green' },
+        note: 'Crowdsourcing de productos: cuando múltiples tenants escanean el mismo EAN, el nombre ya queda precargado.',
+        done: false,
+      },
+      {
+        id: 'idea-5',
+        text: 'Sistema para boliches: entradas + venta de alcohol + combo personalizado desde el celu con QR + automatización de stock',
+        prio: 'low',
+        badge: { label: 'Nuevo vertical', color: 'purple' },
+        note: 'Creación de tu propio combo, compra desde celular con QR seleccionando productos, stock automático.',
+        done: false,
+      },
+    ],
+  },
+
+  {
+    id: 'marketing',
+    icon: '📣',
+    color: '#22c55e20',
+    iconColor: '#22c55e',
+    title: 'Marketing',
+    cards: [
+      {
+        id: 'mkt-1',
+        text: 'Imagen de beneficios y funcionalidades — plan Market (venta en frío)',
+        prio: 'high',
+        badge: { label: 'PRIORIDAD', color: 'red' },
+        note: `Puntos: Control de Stock · Generador de boletas · Automatización de pedido a proveedores · Escaneo de productos (PC y celular) · Administración de equipo de trabajo.
+
+PROMPT para Gemini/ChatGPT:
+"Crea una imagen de marketing para una app de gestión comercial argentina llamada Gesto Market. Fondo oscuro cálido (marrón oscuro / negro). Paleta principal: naranja (#f97316). Tipografía bold, moderna. Debe mostrar en forma visual y rápida 5 funcionalidades clave: ✅ Control de Stock en tiempo real ✅ Generador de boletas ✅ Pedidos a proveedores automáticos ✅ Escáner de productos (cámara y PC) ✅ Gestión de equipo. Estilo: mockup de app en celular a la derecha + íconos flotantes a la izquierda con cada beneficio. Formato 1080x1080px. Texto en español."`,
+        done: false,
+      },
+      {
+        id: 'mkt-2',
+        text: 'Imagen de beneficios y funcionalidades — plan Servicios (venta en frío)',
+        prio: 'high',
+        badge: { label: 'PRIORIDAD', color: 'red' },
+        note: `Puntos: Generador de boletas · Generador de presupuestos (PDF + WhatsApp) · Simplificación de presupuesto.
+
+PROMPT para Gemini/ChatGPT:
+"Crea una imagen de marketing para una app de gestión para trabajadores independientes argentinos llamada Gesto Servicios. Fondo oscuro cálido. Paleta: azul (#3b82f6) como acento. Tipografía bold, moderna. Muestra 3 funcionalidades clave: ✅ Generador de boletas ✅ Presupuestos en PDF y por WhatsApp ✅ Gestión simple de clientes y cobros. Estilo profesional, limpio. Mockup de celular mostrando pantalla de presupuesto a la derecha. Texto en español. 1080x1080px."`,
+        done: false,
+      },
+      {
+        id: 'mkt-3',
+        text: 'Analizar estrategia de marketing con 15 días de prueba gratuita',
+        prio: 'mid',
+        badge: { label: 'Estrategia', color: 'blue' },
+        note: 'Evaluar si 15 días de trial (vs 14 actuales) mejora conversión. Considerar onboarding guiado, email de bienvenida y seguimiento automático al día 10.',
+        done: false,
+      },
+    ],
+  },
+];
+
+/* ═══════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════ */
+const PRIO_COLORS = { high: 'prio-high', mid: 'prio-mid', low: 'prio-low' };
+const STORAGE_KEY = 'gesto-board-done';
+
+function loadDone() {
+  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function saveDone(set) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
+}
+
+let doneSet = loadDone();
+let currentFilter = 'all';
+
+function renderAll() {
+  renderStats();
+  renderGrid();
+}
+
+function renderStats() {
+  const total = COLS.flatMap(c => c.cards).length;
+  const done  = COLS.flatMap(c => c.cards).filter(c => doneSet.has(c.id)).length;
+  const high  = COLS.flatMap(c => c.cards).filter(c => c.prio === 'high' && !doneSet.has(c.id)).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><b>${total - done}</b> pendientes</div>
+    <div class="stat"><b>${done}</b> completados</div>
+    <div class="stat"><b>${high}</b> alta prioridad</div>
+    <div class="stat"><b>${total}</b> total</div>
+  `;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  COLS.forEach(col => {
+    const cards = col.cards.filter(card => {
+      const isDone = doneSet.has(card.id);
+      if (currentFilter === 'pendiente') return !isDone;
+      if (currentFilter === 'hecho')     return isDone;
+      if (currentFilter === 'alta')      return card.prio === 'high' && !isDone;
+      return true;
+    });
+
+    if (cards.length === 0) return;
+
+    const colEl = document.createElement('div');
+    colEl.className = 'col';
+    colEl.innerHTML = `
+      <div class="col-header">
+        <div class="col-icon" style="background:${col.color}; color:${col.iconColor}">${col.icon}</div>
+        <span class="col-title">${col.title}</span>
+        <span class="col-count">${cards.length}</span>
+      </div>
+      <div class="cards" id="cards-${col.id}"></div>
+    `;
+    grid.appendChild(colEl);
+
+    const cardsEl = document.getElementById('cards-' + col.id);
+    cards.forEach(card => {
+      const isDone = doneSet.has(card.id);
+      const cardEl = document.createElement('div');
+      cardEl.className = 'card' + (isDone ? ' done' : '');
+      cardEl.dataset.id = card.id;
+
+      const noteHtml = card.note ? `
+        <span class="card-note-toggle" onclick="toggleNote(event, '${card.id}')">▸ ver detalle</span>
+        <div class="card-note">${card.note.replace(/\n/g, '<br>')}</div>
+      ` : '';
+
+      cardEl.innerHTML = `
+        <div class="card-top">
+          <div class="prio ${PRIO_COLORS[card.prio] || 'prio-low'}"></div>
+          <div class="card-cb" onclick="toggleDone(event, '${card.id}')">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="card-text">${card.text}</span>
+        </div>
+        <div class="card-meta">
+          ${card.badge ? `<span class="badge badge-${card.badge.color}">${card.badge.label}</span>` : ''}
+        </div>
+        ${noteHtml}
+      `;
+      cardsEl.appendChild(cardEl);
+    });
+  });
+}
+
+function toggleDone(e, id) {
+  e.stopPropagation();
+  if (doneSet.has(id)) doneSet.delete(id);
+  else doneSet.add(id);
+  saveDone(doneSet);
+  renderAll();
+}
+
+function toggleNote(e, id) {
+  e.stopPropagation();
+  const card = e.target.closest('.card');
+  const isOpen = card.classList.contains('open');
+  card.classList.toggle('open', !isOpen);
+  e.target.textContent = isOpen ? '▸ ver detalle' : '▾ ocultar';
+}
+
+function filtrar(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderGrid();
+}
+
+// Fecha
+const now = new Date();
+document.getElementById('fecha').textContent =
+  now.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+renderAll();
+</script>
+</body>
+</html>

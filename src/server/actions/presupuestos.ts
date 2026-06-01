@@ -230,3 +230,111 @@ export async function eliminarPresupuesto(id: string) {
   if (result.length === 0) throw new Error('Presupuesto no encontrado');
   revalidatePath('/dashboard/presupuestos');
 }
+
+// ── Plantillas ────────────────────────────────────────────────────────────────
+
+/**
+ * Guarda un presupuesto existente como plantilla reutilizable.
+ * Las plantillas no se muestran en la lista principal pero se pueden duplicar.
+ */
+export async function guardarComoPlantilla(
+  id: string,
+  nombrePlantilla: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!nombrePlantilla.trim()) return { ok: false, error: 'El nombre de la plantilla es requerido' };
+
+  const session = await requireAdmin();
+  const result = await db
+    .update(presupuestos)
+    .set({ esPlantilla: true, nombrePlantilla: nombrePlantilla.trim() })
+    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+    .returning({ id: presupuestos.id });
+
+  if (result.length === 0) return { ok: false, error: 'Presupuesto no encontrado' };
+  revalidatePath('/dashboard/presupuestos');
+  revalidatePath(`/dashboard/presupuestos/${id}`);
+  return { ok: true };
+}
+
+/**
+ * Lista todas las plantillas del tenant.
+ */
+export async function listarPlantillas() {
+  const session = await requireAdmin();
+  const rows = await db
+    .select({
+      id:              presupuestos.id,
+      nombrePlantilla: presupuestos.nombrePlantilla,
+      total:           presupuestos.total,
+      notas:           presupuestos.notas,
+    })
+    .from(presupuestos)
+    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.esPlantilla, true)))
+    .orderBy(desc(presupuestos.createdAt));
+
+  return rows.map((r) => ({ ...r, total: Number(r.total) }));
+}
+
+/**
+ * Duplica una plantilla como un nuevo presupuesto borrador.
+ * Copiamos todas las líneas; el cliente queda vacío para que el usuario lo complete.
+ */
+export async function usarPlantilla(
+  plantillaId: string,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const session = await requireAdmin();
+  const { tenantId } = session;
+
+  const datos = await obtenerPresupuesto(plantillaId);
+  if (!datos) return { ok: false, error: 'Plantilla no encontrada' };
+
+  try {
+    const creado = await db.transaction(async (tx) => {
+      const result = await tx
+        .select({ maxNum: sql<number>`coalesce(max(${presupuestos.numero}), 0)::int` })
+        .from(presupuestos)
+        .where(byTenant(tenantId, presupuestos));
+
+      const numero = (result[0]?.maxNum ?? 0) + 1;
+
+      const [inserted] = await tx
+        .insert(presupuestos)
+        .values({
+          tenantId,
+          numero,
+          clienteId:     null,
+          clienteNombre: null,
+          validezDias:   datos.pres.validezDias,
+          notas:         datos.pres.notas || null,
+          subtotal:      datos.pres.subtotal,
+          descuento:     datos.pres.descuento,
+          total:         datos.pres.total,
+          esPlantilla:   false,
+        })
+        .returning({ id: presupuestos.id });
+
+      if (!inserted) throw new Error('No se pudo crear el presupuesto');
+
+      if (datos.lineas.length > 0) {
+        await tx.insert(presupuestosLineas).values(
+          datos.lineas.map((l) => ({
+            presupuestoId:  inserted.id,
+            productoId:     l.productoId || null,
+            descripcion:    l.descripcion,
+            cantidad:       l.cantidad,
+            precioUnitario: l.precioUnitario,
+            subtotal:       l.subtotal,
+          })),
+        );
+      }
+
+      return inserted;
+    });
+
+    revalidatePath('/dashboard/presupuestos');
+    return { ok: true, id: creado.id };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: msg };
+  }
+}

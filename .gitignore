@@ -44,3 +44,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# artefactos de generación / contexto (no forman parte del producto)
+/gesto-*.txt
+/canvas-fonts/
+/generate_gesto.py

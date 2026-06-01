@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { Plus, Tags, Zap, FileUp } from 'lucide-react';
 import { listarProductos } from '@/server/actions/productos';
-import { listarCategorias } from '@/server/actions/categorias';
+import { listarCategorias, listarGruposVariantes } from '@/server/actions/categorias';
 import { ProductosListClient } from '@/components/productos-list-client';
 
 export default async function ProductosPage() {
-  const [productos, categorias] = await Promise.all([
+  const [productos, categorias, gruposVariantes] = await Promise.all([
     listarProductos(),
     listarCategorias(),
+    listarGruposVariantes(),
   ]);
 
   return (
@@ -56,7 +57,7 @@ export default async function ProductosPage() {
         </div>
       </div>
 
-      <ProductosListClient productos={productos} categorias={categorias} />
+      <ProductosListClient productos={productos} categorias={categorias} gruposVariantes={gruposVariantes} />
     </div>
   );
 }
