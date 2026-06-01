@@ -98,7 +98,7 @@ export default async function ReportesPage({ searchParams }: Props) {
             {subio ? '+' : ''}{delta.toFixed(0)}%
           </span>
         </div>
-        <LineChart serie={serie.serie} comparacion={serie.comparacion} formato={formatARS} />
+        <LineChart serie={serie.serie} comparacion={serie.comparacion} />
       </div>
 
       {/* KPIs por plan */}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useMemo, useState } from 'react';
+import { formatARS } from '@/lib/utils';
 
 export type SeriePunto = { label: string; valor: number };
 
@@ -14,14 +15,13 @@ export type SeriePunto = { label: string; valor: number };
 export function LineChart({
   serie,
   comparacion,
-  formato = (n) => n.toLocaleString('es-AR'),
   alto = 200,
 }: {
   serie: SeriePunto[];
   comparacion?: SeriePunto[];
-  formato?: (n: number) => string;
   alto?: number;
 }) {
+  const formato = (n: number) => formatARS(n);
   const id = useId().replace(/:/g, '');
   const [hover, setHover] = useState<number | null>(null);
 
