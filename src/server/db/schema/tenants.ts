@@ -11,7 +11,7 @@ import {
   pgEnum,
 } from 'drizzle-orm/pg-core';
 
-export const planGesto = pgEnum('plan_gesto', ['servicios', 'market', 'food', 'balanza']);
+export const planGesto = pgEnum('plan_gesto', ['servicios', 'market', 'food', 'balanza', 'prestamista']);
 export const tenantStatus = pgEnum('tenant_status', [
   'trial',         // período de prueba activo
   'activo',        // pagando al día

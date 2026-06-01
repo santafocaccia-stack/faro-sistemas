@@ -11,3 +11,5 @@ export * from './ventas';
 export * from './cuenta-corriente';
 export * from './presupuestos';
 export * from './proveedores';
+export * from './agenda';
+export * from './prestamos';
