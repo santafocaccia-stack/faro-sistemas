@@ -128,12 +128,27 @@ export function AgendaClient({
       {/* Form turno */}
       {formTurno && (
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 grid gap-3 sm:grid-cols-2">
-          <Input className={inputCls} placeholder="Título (ej: Cambio de termotanque)" value={tTitulo} onChange={(e) => setTTitulo(e.target.value)} />
-          <Input className={inputCls} placeholder="Dirección del trabajo" value={tDir} onChange={(e) => setTDir(e.target.value)} />
-          <Input className={inputCls} type="date" value={tFecha} onChange={(e) => setTFecha(e.target.value)} />
+          <label className="space-y-1 block">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Trabajo a realizar</span>
+            <Input className={inputCls} placeholder="ej: Cambio de termotanque" value={tTitulo} onChange={(e) => setTTitulo(e.target.value)} />
+          </label>
+          <label className="space-y-1 block">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Dirección</span>
+            <Input className={inputCls} placeholder="Dirección del trabajo" value={tDir} onChange={(e) => setTDir(e.target.value)} />
+          </label>
+          <label className="space-y-1 block">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Día del turno</span>
+            <Input className={inputCls} type="date" value={tFecha} onChange={(e) => setTFecha(e.target.value)} />
+          </label>
           <div className="flex gap-2">
-            <Input className={inputCls} type="time" value={tHora} onChange={(e) => setTHora(e.target.value)} />
-            <Input className={inputCls} type="number" placeholder="min" value={tDur} onChange={(e) => setTDur(e.target.value)} />
+            <label className="space-y-1 block flex-1">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Hora</span>
+              <Input className={inputCls} type="time" value={tHora} onChange={(e) => setTHora(e.target.value)} />
+            </label>
+            <label className="space-y-1 block w-24">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Duración</span>
+              <Input className={inputCls} type="number" placeholder="min" value={tDur} onChange={(e) => setTDur(e.target.value)} />
+            </label>
           </div>
           <div className="sm:col-span-2 flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setFormTurno(false)}>Cancelar</Button>
@@ -201,14 +216,26 @@ export function AgendaClient({
 
         {formVenc && (
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 grid gap-3 sm:grid-cols-2">
-            <Input className={inputCls} placeholder="Título (ej: VTV camioneta)" value={vTitulo} onChange={(e) => setVTitulo(e.target.value)} />
-            <select className={`${inputCls} rounded-md px-3`} value={vTipo} onChange={(e) => setVTipo(e.target.value)}>
-              {TIPOS_VENC.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-            </select>
-            <Input className={inputCls} type="date" value={vFecha} onChange={(e) => setVFecha(e.target.value)} />
-            <select className={`${inputCls} rounded-md px-3`} value={vPer} onChange={(e) => setVPer(e.target.value)}>
-              {PERIODICIDADES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-            </select>
+            <label className="space-y-1 block">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Qué vence</span>
+              <Input className={inputCls} placeholder="ej: VTV camioneta" value={vTitulo} onChange={(e) => setVTitulo(e.target.value)} />
+            </label>
+            <label className="space-y-1 block">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Tipo</span>
+              <select className={`${inputCls} rounded-md px-3 w-full`} value={vTipo} onChange={(e) => setVTipo(e.target.value)}>
+                {TIPOS_VENC.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </select>
+            </label>
+            <label className="space-y-1 block">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Primer vencimiento</span>
+              <Input className={inputCls} type="date" value={vFecha} onChange={(e) => setVFecha(e.target.value)} />
+            </label>
+            <label className="space-y-1 block">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Se repite</span>
+              <select className={`${inputCls} rounded-md px-3 w-full`} value={vPer} onChange={(e) => setVPer(e.target.value)}>
+                {PERIODICIDADES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </select>
+            </label>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground whitespace-nowrap">Avisar</span>
               <Input className={inputCls} type="number" value={vAviso} onChange={(e) => setVAviso(e.target.value)} />

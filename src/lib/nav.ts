@@ -132,21 +132,60 @@ export const POS_HREF = '/dashboard/ventas';
    - admin / owner: navegación completa según el plan.
 ───────────────────────────────────────────────────────────── */
 
-/** Rutas a las que el rol 'empleado' tiene acceso */
-export const HREFS_EMPLEADO = [
-  '/dashboard/ventas',
-  '/dashboard/ventas/historial',
-  '/dashboard/productos',
-];
+/* Rutas que puede operar el rol 'empleado', SEGÚN EL PLAN.
+   El "empleado" es el operario del día a día de cada vertical:
+   - market/food/balanza → caja: punto de venta, historial y productos.
+   - servicios → presupuestos y agenda (más sus clientes).
+   - prestamista → cartera de préstamos y clientes.
+   No ve reportes, configuración ni equipo. */
+export const EMPLEADO_HREFS_POR_PLAN: Record<PlanId, string[]> = {
+  servicios:   ['/dashboard/presupuestos', '/dashboard/agenda', '/dashboard/clientes'],
+  market:      ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
+  food:        ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
+  balanza:     ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
+  prestamista: ['/dashboard/prestamos', '/dashboard/clientes'],
+};
+
+export function hrefsEmpleado(plan: PlanId): string[] {
+  return EMPLEADO_HREFS_POR_PLAN[plan];
+}
+
+/** Pantalla principal del empleado (a dónde cae al entrar o si pega una ruta prohibida). */
+export function homeEmpleado(plan: PlanId): string {
+  return EMPLEADO_HREFS_POR_PLAN[plan][0] ?? '/dashboard';
+}
+
+/** Frase corta que describe qué puede hacer el empleado en este plan (para la pantalla de Equipo). */
+export function descripcionEmpleado(plan: PlanId): string {
+  switch (plan) {
+    case 'servicios':
+      return 'Crea presupuestos y maneja la agenda. Sin acceso a reportes ni configuración.';
+    case 'prestamista':
+      return 'Gestiona préstamos y clientes. Sin acceso a reportes ni configuración.';
+    default:
+      return 'Opera el punto de venta y carga productos. Sin acceso a reportes ni configuración.';
+  }
+}
+
+/** Frase corta para el rol admin según el plan. */
+export function descripcionAdmin(plan: PlanId): string {
+  switch (plan) {
+    case 'servicios':
+      return 'Crea presupuestos, maneja agenda, clientes, cuenta corriente y reportes.';
+    case 'prestamista':
+      return 'Gestiona la cartera de préstamos, clientes, cobranzas y reportes.';
+    default:
+      return 'Vende, gestiona productos, clientes, cuenta corriente y ve reportes.';
+  }
+}
 
 export function navParaRol(plan: PlanId, rol: Rol): NavPlan {
   const base = NAV_POR_PLAN[plan];
   if (rol === 'empleado') {
+    const permitidas = hrefsEmpleado(plan);
     return {
-      primary: base.primary.filter(
-        (i) => i.href === HISTORIAL.href || i.href === PRODUCTOS.href,
-      ),
-      secondary: [],
+      primary: base.primary.filter((i) => permitidas.includes(i.href)),
+      secondary: base.secondary.filter((i) => permitidas.includes(i.href)),
     };
   }
   return base;

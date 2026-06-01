@@ -125,9 +125,9 @@ export default async function HistorialPage({ searchParams }: Props) {
                 {rows.map(({ venta, clienteNombre }) => {
                   const badge = estadoBadge[venta.estado] ?? { label: venta.estado, className: 'bg-muted text-muted-foreground' };
                   return (
-                    <TableRow key={venta.id} className="hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer group">
+                    <TableRow key={venta.id} className="relative hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer group">
                       <TableCell className="pl-4 py-2.5">
-                        <Link href={`/dashboard/ventas/historial/${venta.id}`} className="block font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                        <Link href={`/dashboard/ventas/historial/${venta.id}`} className="block font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors before:absolute before:inset-0 before:content-['']">
                           #{venta.numero}
                         </Link>
                       </TableCell>

@@ -85,11 +85,20 @@ export async function requireSession(opts?: RequireSessionOpts): Promise<Session
   return session;
 }
 
+/** Pantalla principal del empleado según el plan (no todos tienen POS). */
+const EMPLEADO_HOME: Record<PlanId, string> = {
+  servicios:   '/dashboard/presupuestos',
+  market:      '/dashboard/ventas',
+  food:        '/dashboard/ventas',
+  balanza:     '/dashboard/ventas',
+  prestamista: '/dashboard/prestamos',
+};
+
 export async function requireRol(rolesPermitidos: Rol[]): Promise<Session> {
   const session = await requireSession();
   if (!rolesPermitidos.includes(session.rol)) {
-    // El empleado no tiene acceso → lo mandamos a su pantalla: el POS.
-    redirect('/dashboard/ventas');
+    // Rol sin acceso (típicamente empleado) → su pantalla principal del plan.
+    redirect(EMPLEADO_HOME[session.plan] ?? '/dashboard');
   }
   return session;
 }

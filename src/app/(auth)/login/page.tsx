@@ -2,14 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,16 +19,24 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
     if (error) {
-      setError(error.message);
+      setError(
+        error.message.toLowerCase().includes('invalid')
+          ? 'Email o contraseña incorrectos.'
+          : error.message,
+      );
       setLoading(false);
       return;
     }
 
-    router.push('/dashboard');
-    router.refresh();
+    // Navegación dura: garantiza que el servidor reciba la cookie de sesión
+    // recién creada (evita la carrera que dejaba el botón en "Ingresando...").
+    window.location.assign('/dashboard');
   }
 
   return (

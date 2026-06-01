@@ -1,6 +1,6 @@
-import { Users } from 'lucide-react';
 import { listarEquipo } from '@/server/actions/equipo';
 import { requireSession } from '@/server/auth/session';
+import { descripcionAdmin, descripcionEmpleado } from '@/lib/nav';
 import { EquipoForm } from '@/components/equipo-form';
 
 export default async function EquipoPage() {
@@ -30,13 +30,13 @@ export default async function EquipoPage() {
           },
           {
             rol: 'Admin',
-            desc: 'Puede vender, ver reportes, gestionar productos, clientes y cuenta corriente.',
+            desc: descripcionAdmin(session.plan),
             color: 'text-warning',
             bg: 'bg-warning/5 border-warning/15',
           },
           {
             rol: 'Empleado',
-            desc: 'Solo puede operar el punto de venta. Sin acceso a reportes ni configuración.',
+            desc: descripcionEmpleado(session.plan),
             color: 'text-muted-foreground',
             bg: 'bg-muted/40 border-border/40',
           },

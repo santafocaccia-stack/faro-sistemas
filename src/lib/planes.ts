@@ -13,6 +13,7 @@ export const PLANES = {
       'Reportes básicos',
     ],
     color: 'oklch(0.65 0.15 250)',
+    proximamente: false,
   },
   market: {
     id: 'market' as PlanId,
@@ -27,6 +28,7 @@ export const PLANES = {
       'Reportes de ventas',
     ],
     color: 'oklch(0.68 0.19 38)',
+    proximamente: false,
   },
   food: {
     id: 'food' as PlanId,
@@ -40,6 +42,7 @@ export const PLANES = {
       'Gestión de mesas y turnos',
     ],
     color: 'oklch(0.65 0.18 145)',
+    proximamente: true,
   },
   balanza: {
     id: 'balanza' as PlanId,
@@ -53,6 +56,7 @@ export const PLANES = {
       'Categorías y grupos de variantes',
     ],
     color: 'oklch(0.62 0.16 320)',
+    proximamente: true,
   },
   prestamista: {
     id: 'prestamista' as PlanId,
@@ -66,6 +70,7 @@ export const PLANES = {
       'Cartera: total prestado, a cobrar y en mora',
     ],
     color: 'oklch(0.6 0.15 160)',
+    proximamente: false,
   },
 } as const;
 

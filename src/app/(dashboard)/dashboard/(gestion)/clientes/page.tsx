@@ -109,9 +109,9 @@ export default async function ClientesPage() {
               {clientes.map((c) => {
                 const saldo = Number(c.saldoActual);
                 return (
-                  <TableRow key={c.id} className="hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer group">
+                  <TableRow key={c.id} className="relative hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer group">
                     <TableCell className="pl-4 py-2.5">
-                      <Link href={`/dashboard/clientes/${c.id}`} className="block">
+                      <Link href={`/dashboard/clientes/${c.id}`} className="block before:absolute before:inset-0 before:content-['']">
                         <p className="text-[13px] font-medium">{c.razonSocial}</p>
                         {c.nombreFantasia && (
                           <p className="text-[11px] text-muted-foreground">{c.nombreFantasia}</p>

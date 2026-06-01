@@ -32,14 +32,22 @@ export function PlanCard({ plan, dolarMep, esPlanActual, suscripcionActiva, onCo
     });
   }
 
+  // Plan no disponible todavía (Food / Balanza): se muestra atenuado.
+  const proximamente = 'proximamente' in plan && plan.proximamente;
+
   // Deshabilitar solo si ya tiene suscripción activa en este plan
-  const deshabilitado = isPending || (esPlanActual && suscripcionActiva);
+  const deshabilitado = isPending || proximamente || (esPlanActual && suscripcionActiva);
 
   return (
     <div className={`relative flex flex-col rounded-xl border bg-card p-5 transition-all ${
+      proximamente ? 'border-border opacity-65 saturate-[0.4]' :
       esPlanActual ? 'border-primary/40 shadow-[0_0_0_1px_oklch(var(--primary)_/_0.2)]' : 'border-border'
     }`}>
-      {esPlanActual && (
+      {proximamente ? (
+        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border text-[10px] font-semibold whitespace-nowrap uppercase tracking-wide">
+          Próximamente
+        </span>
+      ) : esPlanActual && (
         <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
           Plan actual
         </span>
@@ -48,21 +56,29 @@ export function PlanCard({ plan, dolarMep, esPlanActual, suscripcionActiva, onCo
       {/* Dot de color */}
       <div
         className="h-8 w-8 rounded-lg mb-4 flex-shrink-0"
-        style={{ background: plan.color, opacity: 0.85 }}
+        style={{ background: plan.color, opacity: proximamente ? 0.4 : 0.85 }}
       />
 
       <h3 className="font-semibold text-sm">{plan.nombre}</h3>
       <p className="text-xs text-muted-foreground mt-1 mb-4 leading-relaxed">{plan.descripcion}</p>
 
-      {/* Precio */}
+      {/* Precio — oculto si está por venir */}
       <div className="mb-5">
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-bold tabular-nums">U$S {plan.precioUsd}</span>
-          <span className="text-xs text-muted-foreground">/mes</span>
-        </div>
-        <p className="text-xs text-muted-foreground mt-0.5 font-mono tabular-nums" suppressHydrationWarning>
-          ≈ ${precioArs.toLocaleString('es-AR')} ARS
-        </p>
+        {proximamente ? (
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-semibold text-muted-foreground">Muy pronto</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold tabular-nums">U$S {plan.precioUsd}</span>
+              <span className="text-xs text-muted-foreground">/mes</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5 font-mono tabular-nums" suppressHydrationWarning>
+              ≈ ${precioArs.toLocaleString('es-AR')} ARS
+            </p>
+          </>
+        )}
       </div>
 
       {/* Features */}
@@ -88,13 +104,15 @@ export function PlanCard({ plan, dolarMep, esPlanActual, suscripcionActiva, onCo
             : 'bg-primary text-primary-foreground hover:brightness-110'
         }`}
       >
-        {isPending
-          ? 'Redirigiendo...'
-          : esPlanActual && suscripcionActiva
-            ? 'Plan activo'
-            : esPlanActual
-              ? 'Continuar con este plan'
-              : 'Contratar'}
+        {proximamente
+          ? 'Próximamente'
+          : isPending
+            ? 'Redirigiendo...'
+            : esPlanActual && suscripcionActiva
+              ? 'Plan activo'
+              : esPlanActual
+                ? 'Continuar con este plan'
+                : 'Contratar'}
       </button>
     </div>
   );
