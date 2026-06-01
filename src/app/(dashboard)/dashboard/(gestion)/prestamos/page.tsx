@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { Plus, Landmark, TrendingUp, AlertTriangle, Wallet } from 'lucide-react';
+import { Plus, Landmark, TrendingUp, AlertTriangle, Wallet, ChevronRight } from 'lucide-react';
 import { dashboardPrestamos, listarPrestamos } from '@/server/actions/prestamos';
 import { formatARS } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -29,25 +30,29 @@ export default async function PrestamosPage() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-5xl mx-auto space-y-6 animate-fade-up">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Préstamos</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gestioná tu cartera de créditos y cobranzas</p>
-        </div>
-        <Button asChild className="glow-primary h-9">
-          <Link href="/dashboard/prestamos/nuevo"><Plus className="h-4 w-4 mr-1.5" />Nuevo préstamo</Link>
-        </Button>
-      </div>
+      <PageHeader
+        icon={Landmark}
+        title="Préstamos"
+        subtitle="Tu cartera de créditos y cobranzas"
+        action={
+          <Button asChild className="glow-primary h-9">
+            <Link href="/dashboard/prestamos/nuevo">
+              <Plus className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Nuevo préstamo</span>
+            </Link>
+          </Button>
+        }
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {cards.map((c) => (
-          <div key={c.label} className="rounded-xl border border-border bg-card p-4">
+        {cards.map((c, i) => (
+          <div key={c.label} className={`panel p-4 ${i === 0 ? 'stat-accent' : ''} ${c.raw && Number(c.valor) > 0 ? 'stat-accent !border-l-destructive' : ''}`}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">{c.label}</span>
-              <c.icon className="h-4 w-4 text-muted-foreground/60" />
+              <c.icon className={`h-4 w-4 ${c.raw && Number(c.valor) > 0 ? 'text-destructive' : 'text-muted-foreground/50'}`} />
             </div>
-            <p className="text-xl font-semibold font-mono tabular-nums">
+            <p className={`text-xl font-semibold font-mono tabular-nums ${c.raw && Number(c.valor) > 0 ? 'text-destructive' : ''}`}>
               {c.raw ? c.valor : formatARS(c.valor)}
             </p>
             {c.sub && <p className="text-[11px] text-muted-foreground mt-0.5">{c.sub}</p>}
@@ -68,7 +73,33 @@ export default async function PrestamosPage() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="panel overflow-hidden">
+          {/* Mobile: tarjetas */}
+          <ul className="md:hidden divide-y divide-border/50 stagger">
+            {prestamos.map((p) => {
+              const badge = ESTADO[p.estado] ?? ESTADO.vigente!;
+              return (
+                <li key={p.id}>
+                  <Link href={`/dashboard/prestamos/${p.id}`} className="list-row flex items-center gap-3 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[14px] font-medium truncate">{p.clienteNombre}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {formatARS(p.capital)} · {p.cantidadCuotas} cuotas
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="font-mono tabular-nums text-[13px] font-semibold">{formatARS(p.saldoPendiente)}</span>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold border uppercase tracking-wide ${badge.cls}`}>{badge.label}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: tabla */}
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/60">
@@ -100,6 +131,7 @@ export default async function PrestamosPage() {
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
     </div>

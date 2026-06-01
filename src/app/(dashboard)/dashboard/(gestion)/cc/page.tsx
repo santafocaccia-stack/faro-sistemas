@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { BookOpen, ArrowRight } from 'lucide-react';
+import { BookOpen, ArrowRight, ChevronRight } from 'lucide-react';
 import { listarClientes } from '@/server/actions/clientes';
 import { formatARS } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -16,30 +17,29 @@ export default async function CuentaCorrientePage() {
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-5xl mx-auto space-y-8 animate-fade-up">
 
       {/* Header */}
-      <div>
-        <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Cuenta Corriente</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {conCC.length} {conCC.length === 1 ? 'cliente habilitado' : 'clientes habilitados'}
-        </p>
-      </div>
+      <PageHeader
+        icon={BookOpen}
+        title="Cuenta corriente"
+        subtitle={`${conCC.length} ${conCC.length === 1 ? 'cliente habilitado' : 'clientes habilitados'}`}
+      />
 
       {/* Resumen total */}
       {conCC.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-[11px] font-medium text-muted-foreground mb-3">Pendiente total</p>
-            <p className={`text-[24px] font-semibold tracking-tight tabular-nums font-mono leading-none ${totalDeuda > 0 ? 'text-destructive' : ''}`}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="panel p-4 stat-accent !border-l-destructive">
+            <p className="text-[11px] font-medium text-muted-foreground mb-2">Pendiente total</p>
+            <p className={`text-[22px] font-semibold tracking-tight tabular-nums font-mono leading-none ${totalDeuda > 0 ? 'text-destructive' : ''}`}>
               {formatARS(totalDeuda)}
             </p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-[11px] font-medium text-muted-foreground mb-3">Clientes con deuda</p>
-            <p className="text-[24px] font-semibold tracking-tight font-mono leading-none">{conDeuda}</p>
-            <p className="text-xs text-muted-foreground mt-2">de {conCC.length} habilitados</p>
+          <div className="panel p-4">
+            <p className="text-[11px] font-medium text-muted-foreground mb-2">Con deuda</p>
+            <p className="text-[22px] font-semibold tracking-tight font-mono leading-none">{conDeuda}</p>
+            <p className="text-[11px] text-muted-foreground mt-1.5">de {conCC.length} habilitados</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-[11px] font-medium text-muted-foreground mb-3">Deuda promedio</p>
-            <p className="text-[24px] font-semibold tracking-tight tabular-nums font-mono leading-none">
+          <div className="panel p-4 col-span-2 sm:col-span-1">
+            <p className="text-[11px] font-medium text-muted-foreground mb-2">Deuda promedio</p>
+            <p className="text-[22px] font-semibold tracking-tight tabular-nums font-mono leading-none">
               {formatARS(conDeuda > 0 ? totalDeuda / conDeuda : 0)}
             </p>
           </div>
@@ -64,7 +64,39 @@ export default async function CuentaCorrientePage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="panel overflow-hidden">
+          {/* Mobile: tarjetas */}
+          <ul className="md:hidden divide-y divide-border/50 stagger">
+            {conCC.map((c) => {
+              const saldo = Number(c.saldoActual);
+              const limite = Number(c.limiteCredito ?? 0);
+              const excedido = limite > 0 && saldo > limite;
+              return (
+                <li key={c.id}>
+                  <Link href={`/dashboard/cc/${c.id}`} className="list-row flex items-center gap-3 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[14px] font-medium truncate">{c.razonSocial}</p>
+                      <p className="text-[11px] text-muted-foreground capitalize">
+                        {c.tipo}{limite > 0 ? ` · límite ${formatARS(limite)}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={`font-mono tabular-nums text-[13px] ${saldo > 0 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                        {formatARS(saldo)}
+                      </span>
+                      {excedido && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border bg-destructive/15 text-destructive border-destructive/20 uppercase tracking-wide">Excedido</span>
+                      )}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: tabla */}
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/60">
@@ -110,6 +142,7 @@ export default async function CuentaCorrientePage() {
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
     </div>

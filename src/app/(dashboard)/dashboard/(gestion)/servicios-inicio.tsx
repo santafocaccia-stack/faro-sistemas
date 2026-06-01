@@ -50,7 +50,7 @@ export async function ServiciosInicio({
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-xl border border-border bg-card p-4">
+          <div key={c.label} className={`panel p-4 ${c.label === 'Cobrado este mes' ? 'stat-accent' : ''}`}>
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70">{c.label}</p>
             <p className="text-xl font-semibold font-mono tabular-nums mt-1">{c.value}</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">{c.sub}</p>
@@ -60,7 +60,7 @@ export async function ServiciosInicio({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Próximos turnos */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
             <h2 className="text-[13px] font-semibold flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4 text-primary" /> Próximos turnos
@@ -96,7 +96,7 @@ export async function ServiciosInicio({
         </div>
 
         {/* Vencimientos a la vista */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
             <h2 className="text-[13px] font-semibold flex items-center gap-1.5">
               <BellRing className="h-4 w-4 text-warning" /> Vencimientos
@@ -132,7 +132,7 @@ export async function ServiciosInicio({
       {/* CTA presupuestos */}
       <Link
         href="/dashboard/presupuestos"
-        className="rounded-xl border border-border bg-card p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
+        className="panel p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
       >
         <span className="text-[13px] font-medium flex items-center gap-2">
           <FileText className="h-4 w-4 text-primary" /> Ver y cobrar presupuestos

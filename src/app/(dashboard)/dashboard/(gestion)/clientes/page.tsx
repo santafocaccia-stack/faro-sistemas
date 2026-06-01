@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, ChevronRight } from 'lucide-react';
 import { listarClientes } from '@/server/actions/clientes';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import { PageHeader } from '@/components/ui/page-header';
 import { formatARS } from '@/lib/utils';
 
 const tipoLabel: Record<string, string> = {
@@ -20,24 +21,26 @@ export default async function ClientesPage() {
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl mx-auto space-y-8 animate-fade-up">
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Clientes</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {clientes.length} {clientes.length === 1 ? 'cliente' : 'clientes'} registrados
-            {conDeuda > 0 && (
-              <span className="text-destructive"> · {conDeuda} con deuda</span>
-            )}
-          </p>
-        </div>
-        <Link
-          href="/dashboard/clientes/nuevo"
-          className="inline-flex items-center gap-2 px-4 h-9 rounded-lg bg-primary text-primary-foreground text-[13px] font-medium hover:brightness-110 transition-all glow-primary"
-        >
-          <Plus className="h-3.5 w-3.5" strokeWidth={2.25} />
-          Nuevo cliente
-        </Link>
-      </div>
+      <PageHeader
+        icon={Users}
+        title="Clientes"
+        subtitle={
+          <>
+            {clientes.length} {clientes.length === 1 ? 'cliente' : 'clientes'}
+            {conDeuda > 0 && <span className="text-destructive"> · {conDeuda} con deuda</span>}
+          </>
+        }
+        action={
+          <Link
+            href="/dashboard/clientes/nuevo"
+            className="glow-primary inline-flex items-center gap-1.5 px-3.5 h-9 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold transition-all"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.25} />
+            <span className="hidden sm:inline">Nuevo cliente</span>
+            <span className="sm:hidden">Nuevo</span>
+          </Link>
+        }
+      />
 
       {clientes.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-14 text-center">
@@ -57,7 +60,40 @@ export default async function ClientesPage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="panel overflow-hidden">
+          {/* Mobile: tarjetas */}
+          <ul className="md:hidden divide-y divide-border/50 stagger">
+            {clientes.map((c) => {
+              const saldo = Number(c.saldoActual);
+              return (
+                <li key={c.id}>
+                  <Link href={`/dashboard/clientes/${c.id}`} className="list-row flex items-center gap-3 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[14px] font-medium truncate">{c.razonSocial}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {tipoLabel[c.tipo]}
+                        {c.telefono ? ` · ${c.telefono}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5 shrink-0">
+                      <span className={`font-mono tabular-nums text-[13px] ${saldo > 0 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                        {formatARS(saldo)}
+                      </span>
+                      {c.habilitaCuentaCorriente && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <span className="h-1.5 w-1.5 rounded-full bg-success" /> Cta. cte.
+                        </span>
+                      )}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: tabla */}
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/60">
@@ -113,6 +149,7 @@ export default async function ClientesPage() {
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
     </div>

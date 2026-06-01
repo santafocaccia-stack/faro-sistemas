@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ClipboardList, Truck, ChevronRight } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 import { listarPedidos } from '@/server/actions/pedidos';
 
 const ESTADO_CONFIG = {
@@ -12,13 +13,12 @@ export default async function PedidosPage() {
   const pedidos = await listarPedidos();
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Pedidos a proveedores</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Los pedidos se acumulan automáticamente al registrar ventas
-        </p>
-      </div>
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-5xl mx-auto space-y-6 animate-fade-up">
+      <PageHeader
+        icon={ClipboardList}
+        title="Pedidos a proveedores"
+        subtitle="Se acumulan automáticamente al registrar ventas"
+      />
 
       {pedidos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -31,17 +31,17 @@ export default async function PedidosPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card divide-y divide-border/60">
+        <div className="panel overflow-hidden divide-y divide-border/50 stagger">
           {pedidos.map(({ pedido, proveedorNombre }) => {
             const cfg = ESTADO_CONFIG[pedido.estado];
             return (
               <Link
                 key={pedido.id}
                 href={`/dashboard/pedidos/${pedido.id}`}
-                className="flex items-center gap-4 px-4 py-3.5 hover:bg-muted/30 transition-colors"
+                className="list-row flex items-center gap-4 px-4 py-3.5"
               >
-                <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <Truck className="h-4 w-4 text-muted-foreground" />
+                <div className="icon-chip h-9 w-9 shrink-0">
+                  <Truck className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{proveedorNombre}</p>

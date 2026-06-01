@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { Plus, FileText, BookMarked } from 'lucide-react';
+import { Plus, FileText, BookMarked, ChevronRight } from 'lucide-react';
 import { listarPresupuestos, listarPlantillas } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
 import { UsarPlantillaButton } from '@/components/plantilla-button';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -24,20 +25,20 @@ export default async function PresupuestosPage() {
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-5xl mx-auto space-y-6 animate-fade-up">
 
       {/* Header */}
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Presupuestos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Creá y enviá presupuestos en PDF a tus clientes
-          </p>
-        </div>
-        <Button asChild className="glow-primary h-9">
-          <Link href="/dashboard/presupuestos/nuevo">
-            <Plus className="h-4 w-4 mr-1.5" />
-            Nuevo presupuesto
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        icon={FileText}
+        title="Presupuestos"
+        subtitle="Creá y enviá presupuestos en PDF"
+        action={
+          <Button asChild className="glow-primary h-9">
+            <Link href="/dashboard/presupuestos/nuevo">
+              <Plus className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Nuevo presupuesto</span>
+              <span className="sm:hidden">Nuevo</span>
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Plantillas guardadas */}
       {plantillas.length > 0 && (
@@ -79,7 +80,34 @@ export default async function PresupuestosPage() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="panel overflow-hidden">
+          {/* Mobile: tarjetas */}
+          <ul className="md:hidden divide-y divide-border/50 stagger">
+            {presupuestos.map((p) => {
+              const badge = ESTADO_BADGE[p.estado] ?? ESTADO_BADGE.borrador!;
+              const fecha = new Date(p.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+              return (
+                <li key={p.id}>
+                  <Link href={`/dashboard/presupuestos/${p.id}`} className="list-row flex items-center gap-3 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[14px] font-medium truncate">{p.clienteDisplay}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        #{String(p.numero).padStart(5, '0')} · {fecha}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="font-mono tabular-nums text-[13px] font-semibold">{formatARS(p.total)}</span>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold border uppercase tracking-wide ${badge.cls}`}>{badge.label}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: tabla */}
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/60">
@@ -127,6 +155,7 @@ export default async function PresupuestosPage() {
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
     </div>

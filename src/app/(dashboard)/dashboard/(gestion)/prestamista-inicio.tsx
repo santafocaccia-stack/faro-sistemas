@@ -46,7 +46,7 @@ export async function PrestamistaInicio({
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-xl border border-border bg-card p-4">
+          <div key={c.label} className={`panel p-4 ${c.label === 'Total prestado' ? 'stat-accent' : ''} ${c.alerta ? 'stat-accent !border-l-destructive' : ''}`}>
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70">{c.label}</p>
             <p className={`text-xl font-semibold font-mono tabular-nums mt-1 ${c.alerta ? 'text-destructive' : ''}`}>
               {c.value}
@@ -64,7 +64,7 @@ export async function PrestamistaInicio({
       )}
 
       {/* Préstamos recientes */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="panel overflow-hidden">
         <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
           <h2 className="text-[13px] font-semibold">Préstamos recientes</h2>
           <Link href="/dashboard/prestamos" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">

@@ -83,7 +83,33 @@ export default async function HistorialPage({ searchParams }: Props) {
         </div>
       ) : (
         <>
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="panel overflow-hidden">
+            {/* Mobile: tarjetas */}
+            <ul className="md:hidden divide-y divide-border/50 stagger">
+              {rows.map(({ venta, clienteNombre }) => {
+                const badge = estadoBadge[venta.estado] ?? { label: venta.estado, className: 'bg-muted text-muted-foreground' };
+                return (
+                  <li key={venta.id}>
+                    <Link href={`/dashboard/ventas/historial/${venta.id}`} className="list-row flex items-center gap-3 px-4 py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-medium truncate">{clienteNombre ?? 'Consumidor final'}</p>
+                        <p className="text-[11px] text-muted-foreground font-mono">
+                          #{venta.numero} · {new Date(venta.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="font-mono tabular-nums text-[13px] font-semibold">{formatARS(Number(venta.total))}</span>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border uppercase tracking-wide ${badge.className}`}>{badge.label}</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Desktop: tabla */}
+            <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-b border-border/60">
@@ -132,6 +158,7 @@ export default async function HistorialPage({ searchParams }: Props) {
                 })}
               </TableBody>
             </Table>
+            </div>
           </div>
 
           {/* Paginación */}
