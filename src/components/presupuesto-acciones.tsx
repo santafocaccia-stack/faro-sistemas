@@ -96,7 +96,7 @@ export function PresupuestoAcciones({ id, estadoActual }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
       {cobrado ? (
         <>
           <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-success/10 text-success border border-success/20">

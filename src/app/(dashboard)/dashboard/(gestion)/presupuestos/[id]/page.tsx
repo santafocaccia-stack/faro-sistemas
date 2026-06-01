@@ -46,11 +46,11 @@ export default async function DetallePresupuestoPage({ params }: Props) {
           Volver a presupuestos
         </Link>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
           <PresupuestoAcciones id={pres.id} estadoActual={pres.estado} />
           <Link
             href={`/dashboard/presupuestos/${pres.id}/editar`}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium border border-border/60 bg-background hover:border-border hover:bg-muted transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md text-xs font-medium border border-border/60 bg-background hover:border-border hover:bg-muted transition-colors"
           >
             <Pencil className="h-3.5 w-3.5" />
             Editar

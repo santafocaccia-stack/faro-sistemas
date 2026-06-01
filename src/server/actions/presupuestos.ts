@@ -27,6 +27,30 @@ export type PresupuestoInput = {
   lineas: LineaPresupuesto[];
 };
 
+// ── Descripciones usadas (autocompletado) ──────────────────────────────────────
+
+/**
+ * Devuelve las descripciones de líneas que el negocio ya usó antes, ordenadas
+ * por frecuencia. Sirven como sugerencias editables al armar un presupuesto
+ * (ej: "Recorte de cerco", "Losa radiante").
+ */
+export async function listarDescripcionesUsadas(): Promise<string[]> {
+  const session = await requireAdmin();
+  const rows = await db
+    .select({ descripcion: presupuestosLineas.descripcion })
+    .from(presupuestosLineas)
+    .innerJoin(
+      presupuestos,
+      and(eq(presupuestosLineas.presupuestoId, presupuestos.id), byTenant(session.tenantId, presupuestos)),
+    )
+    .groupBy(presupuestosLineas.descripcion)
+    .orderBy(sql`count(*) desc`)
+    .limit(60);
+  return rows
+    .map((r) => r.descripcion?.trim())
+    .filter((d): d is string => !!d && d.length > 1);
+}
+
 // ── Listar ────────────────────────────────────────────────────────────────────
 
 export async function listarPresupuestos() {

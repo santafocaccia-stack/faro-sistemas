@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { obtenerPresupuesto } from '@/server/actions/presupuestos';
+import { obtenerPresupuesto, listarDescripcionesUsadas } from '@/server/actions/presupuestos';
 import { listarProductos } from '@/server/actions/productos';
 import { listarClientes } from '@/server/actions/clientes';
 import { PresupuestoForm } from '@/components/presupuesto-form';
@@ -9,10 +9,11 @@ type Props = { params: Promise<{ id: string }> };
 export default async function EditarPresupuestoPage({ params }: Props) {
   const { id } = await params;
 
-  const [data, productos, clientes] = await Promise.all([
+  const [data, productos, clientes, sugerencias] = await Promise.all([
     obtenerPresupuesto(id),
     listarProductos(),
     listarClientes(),
+    listarDescripcionesUsadas(),
   ]);
 
   if (!data) notFound();
@@ -46,6 +47,7 @@ export default async function EditarPresupuestoPage({ params }: Props) {
         productos={productos}
         clientes={clientes}
         initialData={initialData}
+        sugerencias={sugerencias}
       />
     </div>
   );

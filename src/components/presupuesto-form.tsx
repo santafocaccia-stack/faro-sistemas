@@ -44,9 +44,11 @@ type Props = {
   productos: Producto[];
   clientes: Cliente[];
   initialData?: InitialData;
+  /** Descripciones que el negocio ya usó antes — sugerencias editables. */
+  sugerencias?: string[];
 };
 
-export function PresupuestoForm({ productos, clientes, initialData }: Props) {
+export function PresupuestoForm({ productos, clientes, initialData, sugerencias = [] }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!initialData;
@@ -156,6 +158,13 @@ export function PresupuestoForm({ productos, clientes, initialData }: Props) {
 
   return (
     <div className="space-y-4">
+
+      {/* Descripciones ya usadas — autocompletado editable de líneas */}
+      {sugerencias.length > 0 && (
+        <datalist id="gesto-desc-sugeridas">
+          {sugerencias.map((s) => <option key={s} value={s} />)}
+        </datalist>
+      )}
 
       {/* ── Cliente + validez ──────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
@@ -313,22 +322,13 @@ export function PresupuestoForm({ productos, clientes, initialData }: Props) {
                         : <Package className="h-3.5 w-3.5 text-muted-foreground/50" />
                       }
                     </div>
-                    {esServicio ? (
-                      <Textarea
-                        value={l.descripcion}
-                        onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
-                        className="min-h-[32px] max-h-24 bg-background/40 border-border/60 text-sm resize-none py-1.5"
-                        placeholder="Ej: Colocación de cielorraso, mano de obra..."
-                        rows={1}
-                      />
-                    ) : (
-                      <Input
-                        value={l.descripcion}
-                        onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
-                        className="h-8 bg-background/40 border-border/60 text-sm"
-                        placeholder="Descripción..."
-                      />
-                    )}
+                    <Input
+                      list="gesto-desc-sugeridas"
+                      value={l.descripcion}
+                      onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
+                      className="h-8 bg-background/40 border-border/60 text-sm"
+                      placeholder={esServicio ? 'Ej: Colocación de cielorraso, mano de obra...' : 'Descripción...'}
+                    />
                     <Input
                       type="number" min="0.001" step="0.001"
                       value={l.cantidad}
@@ -361,22 +361,13 @@ export function PresupuestoForm({ productos, clientes, initialData }: Props) {
                         }
                       </div>
                       <div className="flex-1 min-w-0">
-                        {esServicio ? (
-                          <Textarea
-                            value={l.descripcion}
-                            onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
-                            className="min-h-[36px] max-h-24 bg-background/40 border-border/60 text-sm resize-none py-1.5"
-                            placeholder="Describí el servicio o tarea..."
-                            rows={1}
-                          />
-                        ) : (
-                          <Input
-                            value={l.descripcion}
-                            onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
-                            className="h-9 bg-background/40 border-border/60 text-sm"
-                            placeholder="Descripción..."
-                          />
-                        )}
+                        <Input
+                          list="gesto-desc-sugeridas"
+                          value={l.descripcion}
+                          onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
+                          className="h-9 bg-background/40 border-border/60 text-sm"
+                          placeholder={esServicio ? 'Describí el servicio o tarea...' : 'Descripción...'}
+                        />
                       </div>
                       <button
                         onClick={() => eliminarLinea(l.key)}

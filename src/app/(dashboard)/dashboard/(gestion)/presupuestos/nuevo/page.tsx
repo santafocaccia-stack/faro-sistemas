@@ -1,11 +1,13 @@
 import { listarProductos } from '@/server/actions/productos';
 import { listarClientes } from '@/server/actions/clientes';
+import { listarDescripcionesUsadas } from '@/server/actions/presupuestos';
 import { PresupuestoForm } from '@/components/presupuesto-form';
 
 export default async function NuevoPresupuestoPage() {
-  const [productos, clientes] = await Promise.all([
+  const [productos, clientes, sugerencias] = await Promise.all([
     listarProductos({ soloActivos: true }),
     listarClientes(),
+    listarDescripcionesUsadas(),
   ]);
 
   return (
@@ -16,7 +18,7 @@ export default async function NuevoPresupuestoPage() {
           Armá el presupuesto y descargalo en PDF para enviárselo al cliente
         </p>
       </div>
-      <PresupuestoForm productos={productos} clientes={clientes} />
+      <PresupuestoForm productos={productos} clientes={clientes} sugerencias={sugerencias} />
     </div>
   );
 }
