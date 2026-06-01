@@ -56,7 +56,7 @@ export const PLANES = {
   },
   prestamista: {
     id: 'prestamista' as PlanId,
-    nombre: 'Gesto Prestamista',
+    nombre: 'Gesto Préstamos',
     precioUsd: 28,
     descripcion: 'Para prestamistas y financieras: gestión de créditos y cobranzas',
     features: [
