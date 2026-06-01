@@ -3,6 +3,7 @@ import { FileText, Plus, ArrowRight, CalendarDays, BellRing, Clock } from 'lucid
 import { resumenServicios } from '@/server/actions/presupuestos';
 import { listarTurnos, listarVencimientos } from '@/server/actions/agenda';
 import { formatARS } from '@/lib/utils';
+import { InicioHero } from '@/components/ui/inicio-hero';
 
 export async function ServiciosInicio({
   saludo, nombre, fechaLabel,
@@ -32,20 +33,27 @@ export async function ServiciosInicio({
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-10 max-w-5xl mx-auto space-y-6 animate-fade-up">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px] font-semibold tracking-tight leading-tight">{saludo}, {nombre}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5 capitalize">{fechaLabel}</p>
-        </div>
+      {/* Hero */}
+      <InicioHero
+        saludo={saludo}
+        nombre={nombre}
+        fechaLabel={fechaLabel}
+        nota={
+          resumen.porCobrarCant > 0
+            ? `Tenés ${resumen.porCobrarCant} presupuesto${resumen.porCobrarCant > 1 ? 's' : ''} aprobado${resumen.porCobrarCant > 1 ? 's' : ''} por cobrar.`
+            : alertas.length > 0
+              ? `${alertas.length} vencimiento${alertas.length > 1 ? 's' : ''} para tener en cuenta.`
+              : 'Armá presupuestos y organizá tu semana.'
+        }
+      >
         <Link
           href="/dashboard/presupuestos/nuevo"
-          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold glow-primary hover:brightness-105 transition-all self-start"
+          className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold glow-primary hover:brightness-105 transition-all"
         >
           <Plus className="h-4 w-4" />
           Nuevo presupuesto
         </Link>
-      </div>
+      </InicioHero>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

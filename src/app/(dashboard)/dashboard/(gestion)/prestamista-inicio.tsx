@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Landmark, Plus, ArrowRight, AlertTriangle } from 'lucide-react';
 import { dashboardPrestamos, listarPrestamos } from '@/server/actions/prestamos';
 import { formatARS } from '@/lib/utils';
+import { InicioHero } from '@/components/ui/inicio-hero';
 
 const ESTADO: Record<string, { label: string; cls: string }> = {
   vigente:      { label: 'Vigente',      cls: 'text-success' },
@@ -26,22 +27,21 @@ export async function PrestamistaInicio({
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-10 max-w-5xl mx-auto space-y-6 animate-fade-up">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px] font-semibold tracking-tight leading-tight">
-            {saludo}, {nombre}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5 capitalize">{fechaLabel}</p>
-        </div>
+      {/* Hero */}
+      <InicioHero
+        saludo={saludo}
+        nombre={nombre}
+        fechaLabel={fechaLabel}
+        nota={kpis.enMora > 0 ? `Tenés ${kpis.enMora} préstamo${kpis.enMora > 1 ? 's' : ''} en mora — revisá la cobranza.` : 'Tu cartera está al día 👌'}
+      >
         <Link
           href="/dashboard/prestamos/nuevo"
-          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold glow-primary hover:brightness-105 transition-all self-start"
+          className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold glow-primary hover:brightness-105 transition-all"
         >
           <Plus className="h-4 w-4" />
           Nuevo préstamo
         </Link>
-      </div>
+      </InicioHero>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

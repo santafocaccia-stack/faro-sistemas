@@ -63,8 +63,34 @@ export default async function PrestamoDetallePage({ params }: { params: Promise<
       {prestamo.estado !== 'cancelado' && <PagoPrestamoForm prestamoId={prestamo.id} sugerido={saldo > 0 ? Math.min(saldo + moraTotal, Number(cuotas.find((c) => c.estado !== 'pagada')?.montoCuota ?? 0) + moraTotal).toFixed(2) : ''} />}
 
       {/* Cronograma */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="panel overflow-hidden">
         <div className="px-4 py-3 border-b border-border/60"><h2 className="text-[13px] font-semibold">Cronograma de cuotas</h2></div>
+
+        {/* Mobile: tarjetas */}
+        <ul className="md:hidden divide-y divide-border/50">
+          {cuotas.map((c) => {
+            const badge = ESTADO_CUOTA[c.vencida && c.estado !== 'pagada' && c.estado !== 'parcial' ? 'vencida' : c.estado] ?? ESTADO_CUOTA.pendiente!;
+            return (
+              <li key={c.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 font-mono text-xs text-muted-foreground">{c.numero}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium">{formatARS(c.montoCuota)}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    vence {fmtFecha(c.vencimiento)}
+                    {c.moraViva > 0 && <span className="text-destructive"> · mora {formatARS(c.moraViva.toFixed(2))}</span>}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className={`text-[11px] font-semibold ${badge.cls}`}>{badge.label}</span>
+                  {Number(c.montoPagado) > 0 && <p className="text-[10px] text-muted-foreground font-mono">pagó {formatARS(c.montoPagado)}</p>}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Desktop: tabla */}
+        <div className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b border-border/60">
@@ -92,6 +118,7 @@ export default async function PrestamoDetallePage({ params }: { params: Promise<
             })}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* Pagos */}

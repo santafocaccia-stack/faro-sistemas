@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { cn, formatARS } from '@/lib/utils';
 import { StaggerList, StaggerItem, FadeUp } from '@/components/motion-primitives';
+import { InicioHero } from '@/components/ui/inicio-hero';
 
 /* ─────────────────────────────────────────────────────────────
    Tipos
@@ -76,41 +77,35 @@ export function DashboardClient({
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-3xl mx-auto space-y-7 pb-24 md:pb-10">
 
-      {/* ── Header saludo ─────────────────────────────────── */}
+      {/* ── Hero saludo + CTA Nueva venta ─────────────────── */}
       <FadeUp index={0}>
-        <div className="space-y-0.5">
-          <h1 className="text-[26px] sm:text-[30px] font-semibold tracking-tight leading-tight">
-            {saludo}, <span className="text-primary capitalize">{nombre}</span> 👋
-          </h1>
-          <p className="text-sm text-muted-foreground capitalize">{fechaLabel}</p>
-
-          {/* Mensaje motivacional */}
-          {cantHoy > 0 && (
-            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+        <InicioHero
+          saludo={saludo}
+          nombre={nombre}
+          fechaLabel={fechaLabel}
+          nota={cantHoy > 0 ? (
+            <span className="flex items-center gap-1.5">
               <Zap className="h-3.5 w-3.5 text-warning shrink-0" />
               {mensajeMotivacional}
-            </p>
-          )}
-        </div>
-      </FadeUp>
-
-      {/* ── Botón Nueva Venta — el más grande de la pantalla ─ */}
-      <FadeUp index={1}>
-        <Link
-          href="/dashboard/ventas"
-          className={cn(
-            'group flex items-center justify-center gap-3',
-            'w-full h-14 sm:h-12 rounded-xl',
-            'bg-primary text-primary-foreground',
-            'text-base sm:text-[15px] font-bold tracking-tight',
-            'transition-all duration-150 press-scale glow-primary',
-            'hover:brightness-105',
-          )}
+            </span>
+          ) : 'Arrancá el día — registrá tu primera venta.'}
         >
-          <ShoppingCart className="h-5 w-5" strokeWidth={2.25} />
-          Nueva venta
-          <ArrowRight className="h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+          <Link
+            href="/dashboard/ventas"
+            className={cn(
+              'group flex items-center justify-center gap-3',
+              'w-full h-12 rounded-xl',
+              'bg-primary text-primary-foreground',
+              'text-base sm:text-[15px] font-bold tracking-tight',
+              'transition-all duration-150 press-scale glow-primary',
+              'hover:brightness-105',
+            )}
+          >
+            <ShoppingCart className="h-5 w-5" strokeWidth={2.25} />
+            Nueva venta
+            <ArrowRight className="h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </InicioHero>
       </FadeUp>
 
       {/* ── KPI Cards ─────────────────────────────────────── */}
