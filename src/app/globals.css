@@ -248,16 +248,33 @@ body::before {
     radial-gradient(ellipse 50% 40% at 100% 100%, oklch(0.65 0.17 145 / 0.04), transparent 60%);
 }
 
-/* Grain overlay sutil — da sensación premium sin ser molesto */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  opacity: 0.020;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+/* Grain overlay sutil — da sensación premium sin ser molesto.
+   IMPORTANTE: solo en desktop. En mobile, una capa fija a pantalla completa
+   con mix-blend-mode obliga a recomponer toda la pantalla en cada frame
+   (animaciones, ticket, cobro) y se siente "a pocos fotogramas". */
+@media (min-width: 1024px) and (pointer: fine) {
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.020;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+}
+
+/* ── PERF MOBILE ─────────────────────────────────────────────
+   El backdrop-filter (blur) en capas fijas (header/footer del POS,
+   fondos de modales, ticket) obliga al GPU a recomponer en cada frame
+   y en celulares se siente "a pocos fotogramas". En pantallas chicas lo
+   apagamos: el fondo sigue siendo semitransparente, solo sin desenfoque. */
+@media (max-width: 1023px) {
+  .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-2xl {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* ── SCROLLBAR ──────────────────────────────────────────────── */
