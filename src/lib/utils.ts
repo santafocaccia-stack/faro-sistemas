@@ -12,13 +12,13 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Formatea un monto en pesos argentinos.
  */
-export function formatARS(amount: number): string {
+export function formatARS(amount: number | string): string {
   return new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency: 'ARS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(Number(amount));
 }
 
 /**
