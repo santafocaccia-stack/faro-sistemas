@@ -1,9 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, gte, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { presupuestos, presupuestosLineas, clientes, type PresupuestoEstado } from '@/server/db/schema';
+import {
+  presupuestos, presupuestosLineas, clientes,
+  type PresupuestoEstado, type MetodoPago,
+} from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireAdmin } from '@/server/auth/session';
 
@@ -217,6 +220,97 @@ export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEs
   if (result.length === 0) throw new Error('Presupuesto no encontrado');
   revalidatePath('/dashboard/presupuestos');
   revalidatePath(`/dashboard/presupuestos/${id}`);
+}
+
+// ── Cobrar (plan servicios) ─────────────────────────────────────────────────────
+
+/**
+ * Marca un presupuesto como cobrado: registra el ingreso (fecha + método).
+ * Es el flujo de cobro del plan Servicios — reemplaza al POS.
+ */
+export async function marcarCobrado(
+  id: string,
+  metodo: MetodoPago,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await requireAdmin();
+  const result = await db
+    .update(presupuestos)
+    .set({ estado: 'cobrado', cobradoAt: new Date(), metodoCobro: metodo })
+    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+    .returning({ id: presupuestos.id });
+  if (result.length === 0) return { ok: false, error: 'Presupuesto no encontrado' };
+  revalidatePath('/dashboard/presupuestos');
+  revalidatePath(`/dashboard/presupuestos/${id}`);
+  revalidatePath('/dashboard');
+  return { ok: true };
+}
+
+/** Revierte un cobro: vuelve el presupuesto a 'aprobado' y limpia el cobro. */
+export async function revertirCobro(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await requireAdmin();
+  const result = await db
+    .update(presupuestos)
+    .set({ estado: 'aprobado', cobradoAt: null, metodoCobro: null })
+    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+    .returning({ id: presupuestos.id });
+  if (result.length === 0) return { ok: false, error: 'Presupuesto no encontrado' };
+  revalidatePath('/dashboard/presupuestos');
+  revalidatePath(`/dashboard/presupuestos/${id}`);
+  revalidatePath('/dashboard');
+  return { ok: true };
+}
+
+/**
+ * Resumen para el inicio del plan Servicios:
+ * cobrado del mes, pendientes de cobro (aprobados), presupuestos abiertos.
+ */
+export async function resumenServicios() {
+  const session = await requireAdmin();
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  inicioMes.setHours(0, 0, 0, 0);
+
+  const [cobrado] = await db
+    .select({
+      total: sql<string>`coalesce(sum(${presupuestos.total}), 0)`,
+      cantidad: sql<number>`count(*)::int`,
+    })
+    .from(presupuestos)
+    .where(and(
+      byTenant(session.tenantId, presupuestos),
+      eq(presupuestos.estado, 'cobrado'),
+      gte(presupuestos.cobradoAt, inicioMes),
+    ));
+
+  const [porCobrar] = await db
+    .select({
+      total: sql<string>`coalesce(sum(${presupuestos.total}), 0)`,
+      cantidad: sql<number>`count(*)::int`,
+    })
+    .from(presupuestos)
+    .where(and(
+      byTenant(session.tenantId, presupuestos),
+      eq(presupuestos.estado, 'aprobado'),
+    ));
+
+  const [abiertos] = await db
+    .select({ cantidad: sql<number>`count(*)::int` })
+    .from(presupuestos)
+    .where(and(
+      byTenant(session.tenantId, presupuestos),
+      eq(presupuestos.esPlantilla, false),
+      sql`${presupuestos.estado} in ('borrador','enviado')`,
+    ));
+
+  return {
+    cobradoMes: cobrado?.total ?? '0',
+    cobradoMesCant: cobrado?.cantidad ?? 0,
+    porCobrar: porCobrar?.total ?? '0',
+    porCobrarCant: porCobrar?.cantidad ?? 0,
+    abiertos: abiertos?.cantidad ?? 0,
+  };
 }
 
 // ── Eliminar ──────────────────────────────────────────────────────────────────

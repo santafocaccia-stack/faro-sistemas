@@ -70,3 +70,36 @@ export const PLANES = {
 } as const;
 
 export const PLANES_ARRAY = Object.values(PLANES);
+
+/* ─────────────────────────────────────────────────────────────
+   Capacidades por plan — FUENTE DE VERDAD de qué puede hacer
+   cada plan. Tanto la navegación (qué se muestra) como el guard
+   de rutas server-side (qué se puede abrir) derivan de acá.
+
+   Regla: cada plan tiene exactamente lo que necesita y nada más.
+───────────────────────────────────────────────────────────── */
+export type Capacidad =
+  | 'pos' // punto de venta + lector de códigos de barras
+  | 'productos' // inventario / stock
+  | 'presupuestos' // presupuestos en PDF (+ cobro de servicios)
+  | 'agenda' // agenda de turnos + vencimientos
+  | 'prestamos' // cartera de créditos
+  | 'clientes'
+  | 'cuentaCorriente'
+  | 'compras' // proveedores + pedidos
+  | 'reportes'
+  | 'cocina' // pantalla de cocina (KDS)
+  | 'balanza'; // integración con balanza digital
+
+export const CAPACIDADES_POR_PLAN: Record<PlanId, readonly Capacidad[]> = {
+  servicios: ['presupuestos', 'agenda', 'clientes', 'cuentaCorriente', 'reportes'],
+  market: ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes'],
+  food: ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'cocina'],
+  balanza: ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'balanza'],
+  prestamista: ['prestamos', 'clientes'],
+};
+
+/** ¿El plan tiene habilitada esta capacidad? */
+export function planTiene(plan: PlanId, cap: Capacidad): boolean {
+  return CAPACIDADES_POR_PLAN[plan].includes(cap);
+}

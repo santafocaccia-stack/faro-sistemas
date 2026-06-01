@@ -57,7 +57,6 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
       CTA_CORRIENTE,
     ],
     secondary: [
-      HISTORIAL,
       REPORTES,
     ],
   },

@@ -5,52 +5,53 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard, ShoppingCart, Users, MoreHorizontal,
-  History, Package, BookOpen, FileText, BarChart3,
-  UsersRound, Settings, LogOut, X, Truck, ClipboardList,
+  ShoppingCart, MoreHorizontal, UsersRound, Settings, LogOut, X,
+  type LucideIcon,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { HREFS_EMPLEADO } from '@/lib/nav';
+import { navParaRol, puedeGestionar, POS_HREF } from '@/lib/nav';
+import { planTiene, type PlanId } from '@/lib/planes';
 import { usePosCart, selectCantidadItems } from '@/lib/stores/pos-cart';
 import type { Rol } from '@/server/db/schema';
 
-/* ── Tabs laterales (Vender va al centro como FAB elevado) ──── */
-const LEFT_TABS = [
-  { href: '/dashboard',          label: 'Inicio',   icon: LayoutDashboard, exactMatch: true },
-  { href: '/dashboard/ventas/historial', label: 'Ventas', icon: History, exactMatch: false },
-];
-const RIGHT_TABS = [
-  { href: '/dashboard/clientes', label: 'Clientes', icon: Users, exactMatch: false },
-];
-
-/* ── Ítems del drawer "Más" ───────────────────────────── */
-const MAS_ITEMS = [
-  { href: '/dashboard/productos',     label: 'Productos',       icon: Package },
-  { href: '/dashboard/cc',            label: 'Cta. Corriente',  icon: BookOpen },
-  { href: '/dashboard/proveedores',   label: 'Proveedores',     icon: Truck },
-  { href: '/dashboard/pedidos',       label: 'Pedidos',         icon: ClipboardList },
-  { href: '/dashboard/presupuestos',  label: 'Presupuestos',    icon: FileText },
-  { href: '/dashboard/reportes',      label: 'Reportes',        icon: BarChart3 },
-  { href: '/dashboard/config/equipo', label: 'Equipo',          icon: UsersRound },
-  { href: '/dashboard/config',        label: 'Configuración',   icon: Settings },
-];
+type Tab = { href: string; label: string; icon: LucideIcon; exactMatch?: boolean };
 
 function isActive(href: string, pathname: string, exactMatch?: boolean) {
   if (exactMatch) return pathname === href;
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
+export function MobileBottomNav({ email, plan, rol }: { email: string; plan: PlanId; rol: Rol }) {
   const pathname = usePathname();
   const router   = useRouter();
   const [masOpen, setMasOpen] = useState(false);
   const cantidadItems = usePosCart(selectCantidadItems);
 
-  const esGestor = rol === 'owner' || rol === 'admin';
-  // Filtrado por rol: el empleado solo ve las rutas de HREFS_EMPLEADO
-  const leftTabs  = esGestor ? LEFT_TABS  : LEFT_TABS.filter((t) => HREFS_EMPLEADO.includes(t.href));
-  const rightTabs = esGestor ? RIGHT_TABS : RIGHT_TABS.filter((t) => HREFS_EMPLEADO.includes(t.href));
-  const masItems  = esGestor ? MAS_ITEMS  : MAS_ITEMS.filter((t) => HREFS_EMPLEADO.includes(t.href));
+  const navPlan  = navParaRol(plan, rol);
+  const tienePOS = planTiene(plan, 'pos');
+  const esGestor = puedeGestionar(rol);
+
+  /* Ítems del plan (sin los marcados "pronto") */
+  const primary   = navPlan.primary.filter((i) => !i.pronto) as Tab[];
+  const secondary = navPlan.secondary.filter((i) => !i.pronto) as Tab[];
+
+  /* Config — solo gestores, siempre al final del drawer "Más" */
+  const configItems: Tab[] = esGestor
+    ? [
+        { href: '/dashboard/config/equipo', label: 'Equipo',        icon: UsersRound },
+        { href: '/dashboard/config',        label: 'Configuración', icon: Settings },
+      ]
+    : [];
+
+  /* Distribución de la barra:
+     - Con POS: 2 tabs a la izquierda + FAB Vender al centro + 1 a la derecha. El resto va a "Más".
+     - Sin POS: hasta 4 tabs planos + "Más". */
+  const leftTabs  = tienePOS ? primary.slice(0, 2) : primary.slice(0, 4);
+  const rightTabs = tienePOS ? primary.slice(2, 3) : [];
+  const overflow  = tienePOS ? primary.slice(3) : primary.slice(4);
+
+  const masItems = [...overflow, ...secondary, ...configItems];
+  const showMas  = masItems.length > 0;
 
   useEffect(() => { setMasOpen(false); }, [pathname]);
   useEffect(() => {
@@ -65,26 +66,24 @@ export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
     router.refresh();
   }
 
-  const masActive = masItems.some((i) => isActive(i.href, pathname)) ||
-    pathname.startsWith('/dashboard/config');
-  const venderActive = isActive('/dashboard/ventas', pathname, true);
+  const masActive   = masItems.some((i) => isActive(i.href, pathname)) || pathname.startsWith('/dashboard/config');
+  const venderActive = isActive(POS_HREF, pathname, true);
 
-  /* Helper para tabs comunes */
-  const renderTab = (tab: typeof LEFT_TABS[number]) => {
+  const renderTab = (tab: Tab) => {
     const Icon = tab.icon;
     const active = isActive(tab.href, pathname, tab.exactMatch);
     return (
       <Link
         key={tab.href}
         href={tab.href}
-        className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
+        className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors min-w-0"
       >
         <Icon
           className={cn('h-5 w-5 transition-colors', active ? 'text-primary' : 'text-muted-foreground')}
           strokeWidth={active ? 2.25 : 1.75}
         />
         <span className={cn(
-          'text-[10px] font-medium transition-colors',
+          'text-[10px] font-medium transition-colors truncate max-w-full px-0.5',
           active ? 'text-primary' : 'text-muted-foreground',
         )}>
           {tab.label}
@@ -102,11 +101,10 @@ export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
           {/* Tabs izquierda */}
           {leftTabs.map(renderTab)}
 
-          {/* FAB Vender — elevado cuando NO estás en /ventas,
-              aplanado cuando ya estás ahí (evita choque con COBRAR) */}
-          {venderActive ? (
+          {/* FAB Vender — solo planes con POS */}
+          {tienePOS && (venderActive ? (
             <Link
-              href="/dashboard/ventas"
+              href={POS_HREF}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
               aria-label="Vender (página actual)"
             >
@@ -116,7 +114,7 @@ export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
           ) : (
             <div className="flex-1 relative flex items-start justify-center">
               <Link
-                href="/dashboard/ventas"
+                href={POS_HREF}
                 className={cn(
                   'absolute -top-5 h-14 w-14 rounded-2xl flex items-center justify-center',
                   'bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0.70_0.22_43_/_45%)]',
@@ -135,30 +133,32 @@ export function MobileBottomNav({ email, rol }: { email: string; rol: Rol }) {
                 Vender
               </span>
             </div>
-          )}
+          ))}
 
           {/* Tabs derecha */}
           {rightTabs.map(renderTab)}
 
           {/* Botón Más */}
-          <button
-            onClick={() => setMasOpen((v) => !v)}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
-          >
-            <MoreHorizontal
-              className={cn(
-                'h-5 w-5 transition-colors',
+          {showMas && (
+            <button
+              onClick={() => setMasOpen((v) => !v)}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
+            >
+              <MoreHorizontal
+                className={cn(
+                  'h-5 w-5 transition-colors',
+                  (masActive || masOpen) ? 'text-primary' : 'text-muted-foreground',
+                )}
+                strokeWidth={(masActive || masOpen) ? 2.25 : 1.75}
+              />
+              <span className={cn(
+                'text-[10px] font-medium transition-colors',
                 (masActive || masOpen) ? 'text-primary' : 'text-muted-foreground',
-              )}
-              strokeWidth={(masActive || masOpen) ? 2.25 : 1.75}
-            />
-            <span className={cn(
-              'text-[10px] font-medium transition-colors',
-              (masActive || masOpen) ? 'text-primary' : 'text-muted-foreground',
-            )}>
-              Más
-            </span>
-          </button>
+              )}>
+                Más
+              </span>
+            </button>
+          )}
         </div>
       </nav>
 

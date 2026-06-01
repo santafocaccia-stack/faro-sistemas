@@ -12,6 +12,7 @@ import {
 import { tenants } from './tenants';
 import { clientes } from './clientes';
 import { productos } from './productos';
+import { metodoPagoEnum } from './cuenta-corriente';
 
 export const presupuestoEstadoEnum = pgEnum('presupuesto_estado', [
   'borrador',
@@ -19,6 +20,7 @@ export const presupuestoEstadoEnum = pgEnum('presupuesto_estado', [
   'aprobado',
   'rechazado',
   'vencido',
+  'cobrado', // plan servicios: el presupuesto se cobró → registra el ingreso
 ]);
 
 export const presupuestos = pgTable(
@@ -41,6 +43,10 @@ export const presupuestos = pgTable(
 
     // Estado
     estado: presupuestoEstadoEnum('estado').notNull().default('borrador'),
+
+    // Cobro (plan servicios): cuándo y cómo se cobró este presupuesto
+    cobradoAt:   timestamp('cobrado_at', { withTimezone: true }),
+    metodoCobro: metodoPagoEnum('metodo_cobro'),
 
     // Contenido
     notas: text('notas'),

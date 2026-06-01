@@ -16,6 +16,7 @@ const ESTADO_BADGE: Record<string, { label: string; cls: string }> = {
   aprobado:  { label: 'Aprobado',  cls: 'bg-success/10 text-success border-success/20' },
   rechazado: { label: 'Rechazado', cls: 'bg-destructive/10 text-destructive border-destructive/20' },
   vencido:   { label: 'Vencido',   cls: 'bg-warning/10 text-warning border-warning/20' },
+  cobrado:   { label: 'Cobrado',   cls: 'bg-success/10 text-success border-success/20' },
 };
 
 type Props = { params: Promise<{ id: string }> };

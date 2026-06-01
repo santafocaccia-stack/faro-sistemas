@@ -1,8 +1,11 @@
 import { Suspense } from 'react';
 import { obtenerKpisDashboard, obtenerProgresoOnboarding } from '@/server/actions/dashboard';
 import { requireSession } from '@/server/auth/session';
+import { planTiene } from '@/lib/planes';
 import { OnboardingWizard } from '@/components/onboarding-wizard';
 import { DashboardClient } from './dashboard-client';
+import { PrestamistaInicio } from './prestamista-inicio';
+import { ServiciosInicio } from './servicios-inicio';
 
 /* ─────────────────────────────────────────────────────────────
    Helpers (corren en servidor, hora de Argentina)
@@ -31,11 +34,7 @@ function getNombre(email: string): string {
 ───────────────────────────────────────────────────────────── */
 // Componente interno con los datos — se suspende mientras carga
 async function DashboardContent() {
-  const [session, kpis, progreso] = await Promise.all([
-    requireSession(),
-    obtenerKpisDashboard(),
-    obtenerProgresoOnboarding(),
-  ]);
+  const session = await requireSession();
 
   // Hora local Argentina (UTC-3, sin ajuste DST necesario para saludo)
   const ahoraAR = new Date(
@@ -51,6 +50,22 @@ async function DashboardContent() {
     day:     'numeric',
     month:   'long',
   });
+
+  // ── Inicio según plan ──────────────────────────────────────────────
+  // Prestamista: cartera de créditos (no tiene ventas ni stock).
+  if (planTiene(session.plan, 'prestamos')) {
+    return <PrestamistaInicio saludo={saludo} nombre={nombre} fechaLabel={fechaLabel} />;
+  }
+  // Servicios: cobros + agenda + presupuestos (no tiene POS ni stock).
+  if (planTiene(session.plan, 'presupuestos') && !planTiene(session.plan, 'pos')) {
+    return <ServiciosInicio saludo={saludo} nombre={nombre} fechaLabel={fechaLabel} />;
+  }
+
+  // ── Planes con POS (market / food / balanza) ──────────────────────
+  const [kpis, progreso] = await Promise.all([
+    obtenerKpisDashboard(),
+    obtenerProgresoOnboarding(),
+  ]);
 
   // Valores derivados
   const totalHoy      = kpis.ventasHoy.minorista.total + kpis.ventasHoy.mayorista.total;

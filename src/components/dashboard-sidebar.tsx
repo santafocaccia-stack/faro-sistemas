@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { navParaRol, puedeGestionar, POS_HREF, type NavItem } from '@/lib/nav';
-import { PLANES, type PlanId } from '@/lib/planes';
+import { PLANES, planTiene, type PlanId } from '@/lib/planes';
 import type { Rol } from '@/server/db/schema';
 
 type Props = {
@@ -27,6 +27,7 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
   const navPlan  = navParaRol(plan, rol);
   const planInfo = PLANES[plan];
   const esGestor = puedeGestionar(rol);
+  const tienePOS = planTiene(plan, 'pos'); // servicios y prestamista no venden en mostrador
 
   /* "Más" dropdown */
   const [masOpen, setMasOpen] = useState(false);
@@ -44,7 +45,7 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
   /* Precarga las rutas principales en background al montar el sidebar */
   useEffect(() => {
     const rutas = [
-      POS_HREF,
+      ...(tienePOS ? [POS_HREF] : []),
       ...navPlan.primary.map((i) => i.href),
       ...navPlan.secondary.filter((i) => !i.pronto).map((i) => i.href),
     ];
@@ -110,25 +111,27 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
         </button>
       </div>
 
-      {/* ── Botón VENDER destacado ───────────────────────── */}
-      <div className="relative px-3 pb-3">
-        <Link
-          href={POS_HREF}
-          prefetch={true}
-          className={cn(
-            'group relative w-full flex items-center gap-2 px-3 h-11 rounded-xl',
-            'bg-primary text-primary-foreground font-bold text-[14px] tracking-tight',
-            'transition-all duration-150 press-scale',
-            posActive
-              ? 'glow-primary brightness-110'
-              : 'glow-primary hover:brightness-105',
-          )}
-        >
-          <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />
-          <span>Vender</span>
-          <ArrowRight className="h-3.5 w-3.5 ml-auto opacity-60 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
-      </div>
+      {/* ── Botón VENDER destacado (solo planes con POS) ──── */}
+      {tienePOS && (
+        <div className="relative px-3 pb-3">
+          <Link
+            href={POS_HREF}
+            prefetch={true}
+            className={cn(
+              'group relative w-full flex items-center gap-2 px-3 h-11 rounded-xl',
+              'bg-primary text-primary-foreground font-bold text-[14px] tracking-tight',
+              'transition-all duration-150 press-scale',
+              posActive
+                ? 'glow-primary brightness-110'
+                : 'glow-primary hover:brightness-105',
+            )}
+          >
+            <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />
+            <span>Vender</span>
+            <ArrowRight className="h-3.5 w-3.5 ml-auto opacity-60 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+      )}
 
       {/* ── Navegación primaria ──────────────────────────── */}
       <nav className="relative flex-1 px-3 pb-3 space-y-0.5 overflow-y-auto">

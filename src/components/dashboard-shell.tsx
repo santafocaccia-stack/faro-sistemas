@@ -69,7 +69,7 @@ export function DashboardShell({ email, plan, rol, tenantNombre, children }: Pro
       </main>
 
       {/* Bottom navigation — solo mobile */}
-      <MobileBottomNav email={email} rol={rol} />
+      <MobileBottomNav email={email} plan={plan} rol={rol} />
 
       {/* Solo se monta (y carga su chunk JS) cuando el usuario abre ⌘K */}
       {openCmd && (
