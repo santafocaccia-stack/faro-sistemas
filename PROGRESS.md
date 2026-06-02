@@ -13,9 +13,9 @@ Ver `docs/context/_estado-git.md` (lo regenera el hook automáticamente — no d
 Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
 
 ## Próximo paso sugerido
-- Seguir **Precios vivos**: ya hay margen objetivo + alerta de margen bajo +
-  actualización masiva con redondeo. Validar UX y QA del flujo de re-precios masivos,
-  y decidir si se expone como acción destacada en Productos.
+- **Precios vivos** endurecido tras revisión (flag server-side, Zod, rango de margen,
+  confirm). Ver `docs/context/precios.md`. Falta: QA en vivo (los 3 planes) y decidir
+  si se expone como acción destacada en Productos. Quedan 🟡 menores anotados.
 
 ## Decisiones/acciones que dependen de vos (bloquean avance)
 1. **Cobro suscripción / Mobbex**: falta CUIT (Monotributo) + cuenta Mobbex. Mientras,

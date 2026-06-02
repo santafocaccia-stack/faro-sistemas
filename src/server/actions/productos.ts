@@ -10,6 +10,8 @@ import {
   productoInputSchema,
   ajustarStockSchema,
   fijarStockSchema,
+  aplicarPreciosMasivoSchema,
+  ajustarPreciosAlMargenSchema,
   formatZodError,
 } from '@/server/schemas';
 import type { VinculoProveedorInput } from './proveedores';
@@ -37,15 +39,27 @@ export type ProductoInput = {
  * categoría) y, opcionalmente, redondea al múltiplo elegido para que terminen
  * en números "lindos" (ej: $3778 → $3800 con redondeo a $100).
  */
+/** ¿El tenant tiene Precios vivos activado? Guard server-side (la UI no alcanza). */
+async function preciosVivosActivo(tenantId: string): Promise<boolean> {
+  const [t] = await db
+    .select({ pv: tenants.preciosVivos })
+    .from(tenants)
+    .where(eq(tenants.id, tenantId))
+    .limit(1);
+  return t?.pv === true;
+}
+
 export async function aplicarPreciosMasivo(input: {
   categoriaId?: string | null;
   pct: number;
   redondeo: number; // 0 (sin redondeo), 10, 50, 100
 }): Promise<{ ok: true; actualizados: number } | { ok: false; error: string }> {
   const session = await requireAdmin();
-  const pct = Number(input.pct);
-  if (isNaN(pct)) return { ok: false, error: 'Porcentaje inválido' };
-  const r = [10, 50, 100].includes(input.redondeo) ? input.redondeo : 0;
+  const parsed = aplicarPreciosMasivoSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: formatZodError(parsed.error) };
+  if (!(await preciosVivosActivo(session.tenantId)))
+    return { ok: false, error: 'Precios vivos no está activado' };
+  const { categoriaId, pct, redondeo: r } = parsed.data;
   const factor = 1 + pct / 100;
   const calc = (v: number) => {
     if (v <= 0) return v;
@@ -53,8 +67,8 @@ export async function aplicarPreciosMasivo(input: {
     return r > 0 ? Math.round(x / r) * r : Math.round(x * 100) / 100;
   };
 
-  const cond = input.categoriaId
-    ? and(byTenant(session.tenantId, productos), eq(productos.categoriaId, input.categoriaId), eq(productos.activo, true))
+  const cond = categoriaId
+    ? and(byTenant(session.tenantId, productos), eq(productos.categoriaId, categoriaId), eq(productos.activo, true))
     : and(byTenant(session.tenantId, productos), eq(productos.activo, true));
 
   const rows = await db
@@ -96,7 +110,12 @@ export type ProductoMargenBajo = {
  */
 export async function productosMargenBajo(): Promise<ProductoMargenBajo[]> {
   const session = await requireAdmin();
-  const objNegocio = await margenObjetivoNegocio(session.tenantId);
+  return calcularMargenBajo(session.tenantId);
+}
+
+/** Núcleo reutilizable (recibe tenantId ya autenticado; evita doble requireAdmin). */
+async function calcularMargenBajo(tenantId: string): Promise<ProductoMargenBajo[]> {
+  const objNegocio = await margenObjetivoNegocio(tenantId);
   const rows = await db
     .select({
       id: productos.id, nombre: productos.nombre,
@@ -104,7 +123,7 @@ export async function productosMargenBajo(): Promise<ProductoMargenBajo[]> {
       obj: productos.margenObjetivo,
     })
     .from(productos)
-    .where(and(byTenant(session.tenantId, productos), eq(productos.activo, true)));
+    .where(and(byTenant(tenantId, productos), eq(productos.activo, true)));
 
   const out: ProductoMargenBajo[] = [];
   for (const r of rows) {
@@ -127,8 +146,12 @@ export async function productosMargenBajo(): Promise<ProductoMargenBajo[]> {
 /** Lleva el precio minorista de los productos con margen bajo al objetivo (con redondeo opcional). */
 export async function ajustarPreciosAlMargen(input: { redondeo: number }): Promise<{ ok: true; ajustados: number } | { ok: false; error: string }> {
   const session = await requireAdmin();
-  const r = [10, 50, 100].includes(input.redondeo) ? input.redondeo : 0;
-  const bajos = await productosMargenBajo();
+  const parsed = ajustarPreciosAlMargenSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: formatZodError(parsed.error) };
+  if (!(await preciosVivosActivo(session.tenantId)))
+    return { ok: false, error: 'Precios vivos no está activado' };
+  const { redondeo: r } = parsed.data;
+  const bajos = await calcularMargenBajo(session.tenantId);
   const redon = (v: number) => (r > 0 ? Math.round(v / r) * r : Math.round(v * 100) / 100);
   let n = 0;
   await db.transaction(async (tx) => {

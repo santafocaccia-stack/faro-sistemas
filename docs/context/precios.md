@@ -28,8 +28,25 @@ el costo) con **redondeo opcional** a números "lindos", y avisar de productos c
 - Página: `src/app/(dashboard)/dashboard/productos/page.tsx`
 
 ## Pendiente / próximo paso
-- Validar UX + QA del flujo de re-precios masivos (los 3 planes; revisar redondeo y bordes).
 - Decidir si se expone como acción destacada en Productos.
+
+## Hardening de revisión (2026-06-02) — ✅ corregido
+Fix aplicado (typecheck verde) en `productos.ts`, `config.ts`, `schemas/index.ts`, `margen-bajo.tsx`:
+1. ✅ **Flag `preciosVivos` chequeado server-side** en `aplicarPreciosMasivo` y
+   `ajustarPreciosAlMargen` (helper `preciosVivosActivo`): si está apagado → `{ok:false}`.
+2. ✅ **Zod en las 3 actions**: `aplicarPreciosMasivoSchema`, `ajustarPreciosAlMargenSchema`
+   (pct finito -90..1000, redondeo ∈ {0,10,50,100}). Input inválido → `formatZodError`.
+3. ✅ **`margenObjetivo` validado** con `margenObjetivoSchema` (coerce, 0..999.99, sin NaN)
+   en `actualizarConfig`.
+4. ✅ **Confirm en "Ajustar al objetivo"** (`margen-bajo.tsx` con `ConfirmDialog`).
+5. ✅ **Doble `requireAdmin` eliminado**: `productosMargenBajo` delega en `calcularMargenBajo(tenantId)`.
+
+🟡 Pendiente menor (no urgente): contador `actualizados` incluye productos precio 0 que
+no cambian; `margenObjetivoNegocio` silencia tenant-not-found (default 50); update masivo
+sin límite de filas (deuda, no bug).
+
+✅ Ya estaba OK: multi-tenant (`byTenant` en SELECT y UPDATE), `requireAdmin` en las 3,
+costo≤0 salteado, numeric como string (`toFixed(2)`), redondeo sanitizado, transacciones.
 
 ## Cuidados
 - `margenObjetivo` es numeric(5,2): manejar como string en Drizzle, no asumir number.

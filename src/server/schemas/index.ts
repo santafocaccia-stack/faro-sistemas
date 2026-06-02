@@ -76,6 +76,37 @@ export const fijarStockSchema = z.object({
   nuevoStock: numericString('Stock inválido'),
 });
 
+// ── Precios vivos ──────────────────────────────────────────────────────────────
+
+/** Redondeo permitido para los re-precios: sin redondeo (0) o múltiplos lindos. */
+const redondeoSchema = z
+  .number()
+  .refine((n) => [0, 10, 50, 100].includes(n), 'Redondeo inválido');
+
+export const aplicarPreciosMasivoSchema = z.object({
+  categoriaId: uuid.nullable().optional(),
+  pct: z
+    .number({ message: 'Porcentaje inválido' })
+    .finite('Porcentaje inválido')
+    .min(-90, 'El porcentaje no puede bajar más de 90%')
+    .max(1000, 'Porcentaje demasiado alto'),
+  redondeo: redondeoSchema,
+});
+
+export const ajustarPreciosAlMargenSchema = z.object({
+  redondeo: redondeoSchema,
+});
+
+/**
+ * Margen objetivo (recargo % sobre el costo). Columna numeric(5,2) → 0..999.99.
+ * Coerce admite string|number; rechaza NaN, negativos y overflow de la columna.
+ */
+export const margenObjetivoSchema = z.coerce
+  .number({ message: 'Margen objetivo inválido' })
+  .finite('Margen objetivo inválido')
+  .min(0, 'El margen no puede ser negativo')
+  .max(999.99, 'El margen máximo es 999.99%');
+
 // ── Ventas ───────────────────────────────────────────────────────────────────
 
 export const lineaVentaSchema = z.object({

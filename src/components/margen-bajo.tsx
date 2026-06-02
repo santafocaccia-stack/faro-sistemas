@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AlertTriangle, ChevronDown } from 'lucide-react';
 import { ajustarPreciosAlMargen, type ProductoMargenBajo } from '@/server/actions/productos';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { formatARS } from '@/lib/utils';
 
 export function MargenBajo({ items }: { items: ProductoMargenBajo[] }) {
@@ -69,10 +70,19 @@ export function MargenBajo({ items }: { items: ProductoMargenBajo[] }) {
               <option value={50}>$50</option>
               <option value={100}>$100</option>
             </select>
-            <button onClick={ajustar} disabled={pending}
-              className="glow-primary ml-auto h-9 px-4 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold disabled:opacity-50">
-              {pending ? 'Ajustando…' : 'Ajustar al objetivo'}
-            </button>
+            <ConfirmDialog
+              variant="default"
+              trigger={
+                <button disabled={pending}
+                  className="glow-primary ml-auto h-9 px-4 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold disabled:opacity-50">
+                  {pending ? 'Ajustando…' : 'Ajustar al objetivo'}
+                </button>
+              }
+              title={`¿Ajustar ${items.length} precio${items.length === 1 ? '' : 's'} al margen objetivo?`}
+              description={`Se actualizará el precio minorista de ${items.length} producto${items.length === 1 ? '' : 's'} con margen bajo${redondeo > 0 ? `, redondeando a $${redondeo}` : ''}. Esta acción modifica precios en masa.`}
+              confirmLabel="Sí, ajustar"
+              onConfirm={ajustar}
+            />
           </div>
         </div>
       )}
