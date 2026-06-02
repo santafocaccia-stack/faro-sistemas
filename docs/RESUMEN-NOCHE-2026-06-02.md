@@ -24,4 +24,9 @@ build verde antes de deployar, nada de MP/credenciales ni destructivo en DB.
 - [B ✅] Marketing: 4 piezas nuevas en marketing/ (texto perfecto, HTML→screenshot):
   gesto-story-market/servicios.png (1080x1920, historias IG) y
   gesto-flyer-market/servicios.png (1080x1080, "1 beneficio grande" para anuncios).
-- [próximo] C) QA cruzado PC+celular, D) pulido, E) ordenar Downloads.
+- [C ✅] QA cruzado: en PC, las rutas de los 3 planes activos (servicios/market/
+  prestamista) cargan sin errores (inicio, reportes, presupuestos/préstamos,
+  productos, historial, cc, equipo). En mobile la pantalla de categorías quedó
+  prolija (sin overflow horizontal). Lógica por plan OK. Sin bugs nuevos.
+- [D ✅] Pulido: no se encontró nada crítico pendiente; la app quedó consistente.
+- [próximo] E) ordenar C:\Users\Tomi\Downloads (con manifiesto), luego resumen final.
