@@ -126,11 +126,11 @@ function Section({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="panel overflow-hidden">
       {/* Header */}
       <div className="p-5 border-b border-border/60 flex items-start gap-3">
-        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <Icono className="h-4 w-4 text-primary" strokeWidth={1.75} />
+        <div className="icon-chip h-8 w-8 shrink-0">
+          <Icono className="h-4 w-4" strokeWidth={1.75} />
         </div>
         <div className="min-w-0">
           <h2 className="text-sm font-semibold tracking-tight">{titulo}</h2>
