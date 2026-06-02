@@ -45,6 +45,7 @@ export const tenants = pgTable('tenants', {
   zonaHoraria: text('zona_horaria').notNull().default('America/Argentina/Buenos_Aires'),
   habilitaMayorista: boolean('habilita_mayorista').notNull().default(true),
   habilitaMinorista: boolean('habilita_minorista').notNull().default(true),
+  preciosVivos: boolean('precios_vivos').notNull().default(false), // actualización masiva de precios con redondeo
 
   // Datos de contacto (para boletas y remitos)
   direccion: text('direccion'),                      // "Av. Corrientes 1234, CABA"

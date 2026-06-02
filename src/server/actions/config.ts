@@ -24,6 +24,7 @@ export type ConfigInput = {
   emailNegocio?: string | null;
   habilitaMayorista: boolean;
   habilitaMinorista: boolean;
+  preciosVivos?: boolean;
 };
 
 export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolean; error?: string }> {
@@ -41,6 +42,7 @@ export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolea
         emailNegocio:      input.emailNegocio?.trim() || null,
         habilitaMayorista: input.habilitaMayorista,
         habilitaMinorista: input.habilitaMinorista,
+        ...(input.preciosVivos !== undefined ? { preciosVivos: input.preciosVivos } : {}),
       })
       .where(eq(tenants.id, session.tenantId));
 

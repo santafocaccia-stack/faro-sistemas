@@ -5,7 +5,7 @@ import { eq, and, ilike, desc, sql, asc } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { productos, productoProveedores, proveedores, categorias, type TipoUnidad } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireSession } from '@/server/auth/session';
+import { requireSession, requireAdmin } from '@/server/auth/session';
 import {
   productoInputSchema,
   ajustarStockSchema,
@@ -30,6 +30,54 @@ export type ProductoInput = {
   activo: boolean;
   vinculos?: VinculoProveedorInput[];
 };
+
+/**
+ * Precios vivos — actualización masiva de precios.
+ * Sube (o baja) un % a los precios de los productos activos (todos o por
+ * categoría) y, opcionalmente, redondea al múltiplo elegido para que terminen
+ * en números "lindos" (ej: $3778 → $3800 con redondeo a $100).
+ */
+export async function aplicarPreciosMasivo(input: {
+  categoriaId?: string | null;
+  pct: number;
+  redondeo: number; // 0 (sin redondeo), 10, 50, 100
+}): Promise<{ ok: true; actualizados: number } | { ok: false; error: string }> {
+  const session = await requireAdmin();
+  const pct = Number(input.pct);
+  if (isNaN(pct)) return { ok: false, error: 'Porcentaje inválido' };
+  const r = [10, 50, 100].includes(input.redondeo) ? input.redondeo : 0;
+  const factor = 1 + pct / 100;
+  const calc = (v: number) => {
+    if (v <= 0) return v;
+    const x = v * factor;
+    return r > 0 ? Math.round(x / r) * r : Math.round(x * 100) / 100;
+  };
+
+  const cond = input.categoriaId
+    ? and(byTenant(session.tenantId, productos), eq(productos.categoriaId, input.categoriaId), eq(productos.activo, true))
+    : and(byTenant(session.tenantId, productos), eq(productos.activo, true));
+
+  const rows = await db
+    .select({ id: productos.id, may: productos.precioMayorista, min: productos.precioMinorista })
+    .from(productos)
+    .where(cond);
+
+  let n = 0;
+  await db.transaction(async (tx) => {
+    for (const p of rows) {
+      const nMay = calc(Number(p.may));
+      const nMin = calc(Number(p.min));
+      await tx
+        .update(productos)
+        .set({ precioMayorista: nMay.toFixed(2), precioMinorista: nMin.toFixed(2) })
+        .where(and(byTenant(session.tenantId, productos), eq(productos.id, p.id)));
+      n++;
+    }
+  });
+
+  revalidatePath('/dashboard/productos');
+  return { ok: true, actualizados: n };
+}
 
 export async function listarProductos(filtros?: { busqueda?: string; soloActivos?: boolean }) {
   const session = await requireSession();

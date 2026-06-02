@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Building2, ShoppingBag, CreditCard, Wallet, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Building2, ShoppingBag, CreditCard, Wallet, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
+import { planTiene } from '@/lib/planes';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
@@ -43,7 +44,9 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
   const [emailNegocio, setEmailNegocio] = useState(tenant.emailNegocio ?? '');
   const [habilitaMayorista, setHabilitaMayorista] = useState(tenant.habilitaMayorista);
   const [habilitaMinorista, setHabilitaMinorista] = useState(tenant.habilitaMinorista);
+  const [preciosVivos, setPreciosVivos] = useState(tenant.preciosVivos);
   const [isPending, startTransition] = useTransition();
+  const tieneProductos = planTiene(tenant.plan, 'productos');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +59,7 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
         emailNegocio: emailNegocio || null,
         habilitaMayorista,
         habilitaMinorista,
+        preciosVivos,
       });
       if (!result.ok) { toast.error(result.error ?? 'Error al guardar'); return; }
       toast.success('Configuración guardada');
@@ -153,6 +157,18 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
           </div>
         )}
       </FormSection>
+
+      {/* Precios vivos — solo planes con productos */}
+      {tieneProductos && (
+        <FormSection icon={TrendingUp} title="Precios vivos" subtitle="Actualizá precios en masa con redondeo a números lindos">
+          <CanalRow
+            title="Activar Precios vivos"
+            description="Agrega un botón en Productos para subir/bajar precios por % y redondear (ej: $3778 → $3800)"
+            checked={preciosVivos}
+            onChange={setPreciosVivos}
+          />
+        </FormSection>
+      )}
 
       {/* Información de cuenta */}
       <FormSection icon={CreditCard} title="Información de cuenta" subtitle="Plan y estado de la suscripción">

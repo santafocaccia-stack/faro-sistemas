@@ -2,14 +2,17 @@ import Link from 'next/link';
 import { Plus, Tags, Zap, FileUp, Package } from 'lucide-react';
 import { listarProductos } from '@/server/actions/productos';
 import { listarCategorias, listarGruposVariantes } from '@/server/actions/categorias';
+import { obtenerTenant } from '@/server/actions/config';
 import { ProductosListClient } from '@/components/productos-list-client';
+import { PreciosVivos } from '@/components/precios-vivos';
 import { PageHeader } from '@/components/ui/page-header';
 
 export default async function ProductosPage() {
-  const [productos, categorias, gruposVariantes] = await Promise.all([
+  const [productos, categorias, gruposVariantes, tenant] = await Promise.all([
     listarProductos(),
     listarCategorias(),
     listarGruposVariantes(),
+    obtenerTenant(),
   ]);
 
   return (
@@ -22,6 +25,12 @@ export default async function ProductosPage() {
         subtitle={`${productos.length} ${productos.length === 1 ? 'producto' : 'productos'} en el catálogo`}
         action={
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {tenant?.preciosVivos && (
+              <PreciosVivos
+                productos={productos.map((p) => ({ id: p.id, nombre: p.nombre, categoriaId: p.categoriaId, precioMinorista: String(p.precioMinorista), activo: p.activo }))}
+                categorias={categorias.map((c) => ({ id: c.id, nombre: c.nombre }))}
+              />
+            )}
             <Link
               href="/dashboard/productos/categorias"
               title="Categorías y variantes"
