@@ -170,7 +170,8 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
       lista = lista.filter((p) => {
         const matchNombre = p.nombre.toLowerCase().includes(q);
         const matchCodigo = p.codigo?.toLowerCase().includes(q);
-        return matchNombre || matchCodigo;
+        const matchPlu = p.codigoPlu?.toLowerCase().includes(q);
+        return matchNombre || matchCodigo || matchPlu;
       });
     }
     return lista.slice(0, 20);
@@ -217,7 +218,9 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
     // Si hay un modal de confirmación abierto, ignorar escaneos
     if (confirmSinStock) return;
     const encontrado = productosActivos.find(
-      (p) => p.codigo && p.codigo.trim().toLowerCase() === trimmed.toLowerCase(),
+      (p) =>
+        (p.codigo && p.codigo.trim().toLowerCase() === trimmed.toLowerCase()) ||
+        (p.codigoPlu && p.codigoPlu.trim().toLowerCase() === trimmed.toLowerCase()),
     );
     if (encontrado) {
       agregarConChequeoStock(encontrado);
@@ -557,6 +560,9 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 {p.codigo && (
                                   <span className="text-[10px] text-muted-foreground/60 font-mono">{p.codigo}</span>
+                                )}
+                                {p.codigoPlu && (
+                                  <span className="text-[10px] text-primary/70 font-mono">PLU {p.codigoPlu}</span>
                                 )}
                                 {catNombre && (
                                   <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary/80 leading-none">

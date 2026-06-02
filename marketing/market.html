@@ -1,0 +1,67 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1080px}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:
+      radial-gradient(ellipse 80% 60% at 85% -10%, rgba(249,104,0,0.22), transparent 60%),
+      radial-gradient(ellipse 60% 50% at -10% 110%, rgba(249,104,0,0.10), transparent 60%),
+      #0f0d0b;
+    color:#f3ede4; position:relative; overflow:hidden;
+    padding:76px 72px;
+  }
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:46px}
+  .logo{display:flex;align-items:center;gap:16px}
+  .mark{width:62px;height:62px;border-radius:16px;background:linear-gradient(145deg,#ff7a1a,#e24a00);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:38px;color:#1a0f06;
+    box-shadow:0 0 0 1px rgba(255,255,255,.10) inset,0 14px 40px rgba(249,104,0,.45)}
+  .brand{font-size:40px;font-weight:800;letter-spacing:-.02em}
+  .tag{font-size:18px;font-weight:700;letter-spacing:.18em;color:#f9a35e;text-transform:uppercase;
+    border:1.5px solid rgba(249,104,0,.4);padding:9px 18px;border-radius:999px}
+  h1{font-size:67px;line-height:1.02;font-weight:800;letter-spacing:-.03em;margin-bottom:18px}
+  h1 .o{color:#f97316}
+  .sub{font-size:25px;color:#b9b1a6;font-weight:500;margin-bottom:50px;max-width:880px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:20px;
+    padding:26px 28px;display:flex;gap:20px;align-items:flex-start}
+  .ic{width:58px;height:58px;border-radius:14px;background:rgba(249,104,0,.14);border:1px solid rgba(249,104,0,.28);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ic svg{width:30px;height:30px;stroke:#f9a35e;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .ct h3{font-size:25px;font-weight:700;letter-spacing:-.01em;margin-bottom:5px}
+  .ct p{font-size:18px;color:#9c958b;line-height:1.32;font-weight:450}
+  .foot{position:absolute;left:72px;right:72px;bottom:64px;display:flex;align-items:center;justify-content:space-between}
+  .pill{background:linear-gradient(145deg,#ff7a1a,#e24a00);color:#1a0f06;font-weight:800;font-size:26px;
+    padding:18px 34px;border-radius:16px;box-shadow:0 12px 34px rgba(249,104,0,.4)}
+  .foot .note{font-size:21px;color:#b9b1a6;font-weight:600;text-align:right}
+  .foot .note b{color:#f3ede4}
+</style></head><body>
+  <div class="top">
+    <div class="logo"><div class="mark">G</div><div class="brand">Gesto</div></div>
+    <div class="tag">Market</div>
+  </div>
+
+  <h1>Tu negocio,<br><span class="o">siempre en orden.</span></h1>
+  <div class="sub">El sistema simple para kioscos, almacenes y comercios. Todo en el celular o la PC.</div>
+
+  <div class="grid">
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg></div>
+      <div class="ct"><h3>Control de stock</h3><p>En tiempo real, con alerta cuando algo se agota.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></div>
+      <div class="ct"><h3>Boletas al instante</h3><p>Cobrás y emitís el comprobante en segundos.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M1 3h13v13H1z"/><path d="M14 8h4l3 3v5h-7"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></div>
+      <div class="ct"><h3>Pedidos a proveedores</h3><p>Se arman solos y los mandás por WhatsApp.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><path d="M7 12h10"/></svg></div>
+      <div class="ct"><h3>Escaneá productos</h3><p>Con la cámara del celular o un lector en la PC.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/></svg></div>
+      <div class="ct"><h3>Tu equipo, con permisos</h3><p>Dueño, admin y empleado, cada uno con su acceso.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 10h16M10 4v16"/></svg></div>
+      <div class="ct"><h3>Fiado ordenado</h3><p>Cuenta corriente por cliente, sin cuaderno.</p></div></div>
+  </div>
+
+  <div class="foot">
+    <div class="pill">15 días gratis</div>
+    <div class="note">Sin tarjeta · <b>Probalo hoy</b></div>
+  </div>
+</body></html>

@@ -13,7 +13,11 @@ export type DatosReporteSemanal = {
   ticketPromedio: number;
   topProductos: TopProducto[];
   porMetodo: PorMetodo[];
-  semanaLabel: string; // "lunes 19 al domingo 25 de mayo"
+  semanaLabel: string; // "lunes 19 al domingo 25 de mayo" (o el día, en el reporte diario)
+  // Labels opcionales para reusar el template en el reporte diario
+  subtitulo?: string;   // header chico — default "Reporte semanal"
+  titulo?: string;      // título grande — default "Resumen de la semana"
+  footerNota?: string;  // pie — default "...cada lunes"
 };
 
 const METODO_LABELS: Record<string, string> = {
@@ -31,6 +35,9 @@ function formatARS(n: number) {
 
 export function buildReporteSemanalHtml(datos: DatosReporteSemanal): string {
   const { negocioNombre, ventasTotales, cantidadVentas, ticketPromedio, topProductos, porMetodo, semanaLabel } = datos;
+  const subtitulo  = datos.subtitulo  ?? 'Reporte semanal';
+  const titulo     = datos.titulo     ?? 'Resumen de la semana';
+  const footerNota = datos.footerNota ?? 'Este email se envía automáticamente cada lunes';
 
   const topRows = topProductos.slice(0, 5).map((p, i) => `
     <tr>
@@ -64,7 +71,7 @@ export function buildReporteSemanalHtml(datos: DatosReporteSemanal): string {
               </td>
               <td style="padding-left:12px;vertical-align:middle">
                 <p style="margin:0;font-size:16px;font-weight:700;color:#e8e2d9">Gesto</p>
-                <p style="margin:0;font-size:12px;color:#7a6f65">Reporte semanal</p>
+                <p style="margin:0;font-size:12px;color:#7a6f65">${subtitulo}</p>
               </td>
             </tr>
           </table>
@@ -72,7 +79,7 @@ export function buildReporteSemanalHtml(datos: DatosReporteSemanal): string {
 
         <!-- Título -->
         <tr><td style="padding-bottom:24px">
-          <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;color:#e8e2d9">Resumen de la semana</h1>
+          <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;color:#e8e2d9">${titulo}</h1>
           <p style="margin:0;font-size:14px;color:#7a6f65">${negocioNombre} · ${semanaLabel}</p>
         </td></tr>
 
@@ -130,7 +137,7 @@ export function buildReporteSemanalHtml(datos: DatosReporteSemanal): string {
         <!-- Footer -->
         <tr><td style="padding-top:16px;border-top:1px solid #2e2a25;text-align:center">
           <p style="margin:0;font-size:12px;color:#7a6f65">
-            Este email se envía automáticamente cada lunes ·
+            ${footerNota} ·
             <a href="{{APP_URL}}/dashboard" style="color:#f97316;text-decoration:none">Ir al dashboard →</a>
           </p>
         </td></tr>

@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/reporte-semanal",
       "schedule": "0 13 * * 1"
+    },
+    {
+      "path": "/api/cron/reporte-diario",
+      "schedule": "0 1 * * *"
     }
   ]
 }
