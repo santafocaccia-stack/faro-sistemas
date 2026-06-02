@@ -14,3 +14,12 @@ build verde antes de deployar, nada de MP/credenciales ni destructivo en DB.
 
 ## Bitácora
 - [inicio] Loop nocturno armado. Empiezo por categorías/variantes.
+- [1 ✅] Categorías/variantes: CRUD revisado (alta/edición inline/eliminar con
+  confirmación + asignación en alta de producto) — está completo y funcional.
+  Apliqué consistencia visual (panel + icon-chip). Build verde, deploy (bef9457).
+- [A ✅] Investigación + docs/IDEAS-INNOVADORAS.md: 3 ideas (Precios vivos
+  anti-inflación ⭐⭐, Reposición inteligente ⭐, Gesto en WhatsApp 🔭) + análisis
+  del catálogo global (decisión de producto cross-tenant → documentada, NO
+  implementada). Recomendación: Precios vivos primero. Con research web (fuentes).
+- [próximo] B) marketing stories IG + flyer, C) QA cruzado, D) pulido,
+  E) ordenar Downloads.
