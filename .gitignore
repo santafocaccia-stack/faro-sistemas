@@ -49,3 +49,6 @@ next-env.d.ts
 /gesto-*.txt
 /canvas-fonts/
 /generate_gesto.py
+
+# cache local del hook de contexto (firma de estado, no versionar)
+/.claude/hooks/.last-state
