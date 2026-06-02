@@ -62,6 +62,9 @@ export const productos = pgTable(
       .notNull()
       .default('0'),
 
+    // Recargo % objetivo sobre el costo (override del default del negocio). Nullable = usar el del negocio.
+    margenObjetivo: numeric('margen_objetivo', { precision: 5, scale: 2 }),
+
     // Estado
     activo: boolean('activo').notNull().default(true),
 

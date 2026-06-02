@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { eq, and, ilike, desc, sql, asc } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { productos, productoProveedores, proveedores, categorias, type TipoUnidad } from '@/server/db/schema';
+import { productos, productoProveedores, proveedores, categorias, tenants, type TipoUnidad } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession, requireAdmin } from '@/server/auth/session';
 import {
@@ -77,6 +77,71 @@ export async function aplicarPreciosMasivo(input: {
 
   revalidatePath('/dashboard/productos');
   return { ok: true, actualizados: n };
+}
+
+/** Recargo objetivo del negocio (default si el producto no tiene override). */
+async function margenObjetivoNegocio(tenantId: string): Promise<number> {
+  const [t] = await db.select({ m: tenants.margenObjetivo }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+  return Number(t?.m ?? 50);
+}
+
+export type ProductoMargenBajo = {
+  id: string; nombre: string; costo: number; precioActual: number;
+  recargoReal: number; objetivo: number; precioSugerido: number;
+};
+
+/**
+ * Productos cuyo recargo real (sobre el costo) quedó por debajo del objetivo.
+ * "Estás vendiendo perdiendo margen" — alma de Precios vivos.
+ */
+export async function productosMargenBajo(): Promise<ProductoMargenBajo[]> {
+  const session = await requireAdmin();
+  const objNegocio = await margenObjetivoNegocio(session.tenantId);
+  const rows = await db
+    .select({
+      id: productos.id, nombre: productos.nombre,
+      costo: productos.costoPromedio, precio: productos.precioMinorista,
+      obj: productos.margenObjetivo,
+    })
+    .from(productos)
+    .where(and(byTenant(session.tenantId, productos), eq(productos.activo, true)));
+
+  const out: ProductoMargenBajo[] = [];
+  for (const r of rows) {
+    const costo = Number(r.costo), precio = Number(r.precio);
+    if (costo <= 0) continue; // sin costo no se puede calcular margen
+    const objetivo = r.obj != null ? Number(r.obj) : objNegocio;
+    const recargoReal = ((precio - costo) / costo) * 100;
+    if (recargoReal < objetivo - 0.5) {
+      out.push({
+        id: r.id, nombre: r.nombre, costo, precioActual: precio,
+        recargoReal: Math.round(recargoReal * 10) / 10, objetivo,
+        precioSugerido: Math.round(costo * (1 + objetivo / 100) * 100) / 100,
+      });
+    }
+  }
+  out.sort((a, b) => a.recargoReal - b.recargoReal);
+  return out;
+}
+
+/** Lleva el precio minorista de los productos con margen bajo al objetivo (con redondeo opcional). */
+export async function ajustarPreciosAlMargen(input: { redondeo: number }): Promise<{ ok: true; ajustados: number } | { ok: false; error: string }> {
+  const session = await requireAdmin();
+  const r = [10, 50, 100].includes(input.redondeo) ? input.redondeo : 0;
+  const bajos = await productosMargenBajo();
+  const redon = (v: number) => (r > 0 ? Math.round(v / r) * r : Math.round(v * 100) / 100);
+  let n = 0;
+  await db.transaction(async (tx) => {
+    for (const p of bajos) {
+      const nuevo = redon(p.precioSugerido);
+      await tx.update(productos)
+        .set({ precioMinorista: nuevo.toFixed(2) })
+        .where(and(byTenant(session.tenantId, productos), eq(productos.id, p.id)));
+      n++;
+    }
+  });
+  revalidatePath('/dashboard/productos');
+  return { ok: true, ajustados: n };
 }
 
 export async function listarProductos(filtros?: { busqueda?: string; soloActivos?: boolean }) {

@@ -45,6 +45,7 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
   const [habilitaMayorista, setHabilitaMayorista] = useState(tenant.habilitaMayorista);
   const [habilitaMinorista, setHabilitaMinorista] = useState(tenant.habilitaMinorista);
   const [preciosVivos, setPreciosVivos] = useState(tenant.preciosVivos);
+  const [margenObjetivo, setMargenObjetivo] = useState(String(tenant.margenObjetivo ?? '50'));
   const [isPending, startTransition] = useTransition();
   const tieneProductos = planTiene(tenant.plan, 'productos');
 
@@ -60,6 +61,7 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
         habilitaMayorista,
         habilitaMinorista,
         preciosVivos,
+        margenObjetivo,
       });
       if (!result.ok) { toast.error(result.error ?? 'Error al guardar'); return; }
       toast.success('Configuración guardada');
@@ -167,6 +169,23 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
             checked={preciosVivos}
             onChange={setPreciosVivos}
           />
+          {preciosVivos && (
+            <div className="space-y-1.5 pt-1">
+              <label htmlFor="margen" className={labelCls}>Recargo objetivo sobre el costo (%)</label>
+              <Input
+                id="margen"
+                type="number"
+                min="0"
+                value={margenObjetivo}
+                onChange={(e) => setMargenObjetivo(e.target.value)}
+                placeholder="50"
+                className={`${inputCls} font-mono tabular-nums max-w-[140px]`}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Si un producto queda con menos recargo que esto, Gesto te avisa que perdiste margen y te sugiere el precio.
+              </p>
+            </div>
+          )}
         </FormSection>
       )}
 

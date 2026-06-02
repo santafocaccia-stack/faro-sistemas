@@ -25,6 +25,7 @@ export type ConfigInput = {
   habilitaMayorista: boolean;
   habilitaMinorista: boolean;
   preciosVivos?: boolean;
+  margenObjetivo?: string | number;
 };
 
 export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolean; error?: string }> {
@@ -43,6 +44,9 @@ export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolea
         habilitaMayorista: input.habilitaMayorista,
         habilitaMinorista: input.habilitaMinorista,
         ...(input.preciosVivos !== undefined ? { preciosVivos: input.preciosVivos } : {}),
+        ...(input.margenObjetivo !== undefined && input.margenObjetivo !== ''
+          ? { margenObjetivo: Number(input.margenObjetivo).toFixed(2) }
+          : {}),
       })
       .where(eq(tenants.id, session.tenantId));
 

@@ -1,19 +1,25 @@
 import Link from 'next/link';
 import { Plus, Tags, Zap, FileUp, Package } from 'lucide-react';
-import { listarProductos } from '@/server/actions/productos';
+import { listarProductos, productosMargenBajo } from '@/server/actions/productos';
 import { listarCategorias, listarGruposVariantes } from '@/server/actions/categorias';
 import { obtenerTenant } from '@/server/actions/config';
+import { requireSession } from '@/server/auth/session';
+import { puedeGestionar } from '@/lib/nav';
 import { ProductosListClient } from '@/components/productos-list-client';
 import { PreciosVivos } from '@/components/precios-vivos';
+import { MargenBajo } from '@/components/margen-bajo';
 import { PageHeader } from '@/components/ui/page-header';
 
 export default async function ProductosPage() {
+  const session = await requireSession();
   const [productos, categorias, gruposVariantes, tenant] = await Promise.all([
     listarProductos(),
     listarCategorias(),
     listarGruposVariantes(),
     obtenerTenant(),
   ]);
+  const margenItems =
+    tenant?.preciosVivos && puedeGestionar(session.rol) ? await productosMargenBajo() : [];
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl mx-auto space-y-6 animate-fade-up">
@@ -65,6 +71,8 @@ export default async function ProductosPage() {
           </div>
         }
       />
+
+      {margenItems.length > 0 && <MargenBajo items={margenItems} />}
 
       <ProductosListClient productos={productos} categorias={categorias} gruposVariantes={gruposVariantes} />
     </div>

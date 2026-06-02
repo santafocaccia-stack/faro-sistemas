@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   boolean,
+  numeric,
   pgEnum,
 } from 'drizzle-orm/pg-core';
 
@@ -46,6 +47,7 @@ export const tenants = pgTable('tenants', {
   habilitaMayorista: boolean('habilita_mayorista').notNull().default(true),
   habilitaMinorista: boolean('habilita_minorista').notNull().default(true),
   preciosVivos: boolean('precios_vivos').notNull().default(false), // actualización masiva de precios con redondeo
+  margenObjetivo: numeric('margen_objetivo', { precision: 5, scale: 2 }).notNull().default('50'), // recargo % objetivo sobre el costo
 
   // Datos de contacto (para boletas y remitos)
   direccion: text('direccion'),                      // "Av. Corrientes 1234, CABA"
