@@ -21,5 +21,7 @@ build verde antes de deployar, nada de MP/credenciales ni destructivo en DB.
   anti-inflación ⭐⭐, Reposición inteligente ⭐, Gesto en WhatsApp 🔭) + análisis
   del catálogo global (decisión de producto cross-tenant → documentada, NO
   implementada). Recomendación: Precios vivos primero. Con research web (fuentes).
-- [próximo] B) marketing stories IG + flyer, C) QA cruzado, D) pulido,
-  E) ordenar Downloads.
+- [B ✅] Marketing: 4 piezas nuevas en marketing/ (texto perfecto, HTML→screenshot):
+  gesto-story-market/servicios.png (1080x1920, historias IG) y
+  gesto-flyer-market/servicios.png (1080x1080, "1 beneficio grande" para anuncios).
+- [próximo] C) QA cruzado PC+celular, D) pulido, E) ordenar Downloads.
