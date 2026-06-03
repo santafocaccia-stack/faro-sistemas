@@ -45,6 +45,17 @@ Fix aplicado (typecheck verde) en `productos.ts`, `config.ts`, `schemas/index.ts
 no cambian; `margenObjetivoNegocio` silencia tenant-not-found (default 50); update masivo
 sin límite de filas (deuda, no bug).
 
+## QA en vivo (2026-06-02, producción, tenant demo-market) — parcial
+✅ Verificado en vivo: login OK, /dashboard/productos carga sin errores de consola,
+Precios vivos activo (botón "Actualizar precios" + alerta de margen bajo presentes).
+✅ **ConfirmDialog del fix funciona**: "Ajustar al objetivo" abre diálogo con título
+e interpolación correctos ("...redondeando a $100. Esta acción modifica precios en masa.",
+singular/plural OK) y botones Cancelar / "Sí, ajustar". Cancelar cierra sin ejecutar.
+⚠️ NO completado por inestabilidad del daemon headless en Windows (se resetea a about:blank
+y pierde sesión entre pasos): test de validación Zod del modal masivo en la UI, y la
+pasada cross-plan (servicios/prestamista). La lógica de validación quedó cubierta por
+typecheck + revisión de código. Reintentar cuando el browser headed/cookies funcione.
+
 ✅ Ya estaba OK: multi-tenant (`byTenant` en SELECT y UPDATE), `requireAdmin` en las 3,
 costo≤0 salteado, numeric como string (`toFixed(2)`), redondeo sanitizado, transacciones.
 
