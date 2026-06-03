@@ -51,10 +51,13 @@ Precios vivos activo (botón "Actualizar precios" + alerta de margen bajo presen
 ✅ **ConfirmDialog del fix funciona**: "Ajustar al objetivo" abre diálogo con título
 e interpolación correctos ("...redondeando a $100. Esta acción modifica precios en masa.",
 singular/plural OK) y botones Cancelar / "Sí, ajustar". Cancelar cierra sin ejecutar.
-⚠️ NO completado por inestabilidad del daemon headless en Windows (se resetea a about:blank
-y pierde sesión entre pasos): test de validación Zod del modal masivo en la UI, y la
-pasada cross-plan (servicios/prestamista). La lógica de validación quedó cubierta por
-typecheck + revisión de código. Reintentar cuando el browser headed/cookies funcione.
+✅ **Re-precio real ejecutado end-to-end** (demo-market): "Ajustar al objetivo" sobre
+"Cigarrillos Marlboro" (recargo 44.4%→50%): minorista $2.600 → $2.700 (redondeo $100),
+mayorista intacto ($2.200), toast "1 precios ajustados", alerta de margen bajo limpiada
+(0 productos), sin errores de consola. `ajustarPreciosAlMargen` confirmado en producción.
+⚠️ Falta (no bloqueante): test de validación Zod del modal masivo en la UI y pasada
+cross-plan (servicios/prestamista). Cubierto a nivel código por typecheck + revisión.
+Nota: daemon headless de gstack inestable en Windows (se resetea entre pasos).
 
 ✅ Ya estaba OK: multi-tenant (`byTenant` en SELECT y UPDATE), `requireAdmin` en las 3,
 costo≤0 salteado, numeric como string (`toFixed(2)`), redondeo sanitizado, transacciones.
