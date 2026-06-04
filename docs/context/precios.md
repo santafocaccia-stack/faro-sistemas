@@ -57,8 +57,8 @@ mayorista intacto ($2.200), toast "1 precios ajustados", alerta de margen bajo l
 (0 productos), sin errores de consola. `ajustarPreciosAlMargen` confirmado en producción.
 ✅ **Modal masivo verificado end-to-end** (demo-market): "Actualizar precios" +7% redondeo
 $100 sobre 7 productos → Marlboro minorista $2.700→$2.900 (2889→2900) y mayorista
-$2.200→$2.400 (2354→2400). Toast "7 precios actualizados". Redondeo correcto. (El masivo
-NO tiene ConfirmDialog, solo el de margen bajo — by design.)
+$2.200→$2.400 (2354→2400). Toast "7 precios actualizados". Redondeo correcto.
+Ambos flujos (margen bajo y masivo) ahora piden confirmación con `ConfirmDialog`.
 ⚠️ Falta (no bloqueante): test de validación Zod con input inválido en la UI del masivo
 y pasada cross-plan (servicios/prestamista). Cubierto a nivel código por typecheck + revisión.
 Nota: daemon headless de gstack inestable en Windows (se resetea entre pasos).

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { TrendingUp, X } from 'lucide-react';
 import { aplicarPreciosMasivo } from '@/server/actions/productos';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { formatARS } from '@/lib/utils';
 
 type Prod = { id: string; nombre: string; categoriaId: string | null; precioMinorista: string; activo?: boolean };
@@ -132,13 +133,21 @@ export function PreciosVivos({ productos, categorias }: { productos: Prod[]; cat
                 )}
               </div>
 
-              <button
-                onClick={aplicar}
-                disabled={pending || afectados.length === 0}
-                className="glow-primary w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50"
-              >
-                {pending ? 'Actualizando…' : `Aplicar a ${afectados.length} producto${afectados.length === 1 ? '' : 's'}`}
-              </button>
+              <ConfirmDialog
+                variant="default"
+                trigger={
+                  <button
+                    disabled={pending || afectados.length === 0}
+                    className="glow-primary w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50"
+                  >
+                    {pending ? 'Actualizando…' : `Aplicar a ${afectados.length} producto${afectados.length === 1 ? '' : 's'}`}
+                  </button>
+                }
+                title={`¿Aplicar ${Number(pct) >= 0 ? '+' : ''}${pct || 0}% a ${afectados.length} producto${afectados.length === 1 ? '' : 's'}?`}
+                description={`Cambia el precio mayorista y minorista en masa${redondeo > 0 ? `, redondeando a $${redondeo}` : ''}. Podés revertir aplicando el % inverso.`}
+                confirmLabel="Sí, aplicar"
+                onConfirm={aplicar}
+              />
               <p className="text-[10px] text-muted-foreground/60 text-center">Afecta precio mayorista y minorista. Podés revertir aplicando el % inverso.</p>
             </div>
           </div>
