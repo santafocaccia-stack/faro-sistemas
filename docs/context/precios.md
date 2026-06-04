@@ -55,8 +55,12 @@ singular/plural OK) y botones Cancelar / "Sí, ajustar". Cancelar cierra sin eje
 "Cigarrillos Marlboro" (recargo 44.4%→50%): minorista $2.600 → $2.700 (redondeo $100),
 mayorista intacto ($2.200), toast "1 precios ajustados", alerta de margen bajo limpiada
 (0 productos), sin errores de consola. `ajustarPreciosAlMargen` confirmado en producción.
-⚠️ Falta (no bloqueante): test de validación Zod del modal masivo en la UI y pasada
-cross-plan (servicios/prestamista). Cubierto a nivel código por typecheck + revisión.
+✅ **Modal masivo verificado end-to-end** (demo-market): "Actualizar precios" +7% redondeo
+$100 sobre 7 productos → Marlboro minorista $2.700→$2.900 (2889→2900) y mayorista
+$2.200→$2.400 (2354→2400). Toast "7 precios actualizados". Redondeo correcto. (El masivo
+NO tiene ConfirmDialog, solo el de margen bajo — by design.)
+⚠️ Falta (no bloqueante): test de validación Zod con input inválido en la UI del masivo
+y pasada cross-plan (servicios/prestamista). Cubierto a nivel código por typecheck + revisión.
 Nota: daemon headless de gstack inestable en Windows (se resetea entre pasos).
 
 ✅ Ya estaba OK: multi-tenant (`byTenant` en SELECT y UPDATE), `requireAdmin` en las 3,
