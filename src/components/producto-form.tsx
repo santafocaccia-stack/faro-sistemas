@@ -245,7 +245,7 @@ export function ProductoForm({
               value={form.nombre}
               onChange={(e) => update('nombre', e.target.value)}
               onBlur={(e) => handleNombreBlur(e.target.value)}
-              placeholder="Bola de lomo"
+              placeholder="Alfajor Guaymallén - Chocolate"
               className={inputCls}
             />
           </Field>
