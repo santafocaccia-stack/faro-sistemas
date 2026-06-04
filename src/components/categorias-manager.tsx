@@ -9,14 +9,16 @@ import {
   crearGrupoVariante, actualizarGrupoVariante, eliminarGrupoVariante,
 } from '@/server/actions/categorias';
 import type { Categoria, GrupoVariante } from '@/server/db/schema';
+import { ejemplosPlan } from '@/lib/planes';
 import { cn } from '@/lib/utils';
 
 type Props = {
   categorias: Categoria[];
   grupos: GrupoVariante[];
+  plan?: string;
 };
 
-export function CategoriasManager({ categorias, grupos }: Props) {
+export function CategoriasManager({ categorias, grupos, plan }: Props) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Section
@@ -27,7 +29,7 @@ export function CategoriasManager({ categorias, grupos }: Props) {
         onCrear={async (n) => { await crearCategoria(n); }}
         onEditar={async (id, n) => { await actualizarCategoria(id, n); }}
         onEliminar={async (id) => { await eliminarCategoria(id); }}
-        placeholder="Ej: Carnes rojas"
+        placeholder={`Ej: ${ejemplosPlan(plan).categoria}`}
         emptyMsg="Aún no creaste ninguna categoría. Sirven para organizar tu catálogo."
       />
 

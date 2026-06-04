@@ -24,6 +24,7 @@ type Props = {
   clientes: Cliente[];
   categorias: Categoria[];
   consumidorFinalId: string | null;
+  plan?: string;
   negocio: {
     nombre: string;
     cuit: string | null;
@@ -52,7 +53,7 @@ type Props = {
  *  - flex ratios (58/42) en vez de h-Xvh: el layout se autoajusta a la
  *    altura real del contenedor sin depender del viewport.
  */
-export function PosContainer({ productos, clientes, categorias, consumidorFinalId, negocio }: Props) {
+export function PosContainer({ productos, clientes, categorias, consumidorFinalId, plan, negocio }: Props) {
   // ── Store del carrito ────────────────────────────────────────
   const items = usePosCart((s) => s.items);
   const canal = usePosCart((s) => s.canal);
@@ -725,6 +726,7 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
       <PosModalLineaSuelta
         open={modalLineaSuelta}
         defaultDescripcion={busqueda.trim()}
+        plan={plan}
         onClose={() => setModalLineaSuelta(false)}
         onConfirmar={(input) => {
           agregarLineaSuelta(input);

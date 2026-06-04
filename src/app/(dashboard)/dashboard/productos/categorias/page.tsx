@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { listarCategorias, listarGruposVariantes } from '@/server/actions/categorias';
 import { CategoriasManager } from '@/components/categorias-manager';
+import { requireSession } from '@/server/auth/session';
 
 export default async function CategoriasPage() {
-  const [categorias, grupos] = await Promise.all([
+  const [categorias, grupos, session] = await Promise.all([
     listarCategorias(),
     listarGruposVariantes(),
+    requireSession(),
   ]);
 
   return (
@@ -27,7 +29,7 @@ export default async function CategoriasPage() {
         </p>
       </div>
 
-      <CategoriasManager categorias={categorias} grupos={grupos} />
+      <CategoriasManager categorias={categorias} grupos={grupos} plan={session.plan} />
     </div>
   );
 }

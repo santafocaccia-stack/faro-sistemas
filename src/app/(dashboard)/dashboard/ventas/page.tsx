@@ -20,6 +20,7 @@ export default async function VentasPage() {
       clientes={clientes}
       categorias={categorias}
       consumidorFinalId={consumidorFinal?.id ?? null}
+      plan={tenant?.plan ?? undefined}
       negocio={{
         nombre: tenant?.nombre ?? 'Mi negocio',
         cuit: tenant?.cuit ?? null,

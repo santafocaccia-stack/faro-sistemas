@@ -17,6 +17,7 @@ import { buscarVariantesSugeridas, crearGrupoVariante } from '@/server/actions/c
 import type { Producto, Categoria, GrupoVariante, Proveedor, ProductoProveedor } from '@/server/db/schema';
 import type { VinculoProveedorInput } from '@/server/actions/proveedores';
 import { BarcodeScannerModal } from '@/components/barcode-scanner-modal';
+import { ejemplosPlan } from '@/lib/planes';
 
 type VinculoLocal = VinculoProveedorInput & { _key: string };
 
@@ -245,7 +246,7 @@ export function ProductoForm({
               value={form.nombre}
               onChange={(e) => update('nombre', e.target.value)}
               onBlur={(e) => handleNombreBlur(e.target.value)}
-              placeholder="Alfajor Guaymallén - Chocolate"
+              placeholder={ejemplosPlan(plan).producto}
               className={inputCls}
             />
           </Field>

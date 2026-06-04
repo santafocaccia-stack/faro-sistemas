@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { crearProducto } from '@/server/actions/productos';
 import { BarcodeScannerModal } from '@/components/barcode-scanner-modal';
+import { ejemplosPlan } from '@/lib/planes';
 import type { Categoria } from '@/server/db/schema';
 
-type Props = { categorias: Categoria[] };
+type Props = { categorias: Categoria[]; plan?: string };
 
 const EMPTY_FORM = {
   codigo: '',
@@ -21,7 +22,7 @@ const EMPTY_FORM = {
   categoriaId: '',
 };
 
-export function CargaRapidaForm({ categorias }: Props) {
+export function CargaRapidaForm({ categorias, plan }: Props) {
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState(EMPTY_FORM);
   const [scannerAbierto, setScannerAbierto] = useState(false);
@@ -202,7 +203,7 @@ export function CargaRapidaForm({ categorias }: Props) {
             value={form.nombre}
             onChange={(e) => update('nombre', e.target.value)}
             onKeyDown={handleNombreKeyDown}
-            placeholder="Ej: Agua Mineral 500ml"
+            placeholder={`Ej: ${ejemplosPlan(plan).producto}`}
             className="h-10 bg-background/40 border-border/60 text-sm"
             autoComplete="off"
           />

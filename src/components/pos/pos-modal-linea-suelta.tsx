@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ejemplosPlan } from '@/lib/planes';
 
 type Props = {
   open: boolean;
   defaultDescripcion?: string;
+  plan?: string;
   onClose: () => void;
   onConfirmar: (input: { descripcion: string; precio: number; cantidad: number }) => void;
 };
@@ -16,7 +18,7 @@ type Props = {
  * Modal para agregar una línea suelta al carrito — productos sin código
  * o por peso (la balanza se ingresa manualmente acá en V1).
  */
-export function PosModalLineaSuelta({ open, defaultDescripcion = '', onClose, onConfirmar }: Props) {
+export function PosModalLineaSuelta({ open, defaultDescripcion = '', plan, onClose, onConfirmar }: Props) {
   const [descripcion, setDescripcion] = useState('');
   const [precio, setPrecio] = useState('');
   const [cantidad, setCantidad] = useState('1');
@@ -94,7 +96,7 @@ export function PosModalLineaSuelta({ open, defaultDescripcion = '', onClose, on
                   type="text"
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Ej: Bola de lomo 0.350 kg"
+                  placeholder={ejemplosPlan(plan).lineaSuelta}
                   className="w-full h-10 px-3 rounded-lg bg-background border border-border/60 text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                 />
               </div>

@@ -108,3 +108,21 @@ export const CAPACIDADES_POR_PLAN: Record<PlanId, readonly Capacidad[]> = {
 export function planTiene(plan: PlanId, cap: Capacidad): boolean {
   return CAPACIDADES_POR_PLAN[plan].includes(cap);
 }
+
+/**
+ * Ejemplos por rubro para los placeholders de la UI (según el plan del tenant).
+ * `producto`: nombre de producto/ítem · `categoria`: nombre de categoría ·
+ * `lineaSuelta`: ítem vendido sin estar en el catálogo (POS línea suelta).
+ */
+export const EJEMPLOS_PLAN: Record<PlanId, { producto: string; categoria: string; lineaSuelta: string }> = {
+  servicios:   { producto: 'Service de aire split',          categoria: 'Mano de obra', lineaSuelta: 'Ej: Visita técnica' },
+  market:      { producto: 'Alfajor Guaymallén - Chocolate', categoria: 'Golosinas',    lineaSuelta: 'Ej: Caramelos sueltos' },
+  food:        { producto: 'Hamburguesa completa',           categoria: 'Hamburguesas', lineaSuelta: 'Ej: Adicional de queso' },
+  balanza:     { producto: 'Bola de lomo',                   categoria: 'Carnes rojas', lineaSuelta: 'Ej: Bola de lomo 0.350 kg' },
+  prestamista: { producto: 'Producto o servicio',            categoria: 'Categoría',    lineaSuelta: 'Ej: Ítem' },
+};
+
+/** Ejemplos de placeholders del plan (default: market si no se reconoce). */
+export function ejemplosPlan(plan?: string | null) {
+  return EJEMPLOS_PLAN[(plan ?? 'market') as PlanId] ?? EJEMPLOS_PLAN.market;
+}
