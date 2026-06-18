@@ -50,21 +50,22 @@ const ESTADO_COLOR: Record<string, string> = {
   cancelado:  'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300',
 };
 
-/** Genera URL para abrir Google Maps con todos los domicilios en orden */
+/**
+ * Genera URL de Google Maps con todos los domicilios activos como paradas.
+ * No se especifica origin → Google Maps usa la ubicación actual del dispositivo.
+ * Con N paradas: destination = última, waypoints = todas las anteriores.
+ */
 function googleMapsUrl(pedidos: PedidoDelDia[]): string {
   const activos = pedidos.filter((p) => p.estado !== 'cancelado' && p.estado !== 'completado');
   if (activos.length === 0) return '';
-  const waypoints = activos.map((p) => {
+  const paradas = activos.map((p) => {
     const dir = [p.direccion, p.localidad].filter(Boolean).join(', ');
     return encodeURIComponent(dir);
   });
-  if (waypoints.length === 1) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${waypoints[0]}&travelmode=driving`;
-  }
-  const origin = waypoints[0];
-  const destination = waypoints[waypoints.length - 1];
-  const middle = waypoints.slice(1, -1).join('|');
-  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${middle ? `&waypoints=${middle}` : ''}&travelmode=driving`;
+  const destination = paradas[paradas.length - 1];
+  const waypoints = paradas.slice(0, -1);
+  const base = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
+  return waypoints.length > 0 ? `${base}&waypoints=${waypoints.join('|')}` : base;
 }
 
 export function ListaPedidosClient({
