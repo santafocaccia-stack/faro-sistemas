@@ -86,6 +86,10 @@ export const clientes = pgTable(
 
     notas: text('notas'),
 
+    // Datos específicos de Gesto Atmosféricos
+    litrosPozoEstimado: numeric('litros_pozo_estimado', { precision: 10, scale: 2 }),
+    // ↑ Capacidad estimada del pozo (m³ o litros según el negocio). Se actualiza al completar un servicio.
+
     // Estado
     activo: boolean('activo').notNull().default(true),
 

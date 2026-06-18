@@ -30,15 +30,22 @@ test.describe('POS — Punto de Venta', () => {
 
   test('agregar un producto al carrito', async ({ page }) => {
     const searchBox = page.getByPlaceholder(/buscar producto|buscar\.\.\./i);
-    await searchBox.fill('a');
+    // Buscar "Chorizo" — es por_unidad, se agrega directo sin modal de peso
+    await searchBox.fill('Chorizo');
     await page.waitForTimeout(500);
 
-    // Los productos son botones con precio — click en el primero
     const firstProduct = page.locator('button').filter({ hasText: /\$/ }).first();
+    await expect(firstProduct).toBeVisible({ timeout: 5_000 });
     await firstProduct.click();
 
-    // El botón COBRAR debe seguir visible pero ahora habilitado
-    const cobrarBtn = page.getByRole('button', { name: 'COBRAR' });
+    // Puede aparecer modal de stock 0 — esperarlo hasta 3s
+    const agregarIgual = page.getByRole('button', { name: /agregar igual/i });
+    if (await agregarIgual.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await agregarIgual.click();
+    }
+
+    // El botón de cobro cambia de texto al tener items ("COBRAR" vacío → "Cobrar $X" con items)
+    const cobrarBtn = page.locator('button[title="Abrir cobro (F2)"]');
     await expect(cobrarBtn).toBeEnabled({ timeout: 5_000 });
   });
 

@@ -3,11 +3,12 @@
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ChevronLeft, ScanBarcode, Camera, Zap, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ScanBarcode, Camera, Zap, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { crearProducto } from '@/server/actions/productos';
+import { buscarEnOFF } from '@/server/actions/productos-off';
 import { BarcodeScannerModal } from '@/components/barcode-scanner-modal';
 import { ejemplosPlan } from '@/lib/planes';
 import type { Categoria } from '@/server/db/schema';
@@ -28,6 +29,7 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
   const [scannerAbierto, setScannerAbierto] = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState<string | null>(null);
   const [totalSesion, setTotalSesion] = useState(0);
+  const [sugerenciaOFF, setSugerenciaOFF] = useState<string | null>(null);
 
   const codigoRef = useRef<HTMLInputElement>(null);
   const nombreRef = useRef<HTMLInputElement>(null);
@@ -43,9 +45,22 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function autocompletarDesdeOFF(codigo: string) {
+    if (!codigo.trim()) return;
+    const nombre = await buscarEnOFF(codigo.trim());
+    if (nombre) setSugerenciaOFF(nombre);
+  }
+
+  function aplicarSugerencia() {
+    if (!sugerenciaOFF) return;
+    setForm((prev) => ({ ...prev, nombre: sugerenciaOFF }));
+    setSugerenciaOFF(null);
+    precioMinRef.current?.focus();
+  }
+
   const resetForm = useCallback(() => {
     setForm(EMPTY_FORM);
-    // Pequeño delay para que el DOM se actualice antes del focus
+    setSugerenciaOFF(null);
     requestAnimationFrame(() => {
       codigoRef.current?.focus();
     });
@@ -54,6 +69,7 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
   function handleCodigoKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
+      autocompletarDesdeOFF(form.codigo);
       nombreRef.current?.focus();
     }
   }
@@ -201,12 +217,24 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
             ref={nombreRef}
             id="cr-nombre"
             value={form.nombre}
-            onChange={(e) => update('nombre', e.target.value)}
+            onChange={(e) => { update('nombre', e.target.value); setSugerenciaOFF(null); }}
             onKeyDown={handleNombreKeyDown}
             placeholder={`Ej: ${ejemplosPlan(plan).producto}`}
             className="h-10 bg-background/40 border-border/60 text-sm"
             autoComplete="off"
           />
+          {sugerenciaOFF && (
+            <button
+              type="button"
+              onClick={aplicarSugerencia}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/8 border border-primary/20 text-[12px] text-left hover:bg-primary/12 transition-colors group"
+            >
+              <Sparkles className="h-3 w-3 text-primary shrink-0" />
+              <span className="text-muted-foreground">Sugerido:</span>
+              <span className="text-foreground font-medium truncate">{sugerenciaOFF}</span>
+              <span className="ml-auto text-primary/60 group-hover:text-primary text-[11px] shrink-0">Aplicar →</span>
+            </button>
+          )}
         </div>
 
         {/* Precios */}
@@ -303,7 +331,7 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
         onDetected={(codigo) => {
           update('codigo', codigo.trim());
           setScannerAbierto(false);
-          toast.success('Código escaneado', { duration: 1500 });
+          autocompletarDesdeOFF(codigo.trim());
           nombreRef.current?.focus();
         }}
       />

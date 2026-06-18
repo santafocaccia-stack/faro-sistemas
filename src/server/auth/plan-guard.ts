@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { planTiene, type Capacidad } from '@/lib/planes';
+import { tenantTiene, type Capacidad } from '@/lib/planes';
 import { requireSession, type Session } from './session';
 
 /**
@@ -7,10 +7,11 @@ import { requireSession, type Session } from './session';
  * para que un plan NO pueda abrir rutas que no le corresponden, ni siquiera
  * escribiendo la URL a mano (la navegación las oculta, esto las cierra).
  *
- * Si el plan no tiene la capacidad → 404 (notFound), igual que una ruta inexistente.
+ * Respeta los overrides por tenant almacenados en plan_features.
+ * Si el tenant no tiene la capacidad → 404 (notFound), igual que una ruta inexistente.
  */
 export async function requireCapacidad(cap: Capacidad): Promise<Session> {
   const session = await requireSession();
-  if (!planTiene(session.plan, cap)) notFound();
+  if (!tenantTiene(session.plan, cap, session.planFeatures)) notFound();
   return session;
 }

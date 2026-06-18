@@ -4,7 +4,8 @@ import { eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/server/db';
 import { usersTenants, tenants, type Rol } from '@/server/db/schema';
-import type { PlanId } from '@/lib/planes';
+import type { PlanId, Capacidad } from '@/lib/planes';
+import type { Permiso } from '@/lib/permisos';
 
 export type Session = {
   userId: string;
@@ -12,7 +13,9 @@ export type Session = {
   tenantId: string;
   tenantNombre: string;
   rol: Rol;
+  permisos: Permiso[] | null;
   plan: PlanId;
+  planFeatures: Partial<Record<Capacidad, boolean>> | null;
   status: 'trial' | 'activo' | 'moroso' | 'suspendido' | 'cancelado';
   trialEnd: Date | null;
 };
@@ -46,10 +49,12 @@ const getSessionData = cache(async (): Promise<Session | null> => {
     .select({
       tenantId:     usersTenants.tenantId,
       rol:          usersTenants.rol,
+      permisos:     usersTenants.permisos,
       tenantNombre: tenants.nombre,
       status:       tenants.status,
       trialEnd:     tenants.trialEnd,
       plan:         tenants.plan,
+      planFeatures: tenants.planFeatures,
     })
     .from(usersTenants)
     .innerJoin(tenants, eq(tenants.id, usersTenants.tenantId))
@@ -64,7 +69,9 @@ const getSessionData = cache(async (): Promise<Session | null> => {
     tenantId:     row.tenantId,
     tenantNombre: row.tenantNombre,
     rol:          row.rol,
+    permisos:     row.permisos as Permiso[] | null,
     plan:         row.plan as PlanId,
+    planFeatures: row.planFeatures as Partial<Record<Capacidad, boolean>> | null,
     status:       row.status,
     trialEnd:     row.trialEnd,
   };
@@ -87,11 +94,12 @@ export async function requireSession(opts?: RequireSessionOpts): Promise<Session
 
 /** Pantalla principal del empleado según el plan (no todos tienen POS). */
 const EMPLEADO_HOME: Record<PlanId, string> = {
-  servicios:   '/dashboard/presupuestos',
-  market:      '/dashboard/ventas',
-  food:        '/dashboard/ventas',
-  balanza:     '/dashboard/ventas',
-  prestamista: '/dashboard/prestamos',
+  servicios:    '/dashboard/presupuestos',
+  market:       '/dashboard/ventas',
+  food:         '/dashboard/ventas',
+  balanza:      '/dashboard/ventas',
+  prestamista:  '/dashboard/prestamos',
+  atmosfericos: '/dashboard/atmosfericos',
 };
 
 export async function requireRol(rolesPermitidos: Rol[]): Promise<Session> {
@@ -110,4 +118,18 @@ export async function requireRol(rolesPermitidos: Rol[]): Promise<Session> {
  */
 export async function requireAdmin(): Promise<Session> {
   return requireRol(['owner', 'admin']);
+}
+
+/**
+ * Guard granular por permiso.
+ * Respeta overrides de permisos por usuario (users_tenants.permisos).
+ * Redirige a la pantalla principal del plan si el usuario no tiene el permiso.
+ */
+export async function requirePermiso(permiso: import('@/lib/permisos').Permiso): Promise<Session> {
+  const { tienePermiso } = await import('@/lib/permisos');
+  const session = await requireSession();
+  if (!tienePermiso(session, permiso)) {
+    redirect(EMPLEADO_HOME[session.plan] ?? '/dashboard');
+  }
+  return session;
 }

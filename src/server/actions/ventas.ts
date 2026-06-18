@@ -13,6 +13,8 @@ import { requireSession } from '@/server/auth/session';
 import { revalidatePath } from 'next/cache';
 import { calcularTotalesVenta, validarLimiteCredito } from '@/lib/business-logic';
 import { nuevaVentaSchema, formatZodError } from '@/server/schemas';
+import { audit } from '@/server/audit';
+import { checkIdempotency, saveIdempotency } from '@/server/idempotency';
 import { z } from 'zod';
 
 export type LineaVenta = {
@@ -44,8 +46,16 @@ async function siguienteNumero(tenantId: string, canal: CanalVenta, tx: any): Pr
 
 export async function crearVenta(
   input: NuevaVentaInput,
+  idempotencyKey?: string,
 ): Promise<{ id: string; numero: number; total: string }> {
   const session = await requireSession();
+
+  // Idempotencia: retornar resultado cacheado si el key ya fue procesado
+  if (idempotencyKey) {
+    const cached = await checkIdempotency(session.tenantId, idempotencyKey, 'crearVenta');
+    if (cached) return cached as { id: string; numero: number; total: string };
+  }
+
   const parsed = nuevaVentaSchema.safeParse(input);
   if (!parsed.success) throw new Error(formatZodError(parsed.error));
   // input ya está validado; seguimos usando `input` para no romper tipos downstream
@@ -149,6 +159,25 @@ export async function crearVenta(
     }
   });
 
+  // ── Audit log + idempotency (best-effort, no bloquean) ──
+  if (!ventaCreada) throw new Error('Error interno: venta no creada');
+  const vc = ventaCreada as { id: string; numero: number };
+  const resultado = {
+    id: vc.id,
+    numero: vc.numero,
+    total: total.toFixed(2),
+  };
+  after(() =>
+    Promise.all([
+      audit(session, 'venta.crear', 'venta', resultado.id, {
+        after: { total, canal: input.canal, lineas: input.lineas.length },
+      }),
+      idempotencyKey
+        ? saveIdempotency(session.tenantId, idempotencyKey, 'crearVenta', resultado)
+        : Promise.resolve(),
+    ]).catch(() => {}),
+  );
+
   // ── Acumular pedidos al proveedor DESPUÉS de responder al cliente ──
   // Usa after() para que esto corra DESPUÉS de que el resultado se envíe al browser.
   // La venta ya está registrada — esto es best-effort y no bloquea el ticket.
@@ -165,11 +194,7 @@ export async function crearVenta(
   revalidatePath('/dashboard/clientes');
 
   if (!ventaCreada) throw new Error('No se pudo crear la venta');
-  return {
-    id: (ventaCreada as { id: string; numero: number }).id,
-    numero: (ventaCreada as { id: string; numero: number }).numero,
-    total: total.toFixed(2),
-  };
+  return resultado;
 }
 
 /* ─────────────────────────────────────────────────────────────

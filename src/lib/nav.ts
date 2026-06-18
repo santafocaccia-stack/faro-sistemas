@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, History, Package, Users,
   BookOpen, FileText, BarChart3, Truck, ClipboardList,
-  UtensilsCrossed, Scale, CalendarDays, Landmark, type LucideIcon,
+  UtensilsCrossed, Scale, CalendarDays, Landmark, MapPin, type LucideIcon,
 } from 'lucide-react';
 import type { PlanId } from './planes';
 import type { Rol } from '@/server/db/schema';
@@ -45,6 +45,7 @@ const COCINA: NavItem        = { href: '/dashboard/cocina',           label: 'Co
 const BALANZA: NavItem       = { href: '/dashboard/balanza',          label: 'Balanza',        icon: Scale, pronto: true };
 const AGENDA: NavItem        = { href: '/dashboard/agenda',           label: 'Agenda',         icon: CalendarDays };
 const PRESTAMOS: NavItem     = { href: '/dashboard/prestamos',        label: 'Préstamos',      icon: Landmark };
+const PEDIDOS_ATMOS: NavItem = { href: '/dashboard/atmosfericos',     label: 'Pedidos del día', icon: MapPin };
 
 export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
 
@@ -116,6 +117,16 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
     ],
     secondary: [],
   },
+
+  atmosfericos: {
+    primary: [
+      PEDIDOS_ATMOS,
+      CLIENTES,
+    ],
+    secondary: [
+      REPORTES,
+    ],
+  },
 };
 
 /* Ruta del POS por plan (todos usan la misma hoy, pero queda
@@ -139,11 +150,12 @@ export const POS_HREF = '/dashboard/ventas';
    - prestamista → cartera de préstamos y clientes.
    No ve reportes, configuración ni equipo. */
 export const EMPLEADO_HREFS_POR_PLAN: Record<PlanId, string[]> = {
-  servicios:   ['/dashboard/presupuestos', '/dashboard/agenda', '/dashboard/clientes'],
-  market:      ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
-  food:        ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
-  balanza:     ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
-  prestamista: ['/dashboard/prestamos', '/dashboard/clientes'],
+  servicios:    ['/dashboard/presupuestos', '/dashboard/agenda', '/dashboard/clientes'],
+  market:       ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
+  food:         ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
+  balanza:      ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
+  prestamista:  ['/dashboard/prestamos', '/dashboard/clientes'],
+  atmosfericos: ['/dashboard/atmosfericos'],
 };
 
 export function hrefsEmpleado(plan: PlanId): string[] {

@@ -1,6 +1,20 @@
-export type PlanId = 'servicios' | 'market' | 'food' | 'balanza' | 'prestamista';
+export type PlanId = 'servicios' | 'market' | 'food' | 'balanza' | 'prestamista' | 'atmosfericos';
 
 export const PLANES = {
+  atmosfericos: {
+    id: 'atmosfericos' as PlanId,
+    nombre: 'Gesto Atmosféricos',
+    precioUsd: 20,
+    descripcion: 'Para empresas de servicio de pozos y atmosféricos a domicilio',
+    features: [
+      'Lista de pedidos del día con ruta',
+      'Historial por cliente (litros y cobros)',
+      'Ruta optimizada en Google Maps',
+      'Actualización en tiempo real para el equipo',
+    ],
+    color: 'oklch(0.60 0.18 200)',
+    proximamente: false,
+  },
   servicios: {
     id: 'servicios' as PlanId,
     nombre: 'Gesto Servicios',
@@ -94,18 +108,34 @@ export type Capacidad =
   | 'compras' // proveedores + pedidos
   | 'reportes'
   | 'cocina' // pantalla de cocina (KDS)
-  | 'balanza'; // integración con balanza digital
+  | 'balanza' // integración con balanza digital
+  | 'atmosfericos'; // gestión de pedidos de servicio a domicilio (pozos, etc.)
 
 export const CAPACIDADES_POR_PLAN: Record<PlanId, readonly Capacidad[]> = {
-  servicios: ['presupuestos', 'agenda', 'clientes', 'cuentaCorriente', 'reportes'],
-  market: ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes'],
-  food: ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'cocina'],
-  balanza: ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'balanza'],
-  prestamista: ['prestamos', 'clientes'],
+  servicios:    ['presupuestos', 'agenda', 'clientes', 'cuentaCorriente', 'reportes'],
+  market:       ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes'],
+  food:         ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'cocina'],
+  balanza:      ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'balanza'],
+  prestamista:  ['prestamos', 'clientes'],
+  atmosfericos: ['atmosfericos', 'clientes', 'reportes'],
 };
 
-/** ¿El plan tiene habilitada esta capacidad? */
+/** ¿El plan tiene habilitada esta capacidad? (chequea solo por plan, sin overrides de DB) */
 export function planTiene(plan: PlanId, cap: Capacidad): boolean {
+  return CAPACIDADES_POR_PLAN[plan].includes(cap);
+}
+
+/**
+ * ¿El tenant tiene habilitada esta capacidad?
+ * Combina el plan base con los overrides por tenant almacenados en plan_features.
+ * Los overrides pueden activar o desactivar capacidades independientemente del plan.
+ */
+export function tenantTiene(
+  plan: PlanId,
+  cap: Capacidad,
+  planFeatures?: Partial<Record<Capacidad, boolean>> | null,
+): boolean {
+  if (planFeatures && cap in planFeatures) return planFeatures[cap]!;
   return CAPACIDADES_POR_PLAN[plan].includes(cap);
 }
 
@@ -115,11 +145,12 @@ export function planTiene(plan: PlanId, cap: Capacidad): boolean {
  * `lineaSuelta`: ítem vendido sin estar en el catálogo (POS línea suelta).
  */
 export const EJEMPLOS_PLAN: Record<PlanId, { producto: string; categoria: string; lineaSuelta: string }> = {
-  servicios:   { producto: 'Service de aire split',          categoria: 'Mano de obra', lineaSuelta: 'Ej: Visita técnica' },
-  market:      { producto: 'Alfajor Guaymallén - Chocolate', categoria: 'Golosinas',    lineaSuelta: 'Ej: Caramelos sueltos' },
-  food:        { producto: 'Hamburguesa completa',           categoria: 'Hamburguesas', lineaSuelta: 'Ej: Adicional de queso' },
-  balanza:     { producto: 'Bola de lomo',                   categoria: 'Carnes rojas', lineaSuelta: 'Ej: Bola de lomo 0.350 kg' },
-  prestamista: { producto: 'Producto o servicio',            categoria: 'Categoría',    lineaSuelta: 'Ej: Ítem' },
+  servicios:    { producto: 'Service de aire split',          categoria: 'Mano de obra', lineaSuelta: 'Ej: Visita técnica' },
+  market:       { producto: 'Alfajor Guaymallén - Chocolate', categoria: 'Golosinas',    lineaSuelta: 'Ej: Caramelos sueltos' },
+  food:         { producto: 'Hamburguesa completa',           categoria: 'Hamburguesas', lineaSuelta: 'Ej: Adicional de queso' },
+  balanza:      { producto: 'Bola de lomo',                   categoria: 'Carnes rojas', lineaSuelta: 'Ej: Bola de lomo 0.350 kg' },
+  prestamista:  { producto: 'Producto o servicio',            categoria: 'Categoría',    lineaSuelta: 'Ej: Ítem' },
+  atmosfericos: { producto: 'Servicio de pozo',               categoria: 'Zona',         lineaSuelta: 'Ej: Visita extra' },
 };
 
 /** Ejemplos de placeholders del plan (default: market si no se reconoce). */

@@ -9,10 +9,12 @@ import {
   timestamp,
   boolean,
   numeric,
+  jsonb,
   pgEnum,
 } from 'drizzle-orm/pg-core';
+import type { Capacidad } from '@/lib/planes';
 
-export const planGesto = pgEnum('plan_gesto', ['servicios', 'market', 'food', 'balanza', 'prestamista']);
+export const planGesto = pgEnum('plan_gesto', ['servicios', 'market', 'food', 'balanza', 'prestamista', 'atmosfericos']);
 export const tenantStatus = pgEnum('tenant_status', [
   'trial',         // período de prueba activo
   'activo',        // pagando al día
@@ -53,6 +55,9 @@ export const tenants = pgTable('tenants', {
   direccion: text('direccion'),                      // "Av. Corrientes 1234, CABA"
   telefono: text('telefono'),                        // "011 4567-8901"
   emailNegocio: text('email_negocio'),               // "info@carniceria.com"
+
+  // Feature flags por tenant (overrides sobre las capacidades del plan)
+  planFeatures: jsonb('plan_features').$type<Partial<Record<Capacidad, boolean>>>(),
 
   // Metadata
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

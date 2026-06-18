@@ -10,11 +10,13 @@ import {
   uuid,
   text,
   timestamp,
+  jsonb,
   pgEnum,
   primaryKey,
   unique,
 } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
+import type { Permiso } from '@/lib/permisos';
 
 export const rolEnum = pgEnum('rol_tenant', [
   'owner',     // dueño del negocio — todos los permisos
@@ -50,6 +52,10 @@ export const usersTenants = pgTable(
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
     rol: rolEnum('rol').notNull().default('empleado'),
+    // Overrides de permisos para este usuario en este tenant.
+    // null → usa los permisos por defecto del rol.
+    // [] o array → reemplaza completamente los permisos del rol.
+    permisos: jsonb('permisos').$type<Permiso[]>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

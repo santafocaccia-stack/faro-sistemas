@@ -24,7 +24,8 @@ test.describe('Productos', () => {
   });
 
   test('botón "Nuevo producto" lleva al form', async ({ page }) => {
-    const nuevoBtn = page.getByRole('link', { name: /nuevo producto|agregar producto/i });
+    // El botón dice "Nuevo" (span visible) + ícono Plus — buscar por href es más robusto
+    const nuevoBtn = page.locator('a[href*="/productos/nuevo"]').first();
     await expect(nuevoBtn).toBeVisible();
     await nuevoBtn.click();
     await expect(page).toHaveURL(/\/productos\/nuevo/, { timeout: 8_000 });
