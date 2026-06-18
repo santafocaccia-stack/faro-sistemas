@@ -1,6 +1,6 @@
 'use server';
 
-import { eq, and, asc, desc } from 'drizzle-orm';
+import { eq, and, asc, desc, lt } from 'drizzle-orm';
 import { db } from '@/server/db';
 import {
   pedidosAtmosfericos, clientes,
@@ -216,6 +216,54 @@ export async function cancelarPedido(id: string) {
     .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, id)));
   revalidatePath(RUTA);
 }
+
+/** Historial de días anteriores agrupados por fecha */
+export async function listarHistorial() {
+  const session = await requireSession();
+  const hoy = new Date().toISOString().slice(0, 10);
+
+  const rows = await db
+    .select({
+      id:              pedidosAtmosfericos.id,
+      nombreContacto:  pedidosAtmosfericos.nombreContacto,
+      direccion:       pedidosAtmosfericos.direccion,
+      localidad:       pedidosAtmosfericos.localidad,
+      estado:          pedidosAtmosfericos.estado,
+      fechaProgramada: pedidosAtmosfericos.fechaProgramada,
+      litrosExtraidos: pedidosAtmosfericos.litrosExtraidos,
+      montoCobrado:    pedidosAtmosfericos.montoCobrado,
+      metodoPago:      pedidosAtmosfericos.metodoPago,
+      notas:           pedidosAtmosfericos.notas,
+      completadoAt:    pedidosAtmosfericos.completadoAt,
+      clienteNombre:   clientes.razonSocial,
+    })
+    .from(pedidosAtmosfericos)
+    .leftJoin(clientes, eq(pedidosAtmosfericos.clienteId, clientes.id))
+    .where(
+      and(
+        byTenant(session.tenantId, pedidosAtmosfericos),
+        lt(pedidosAtmosfericos.fechaProgramada, hoy),
+        eq(pedidosAtmosfericos.activo, true),
+      )
+    )
+    .orderBy(desc(pedidosAtmosfericos.fechaProgramada), asc(pedidosAtmosfericos.orden));
+
+  // Agrupar por fecha en JS
+  const porFecha = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const f = row.fechaProgramada as unknown as string;
+    if (!porFecha.has(f)) porFecha.set(f, []);
+    porFecha.get(f)!.push(row);
+  }
+
+  return Array.from(porFecha.entries()).map(([fecha, pedidos]) => {
+    const completados = pedidos.filter((p) => p.estado === 'completado');
+    const totalCobrado = completados.reduce((s, p) => s + Number(p.montoCobrado ?? 0), 0);
+    return { fecha, pedidos, totalCompletados: completados.length, totalCobrado };
+  });
+}
+
+export type DiaHistorial = Awaited<ReturnType<typeof listarHistorial>>[number];
 
 /** Guardar cliente desde un pedido ad-hoc */
 export async function guardarClienteDesdePedido(

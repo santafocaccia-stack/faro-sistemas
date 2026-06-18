@@ -11,9 +11,10 @@ import {
 } from '@/server/actions/pedidos-atmosfericos';
 import type { PedidoDelDia } from '@/server/actions/pedidos-atmosfericos';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import {
   MapPin, GripVertical, CheckCircle2, Truck, XCircle,
-  Plus, Phone, Droplets, DollarSign, User, ChevronDown, Navigation,
+  Plus, Phone, Droplets, DollarSign, User, ChevronDown, Navigation, History,
 } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { ModalCompletarPedido } from './modal-completar-pedido';
@@ -155,6 +156,11 @@ export function ListaPedidosClient({
           </p>
         </div>
         <div className="flex gap-2">
+          <Link href="/dashboard/atmosfericos/historial">
+            <Button variant="ghost" size="sm">
+              <History className="w-4 h-4 mr-1" /> Historial
+            </Button>
+          </Link>
           {mapsUrl && (
             <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
