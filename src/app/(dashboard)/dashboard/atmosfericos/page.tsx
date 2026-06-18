@@ -1,10 +1,11 @@
 import { requireSession } from '@/server/auth/session';
 import { listarPedidosDelDia } from '@/server/actions/pedidos-atmosfericos';
 import { db } from '@/server/db';
-import { clientes } from '@/server/db/schema';
+import { clientes, tenants } from '@/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { byTenant } from '@/server/db/tenant-context';
 import { puedeGestionar } from '@/lib/nav';
+import { paisDesdeZonaHoraria } from '@/lib/geo';
 import { ListaPedidosClient } from '@/components/atmosfericos/lista-pedidos-client';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,7 @@ export default async function AtmosfericosPage({
   const { fecha } = await searchParams;
   const hoy = fecha ?? new Date().toISOString().slice(0, 10);
 
-  const [pedidos, clientesDisponibles] = await Promise.all([
+  const [pedidos, clientesDisponibles, tenantRow] = await Promise.all([
     listarPedidosDelDia(hoy),
     db
       .select({
@@ -32,9 +33,15 @@ export default async function AtmosfericosPage({
       .from(clientes)
       .where(and(byTenant(session.tenantId, clientes), eq(clientes.activo, true)))
       .orderBy(clientes.razonSocial),
+    db
+      .select({ zonaHoraria: tenants.zonaHoraria })
+      .from(tenants)
+      .where(eq(tenants.id, session.tenantId))
+      .limit(1),
   ]);
 
   const esGestor = puedeGestionar(session.rol);
+  const pais = paisDesdeZonaHoraria(tenantRow[0]?.zonaHoraria);
 
   return (
     <ListaPedidosClient
@@ -43,6 +50,7 @@ export default async function AtmosfericosPage({
       fecha={hoy}
       tenantId={session.tenantId}
       esGestor={esGestor}
+      pais={pais}
     />
   );
 }

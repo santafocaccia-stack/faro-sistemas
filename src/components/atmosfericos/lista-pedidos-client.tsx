@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   DragDropContext, Droppable, Draggable, type DropResult,
 } from '@hello-pangea/dnd';
 import { createClient } from '@/lib/supabase/client';
+import { mapsUrlRuta, mapsUrlDestino } from '@/lib/geo';
 import {
   reordenarPedidos, crearPedido, completarPedido,
   marcarEnCamino, cancelarPedido, guardarClienteDesdePedido,
@@ -35,6 +37,7 @@ type Props = {
   fecha: string;
   tenantId: string;
   esGestor: boolean;
+  pais: string;
 };
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -51,32 +54,20 @@ const ESTADO_COLOR: Record<string, string> = {
   cancelado:  'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300',
 };
 
-/**
- * Genera URL de Google Maps con todos los domicilios activos como paradas.
- * No se especifica origin → Google Maps usa la ubicación actual del dispositivo.
- * Con N paradas: destination = última, waypoints = todas las anteriores.
- */
-function googleMapsUrl(pedidos: PedidoDelDia[]): string {
-  const activos = pedidos.filter((p) => p.estado !== 'cancelado' && p.estado !== 'completado');
-  if (activos.length === 0) return '';
-  const paradas = activos.map((p) => {
-    const dir = [p.direccion, p.localidad].filter(Boolean).join(', ');
-    return encodeURIComponent(dir);
-  });
-  const destination = paradas[paradas.length - 1];
-  const waypoints = paradas.slice(0, -1);
-  const base = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
-  return waypoints.length > 0 ? `${base}&waypoints=${waypoints.join('|')}` : base;
-}
-
 export function ListaPedidosClient({
-  pedidosIniciales, clientesDisponibles, fecha, tenantId, esGestor,
+  pedidosIniciales, clientesDisponibles, fecha, tenantId, esGestor, pais,
 }: Props) {
+  const router = useRouter();
   const [pedidos, setPedidos] = useState<PedidoDelDia[]>(pedidosIniciales);
   const [modalCompletar, setModalCompletar] = useState<PedidoDelDia | null>(null);
   const [modalNuevo, setModalNuevo] = useState(false);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Sincronizar con los datos del servidor cuando cambian (router.refresh)
+  useEffect(() => {
+    setPedidos(pedidosIniciales);
+  }, [pedidosIniciales]);
 
   // ── Real-time via Supabase ──────────────────────────────────────────────
   useEffect(() => {
@@ -92,15 +83,15 @@ export function ListaPedidosClient({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          // Al recibir cualquier cambio, refrescar la lista
-          // (Next.js revalidatePath ya actualizó el servidor; hacemos un fetch liviano)
-          window.location.reload();
+          // Al recibir cualquier cambio, re-ejecutar el server component
+          // (liviano: no recarga toda la página, sólo refetchea los datos).
+          router.refresh();
         },
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [tenantId, fecha]);
+  }, [tenantId, fecha, router]);
 
   // ── Drag & Drop ─────────────────────────────────────────────────────────
   const onDragEnd = useCallback((result: DropResult) => {
@@ -140,7 +131,7 @@ export function ListaPedidosClient({
 
   const pendientes = pedidos.filter((p) => p.estado !== 'cancelado' && p.estado !== 'completado');
   const completados = pedidos.filter((p) => p.estado === 'completado');
-  const mapsUrl = googleMapsUrl(pedidos);
+  const mapsUrl = mapsUrlRuta(pendientes, pais);
 
   return (
     <div className="flex flex-col gap-4 p-4 max-w-2xl mx-auto">
@@ -330,6 +321,16 @@ export function ListaPedidosClient({
 
                           {/* Acciones */}
                           <div className="flex gap-2 flex-wrap pt-1">
+                            <a
+                              href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad }, pais)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button size="sm" variant="outline">
+                                <Navigation className="w-3 h-3 mr-1" /> Cómo llegar
+                              </Button>
+                            </a>
+
                             {pedido.estado === 'pendiente' && (
                               <>
                                 <Button
@@ -422,7 +423,7 @@ export function ListaPedidosClient({
           onCreate={async (input) => {
             await crearPedido(input);
             setModalNuevo(false);
-            window.location.reload();
+            router.refresh();
           }}
         />
       )}
