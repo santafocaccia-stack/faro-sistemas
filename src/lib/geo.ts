@@ -1,61 +1,44 @@
 /**
  * Helpers de geolocalización para navegación con Google Maps.
  *
- * Problema que resuelven: una dirección como "Solis 4354, José c paz" sin
- * país es ambigua para el geocoder de Google y puede resolver a una localidad
- * homónima en otra parte del mundo. Agregando el país del negocio (derivado
- * de su zona horaria) la dirección se vuelve inequívoca.
+ * Decisión clave: usamos el formato de PATH (/maps/dir/A/B/C) y NO el de query
+ * (?api=1&waypoints=...). En el formato query las paradas intermedias van como
+ * `waypoints` y Google las pasa por su optimizador de ruta, que ante una
+ * dirección ambigua elige la interpretación más cercana a la ruta — y termina
+ * desviando a una calle homónima cercana. En el formato path cada parada es un
+ * punto fijo y se geocodea igual que el destino final.
+ *
+ * Tampoco agregamos país/provincia: ensuciar la dirección con texto extra
+ * llega a mover el punto que devuelve el geocoder. Se respeta exactamente lo
+ * que cargó el usuario (dirección + localidad).
  */
-
-const TZ_PAIS: Record<string, string> = {
-  'America/Montevideo':   'Uruguay',
-  'America/Santiago':     'Chile',
-  'America/Asuncion':     'Paraguay',
-  'America/La_Paz':       'Bolivia',
-  'America/Lima':         'Perú',
-  'America/Bogota':       'Colombia',
-  'America/Mexico_City':  'México',
-  'America/Sao_Paulo':    'Brasil',
-};
-
-/** Deriva el país para geocoding a partir de una zona horaria IANA. */
-export function paisDesdeZonaHoraria(tz: string | null | undefined): string {
-  if (!tz) return 'Argentina';
-  if (TZ_PAIS[tz]) return TZ_PAIS[tz]!;
-  // America/Argentina/* → Argentina
-  if (/^America\/Argentina\//.test(tz)) return 'Argentina';
-  return 'Argentina'; // default seguro: la plataforma es argentina
-}
-
-/** Compone "direccion, localidad, país" omitiendo partes vacías. */
-export function direccionCompleta(
-  direccion: string,
-  localidad: string | null | undefined,
-  pais: string,
-): string {
-  return [direccion, localidad, pais].filter(Boolean).join(', ');
-}
 
 type Parada = { direccion: string; localidad?: string | null };
 
+/** Compone "direccion, localidad" omitiendo partes vacías. */
+function direccionTexto(parada: Parada): string {
+  return [parada.direccion, parada.localidad].filter(Boolean).join(', ');
+}
+
+/** Codifica una parada como segmento de path para una URL de Google Maps. */
+function segmento(parada: Parada): string {
+  return encodeURIComponent(direccionTexto(parada));
+}
+
 /** URL de Google Maps para navegar a un único destino (origen = GPS del dispositivo). */
-export function mapsUrlDestino(parada: Parada, pais: string): string {
-  const destino = encodeURIComponent(direccionCompleta(parada.direccion, parada.localidad, pais));
-  return `https://www.google.com/maps/dir/?api=1&destination=${destino}&travelmode=driving`;
+export function mapsUrlDestino(parada: Parada): string {
+  // El primer segmento vacío (doble slash) hace que Maps use la ubicación actual.
+  return `https://www.google.com/maps/dir//${segmento(parada)}`;
 }
 
 /**
- * URL de Google Maps con todas las paradas en orden.
- * Origen omitido → usa la ubicación actual del dispositivo.
- * destination = última parada; waypoints = todas las anteriores.
+ * URL de Google Maps con todas las paradas en orden, usando el formato de path.
+ * Origen omitido (primer segmento vacío) → usa la ubicación actual del dispositivo.
+ * Todas las paradas se tratan como puntos fijos (sin optimizador de waypoints).
  */
-export function mapsUrlRuta(paradas: Parada[], pais: string): string {
+export function mapsUrlRuta(paradas: Parada[]): string {
   if (paradas.length === 0) return '';
-  const dirs = paradas.map((p) =>
-    encodeURIComponent(direccionCompleta(p.direccion, p.localidad, pais)),
-  );
-  const destination = dirs[dirs.length - 1];
-  const waypoints = dirs.slice(0, -1);
-  const base = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
-  return waypoints.length > 0 ? `${base}&waypoints=${waypoints.join('|')}` : base;
+  const segs = paradas.map(segmento);
+  // ['', ...segs].join('/') => "/seg1/seg2"; con el "dir/" queda "dir//seg1/seg2"
+  return `https://www.google.com/maps/dir/${['', ...segs].join('/')}`;
 }

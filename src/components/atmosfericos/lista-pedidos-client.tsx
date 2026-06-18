@@ -37,7 +37,6 @@ type Props = {
   fecha: string;
   tenantId: string;
   esGestor: boolean;
-  pais: string;
 };
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -55,7 +54,7 @@ const ESTADO_COLOR: Record<string, string> = {
 };
 
 export function ListaPedidosClient({
-  pedidosIniciales, clientesDisponibles, fecha, tenantId, esGestor, pais,
+  pedidosIniciales, clientesDisponibles, fecha, tenantId, esGestor,
 }: Props) {
   const router = useRouter();
   const [pedidos, setPedidos] = useState<PedidoDelDia[]>(pedidosIniciales);
@@ -131,7 +130,7 @@ export function ListaPedidosClient({
 
   const pendientes = pedidos.filter((p) => p.estado !== 'cancelado' && p.estado !== 'completado');
   const completados = pedidos.filter((p) => p.estado === 'completado');
-  const mapsUrl = mapsUrlRuta(pendientes, pais);
+  const mapsUrl = mapsUrlRuta(pendientes);
 
   return (
     <div className="flex flex-col gap-4 p-4 max-w-2xl mx-auto">
@@ -322,7 +321,7 @@ export function ListaPedidosClient({
                           {/* Acciones */}
                           <div className="flex gap-2 flex-wrap pt-1">
                             <a
-                              href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad }, pais)}
+                              href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad })}
                               target="_blank"
                               rel="noopener noreferrer"
                             >
