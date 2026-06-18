@@ -16,4 +16,3 @@ export * from './prestamos';
 export * from './audit-logs';
 export * from './idempotency';
 export * from './pedidos-atmosfericos';
-export * from './productos-off';
