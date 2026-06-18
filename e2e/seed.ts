@@ -4,6 +4,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq } from 'drizzle-orm';
 import postgres from 'postgres';
 import * as schema from '../src/server/db/schema';
 
@@ -74,9 +75,11 @@ async function seed(db: ReturnType<typeof drizzle>, userId: string) {
 
   if (!tenant) {
     // Ya existe — buscarlo por slug
-    const existing = await db.query.tenants.findFirst({
-      where: (t, { eq }) => eq(t.slug, 'prueba'),
-    });
+    const [existing] = await db
+      .select({ id: schema.tenants.id })
+      .from(schema.tenants)
+      .where(eq(schema.tenants.slug, 'prueba'))
+      .limit(1);
     if (!existing) throw new Error('No se pudo obtener el tenant');
     console.log('Tenant ya existe, reutilizando:', existing.id);
     await linkUser(db, userId, existing.id);
