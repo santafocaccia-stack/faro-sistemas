@@ -4,7 +4,7 @@
  */
 import postgres from 'postgres';
 const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
-const tenantId = process.argv[2];
+const tenantId = process.argv[2] ?? '';
 if (!tenantId) { console.error('Falta tenant-id'); process.exit(1); }
 async function main() {
   await sql`UPDATE tenants SET status = 'activo', trial_end = NULL WHERE id = ${tenantId}`;
