@@ -32,6 +32,20 @@ export function mapsUrlDestino(parada: Parada): string {
 }
 
 /**
+ * URL de BÚSQUEDA (geocoding aislado, sin ruta). Sirve para diagnosticar:
+ * si esta variante cae bien pero la de ruta no, el problema es el formato de
+ * ruta; si esta también cae mal, el problema es la dirección en sí.
+ */
+export function mapsUrlBusqueda(parada: Parada): string {
+  return `https://www.google.com/maps/search/?api=1&query=${segmento(parada)}`;
+}
+
+/** Texto plano de la dirección compuesta (para diagnóstico/logs). */
+export function direccionParaLog(parada: Parada): string {
+  return direccionTexto(parada);
+}
+
+/**
  * URL de Google Maps con todas las paradas en orden, usando el formato de path.
  * Origen omitido (primer segmento vacío) → usa la ubicación actual del dispositivo.
  * Todas las paradas se tratan como puntos fijos (sin optimizador de waypoints).

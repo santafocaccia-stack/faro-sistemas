@@ -6,7 +6,7 @@ import {
   DragDropContext, Droppable, Draggable, type DropResult,
 } from '@hello-pangea/dnd';
 import { createClient } from '@/lib/supabase/client';
-import { mapsUrlRuta, mapsUrlDestino } from '@/lib/geo';
+import { mapsUrlRuta, mapsUrlDestino, mapsUrlBusqueda, direccionParaLog } from '@/lib/geo';
 import {
   reordenarPedidos, crearPedido, completarPedido,
   marcarEnCamino, cancelarPedido, guardarClienteDesdePedido,
@@ -66,6 +66,27 @@ export function ListaPedidosClient({
   // Sincronizar con los datos del servidor cuando cambian (router.refresh)
   useEffect(() => {
     setPedidos(pedidosIniciales);
+  }, [pedidosIniciales]);
+
+  // Rastrillaje de datos: log del recorrido dato → URL de Maps
+  useEffect(() => {
+    const activos = pedidosIniciales.filter(
+      (p) => p.estado !== 'cancelado' && p.estado !== 'completado',
+    );
+    if (activos.length === 0) return;
+    console.groupCollapsed('[atmosfericos] rastrillaje de ruta');
+    activos.forEach((p, i) => {
+      const parada = { direccion: p.direccion, localidad: p.localidad };
+      console.log(`#${i + 1}`, {
+        direccion_raw: p.direccion,
+        localidad_raw: p.localidad,
+        string_compuesto: direccionParaLog(parada),
+        url_busqueda: mapsUrlBusqueda(parada),
+        url_destino: mapsUrlDestino(parada),
+      });
+    });
+    console.log('url_ruta_completa:', mapsUrlRuta(activos));
+    console.groupEnd();
   }, [pedidosIniciales]);
 
   // ── Real-time via Supabase ──────────────────────────────────────────────
@@ -394,6 +415,52 @@ export function ListaPedidosClient({
           )}
         </Droppable>
       </DragDropContext>
+
+      {/* ── Panel de diagnóstico de rutas ── */}
+      {pendientes.length > 0 && (
+        <details className="rounded-xl border bg-muted/30 text-xs">
+          <summary className="cursor-pointer px-3 py-2 font-medium text-muted-foreground select-none">
+            🔍 Diagnóstico de ruta (tocá para abrir)
+          </summary>
+          <div className="px-3 pb-3 flex flex-col gap-3">
+            <p className="text-muted-foreground">
+              Para cada parada, probá las 3 variantes y fijate cuál cae bien.
+              Si <b>Búsqueda</b> cae bien pero <b>Ruta</b> no, el problema es el formato de ruta.
+              Si <b>Búsqueda</b> también cae mal, el problema es la dirección cargada.
+            </p>
+
+            {pendientes.map((p, i) => {
+              const parada = { direccion: p.direccion, localidad: p.localidad };
+              return (
+                <div key={p.id} className="rounded-lg border bg-background p-2.5 flex flex-col gap-1.5">
+                  <div className="font-semibold">
+                    #{i + 1} — {p.clienteNombre ?? p.nombreContacto ?? 'Sin nombre'}
+                  </div>
+                  <div className="font-mono text-[11px] break-all bg-muted rounded px-2 py-1">
+                    String enviado: "{direccionParaLog(parada)}"
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <a href={mapsUrlBusqueda(parada)} target="_blank" rel="noopener noreferrer"
+                       className="underline text-primary">Búsqueda</a>
+                    <a href={mapsUrlDestino(parada)} target="_blank" rel="noopener noreferrer"
+                       className="underline text-primary">Ir a (ruta individual)</a>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="rounded-lg border bg-background p-2.5 flex flex-col gap-1.5">
+              <div className="font-semibold">Ruta completa ({pendientes.length} paradas)</div>
+              <div className="font-mono text-[10px] break-all bg-muted rounded px-2 py-1">
+                {mapsUrl}
+              </div>
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="underline text-primary">
+                Abrir ruta completa
+              </a>
+            </div>
+          </div>
+        </details>
+      )}
 
       {/* ── Modales ── */}
       {modalCompletar && (
