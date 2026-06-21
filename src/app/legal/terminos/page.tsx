@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LegalDoc, Ph } from '../legal-doc';
+import { LegalDoc, CONTACTO_EMAIL } from '../legal-doc';
 
 export const metadata: Metadata = {
   title: 'Términos y Condiciones — Gesto',
@@ -37,9 +37,9 @@ export default function TerminosPage() {
 
       <h2 id="responsable">1. Quién presta el servicio</h2>
       <p>
-        Gesto es un servicio de <strong>Faro Sistemas</strong>, CUIT <Ph>[CUIT]</Ph>, con domicilio en{' '}
-        <Ph>[DOMICILIO]</Ph>, Argentina (en adelante, «Gesto», «nosotros»). Para cualquier consulta podés
-        escribir a <Ph>[EMAIL DE CONTACTO]</Ph>.
+        Gesto es un servicio de <strong>Faro Sistemas</strong>, con sede en Argentina (en adelante, «Gesto»,
+        «nosotros»). Para cualquier consulta podés escribir a{' '}
+        <a href={`mailto:${CONTACTO_EMAIL}`}>{CONTACTO_EMAIL}</a>.
       </p>
 
       <h2 id="servicio">2. Qué es Gesto</h2>
@@ -145,13 +145,13 @@ export default function TerminosPage() {
       <h2 id="ley">13. Ley aplicable y jurisdicción</h2>
       <p>
         Estos términos se rigen por las leyes de la República Argentina. Ante cualquier controversia, serán
-        competentes los tribunales ordinarios de <Ph>[JURISDICCIÓN]</Ph>, sin perjuicio de los derechos que la
+        competentes los tribunales ordinarios que correspondan de la República Argentina, sin perjuicio de los derechos que la
         normativa de defensa del consumidor te reconozca.
       </p>
 
       <h2 id="contacto">14. Contacto</h2>
       <p>
-        Por dudas sobre estos términos, escribinos a <Ph>[EMAIL DE CONTACTO]</Ph>.
+        Por dudas sobre estos términos, escribinos a <a href={`mailto:${CONTACTO_EMAIL}`}>{CONTACTO_EMAIL}</a>.
       </p>
     </LegalDoc>
   );

@@ -2,7 +2,10 @@ import type { ReactNode } from 'react';
 
 /* Datos compartidos por todos los documentos legales. */
 export const UPDATED = '21 de junio de 2026';
-export const TITULAR_NOMBRE = 'Tomás de Sousa';
+
+/* Único dato de contacto del servicio. Cambialo acá cuando tengas un email
+   de la marca (ej. hola@faro-sistemas...). Por ahora, contacto provisorio. */
+export const CONTACTO_EMAIL = 'tomasemanueldesousa@gmail.com';
 
 /* Marca visual para los datos que el responsable debe completar
    antes de publicar (CUIT, domicilio, email de contacto, etc.). */

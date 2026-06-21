@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LegalDoc, Ph } from '../legal-doc';
+import { LegalDoc, CONTACTO_EMAIL } from '../legal-doc';
 
 export const metadata: Metadata = {
   title: 'Baja y borrado de datos — Gesto',
@@ -24,7 +24,7 @@ export default function BajaPage() {
       <h2 id="baja-cuenta">2. Dar de baja la cuenta</h2>
       <p>
         Para dar de baja definitivamente tu cuenta y eliminar tus datos, escribinos desde el email asociado a tu
-        cuenta a <Ph>[EMAIL DE CONTACTO]</Ph> con el asunto «Baja de cuenta». Podemos pedirte algún dato para
+        cuenta a <a href={`mailto:${CONTACTO_EMAIL}`}>{CONTACTO_EMAIL}</a> con el asunto «Baja de cuenta». Podemos pedirte algún dato para
         verificar tu identidad antes de proceder.
       </p>
 
@@ -52,7 +52,7 @@ export default function BajaPage() {
 
       <h2 id="contacto">6. Contacto</h2>
       <p>
-        Para cualquier consulta sobre la baja o tus datos, escribinos a <Ph>[EMAIL DE CONTACTO]</Ph>. Más detalle
+        Para cualquier consulta sobre la baja o tus datos, escribinos a <a href={`mailto:${CONTACTO_EMAIL}`}>{CONTACTO_EMAIL}</a>. Más detalle
         en la <a href="/legal/privacidad">Política de Privacidad</a>.
       </p>
     </LegalDoc>

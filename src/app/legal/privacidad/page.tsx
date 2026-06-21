@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { LegalDoc, Ph } from '../legal-doc';
+import { LegalDoc, CONTACTO_EMAIL } from '../legal-doc';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidad — Gesto',
@@ -36,8 +36,8 @@ export default function PrivacidadPage() {
 
       <h2 id="responsable">1. Responsable</h2>
       <p>
-        El responsable del tratamiento de los datos es <strong>Faro Sistemas</strong>, CUIT <Ph>[CUIT]</Ph>,
-        domicilio <Ph>[DOMICILIO]</Ph>, Argentina. Contacto para temas de privacidad: <Ph>[EMAIL DE CONTACTO]</Ph>.
+        El responsable del tratamiento de los datos es <strong>Faro Sistemas</strong>, con sede en Argentina.
+        Contacto para temas de privacidad: <a href={`mailto:${CONTACTO_EMAIL}`}>{CONTACTO_EMAIL}</a>.
       </p>
 
       <h2 id="datos">2. Qué datos recolectamos</h2>
@@ -119,7 +119,7 @@ export default function PrivacidadPage() {
       <h2 id="derechos">9. Tus derechos</h2>
       <p>
         Como titular de los datos, tenés derecho a acceder, rectificar, actualizar y suprimir tu información, y a
-        oponerte a determinados tratamientos. Para ejercerlos, escribinos a <Ph>[EMAIL DE CONTACTO]</Ph>.
+        oponerte a determinados tratamientos. Para ejercerlos, escribinos a <a href={`mailto:${CONTACTO_EMAIL}`}>{CONTACTO_EMAIL}</a>.
       </p>
       <p>
         La <strong>Agencia de Acceso a la Información Pública (AAIP)</strong>, órgano de control de la Ley 25.326,
@@ -146,7 +146,7 @@ export default function PrivacidadPage() {
 
       <h2 id="contacto">13. Contacto</h2>
       <p>
-        Por consultas sobre tus datos o esta política, escribinos a <Ph>[EMAIL DE CONTACTO]</Ph>.
+        Por consultas sobre tus datos o esta política, escribinos a <a href={`mailto:${CONTACTO_EMAIL}`}>{CONTACTO_EMAIL}</a>.
       </p>
     </LegalDoc>
   );
