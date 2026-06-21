@@ -11,7 +11,6 @@ import { Switch } from '@/components/ui/switch';
 import { actualizarConfig } from '@/server/actions/config';
 import { cancelarSuscripcion } from '@/server/actions/suscripcion';
 import { desconectarMP } from '@/server/actions/mp-negocio';
-import { getUrlConectarMP } from '@/lib/mp-url';
 import type { Tenant } from '@/server/db/schema';
 import Link from 'next/link';
 
@@ -324,7 +323,6 @@ function InfoCell({ label, children }: { label: string; children: React.ReactNod
 function MPSection({ tenant, mpStatus }: { tenant: Tenant; mpStatus?: string }) {
   const [isPending, startTransition] = useTransition();
   const conectado = !!tenant.mpNegocioAccessToken;
-  const urlConectar = getUrlConectarMP();
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-4 mt-4">
@@ -376,7 +374,7 @@ function MPSection({ tenant, mpStatus }: { tenant: Tenant; mpStatus?: string }) 
             Conectá tu cuenta para que tus clientes puedan pagarte con tarjeta de crédito, débito o QR directamente desde el POS.
           </p>
           <a
-            href={urlConectar}
+            href="/api/mp-oauth/start"
             className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-[#009EE3] text-white text-sm font-medium hover:brightness-110 transition-all"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>

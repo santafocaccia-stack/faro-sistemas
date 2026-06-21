@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/server/db';
@@ -14,8 +15,18 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const code  = searchParams.get('code');
   const error = searchParams.get('error');
+  const state = searchParams.get('state');
 
   if (error || !code) {
+    return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=error`);
+  }
+
+  // Verificación anti-CSRF: el state debe coincidir con la cookie sembrada en
+  // /api/mp-oauth/start. La cookie es single-use: se borra siempre.
+  const cookieStore = await cookies();
+  const expectedState = cookieStore.get('mp_oauth_state')?.value;
+  cookieStore.delete('mp_oauth_state');
+  if (!state || !expectedState || state !== expectedState) {
     return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=error`);
   }
 

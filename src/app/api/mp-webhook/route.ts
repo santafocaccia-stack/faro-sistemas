@@ -48,17 +48,26 @@ function verificarFirmaMP(req: NextRequest, secret: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  // F2 — verificación de firma. Si el secret está configurado, se exige firma
-  // válida. Si no está configurado, se procesa con un warning (rollout sin
-  // romper pagos) — cargar MP_WEBHOOK_SECRET en Vercel activa la verificación.
+  // F2 — verificación de firma.
+  //  - Con secret configurado: se exige firma válida (HMAC timing-safe).
+  //  - Sin secret EN PRODUCCIÓN: fail-closed, se rechaza el request. Sin el
+  //    secret no hay forma de distinguir un webhook legítimo de MP de un POST
+  //    falso, así que procesar sería el agujero de seguridad. Rechazar fuerza a
+  //    cargar MP_WEBHOOK_SECRET en Vercel antes de aceptar pagos.
+  //  - Sin secret EN DEV: se procesa con warning, para poder testear local.
   if (MP_WEBHOOK_SECRET) {
     if (!verificarFirmaMP(req, MP_WEBHOOK_SECRET)) {
       console.warn('[mp-webhook] firma inválida o ausente — request rechazado');
       return NextResponse.json({ ok: false }, { status: 401 });
     }
+  } else if (process.env.NODE_ENV === 'production') {
+    console.error(
+      '[mp-webhook] MP_WEBHOOK_SECRET no configurado en producción — request rechazado (fail-closed)',
+    );
+    return NextResponse.json({ ok: false }, { status: 503 });
   } else {
     console.warn(
-      '[mp-webhook] MP_WEBHOOK_SECRET no configurado — webhook procesado SIN verificación de firma',
+      '[mp-webhook] MP_WEBHOOK_SECRET no configurado (dev) — webhook procesado SIN verificación de firma',
     );
   }
 

@@ -29,6 +29,17 @@ const METODO_LABELS: Record<string, string> = {
   cuenta_corriente:'Cta. Cte.',
 };
 
+/** Escapa texto controlado por el usuario (nombre de negocio, de productos)
+ *  antes de interpolarlo en el HTML del email. */
+function esc(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function formatARS(n: number) {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
 }
@@ -42,7 +53,7 @@ export function buildReporteSemanalHtml(datos: DatosReporteSemanal): string {
   const topRows = topProductos.slice(0, 5).map((p, i) => `
     <tr>
       <td style="padding:8px 12px;border-bottom:1px solid #2e2a25;color:#7a6f65;font-size:13px">${i + 1}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #2e2a25;font-size:13px">${p.nombre ?? 'Producto sin nombre'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #2e2a25;font-size:13px">${esc(p.nombre ?? 'Producto sin nombre')}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #2e2a25;text-align:right;font-family:monospace;font-size:13px">${formatARS(p.totalMonto)}</td>
     </tr>
   `).join('');
@@ -80,7 +91,7 @@ export function buildReporteSemanalHtml(datos: DatosReporteSemanal): string {
         <!-- Título -->
         <tr><td style="padding-bottom:24px">
           <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;color:#e8e2d9">${titulo}</h1>
-          <p style="margin:0;font-size:14px;color:#7a6f65">${negocioNombre} · ${semanaLabel}</p>
+          <p style="margin:0;font-size:14px;color:#7a6f65">${esc(negocioNombre)} · ${semanaLabel}</p>
         </td></tr>
 
         <!-- KPIs -->

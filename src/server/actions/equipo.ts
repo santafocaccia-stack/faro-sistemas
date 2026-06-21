@@ -3,7 +3,7 @@
 import { eq, and } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { users, usersTenants, type Rol } from '@/server/db/schema';
-import { requireSession, requireRol } from '@/server/auth/session';
+import { requireRol } from '@/server/auth/session';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
@@ -20,7 +20,7 @@ export type MiembroEquipo = {
 
 /* ── Listar miembros del tenant ── */
 export async function listarEquipo(): Promise<MiembroEquipo[]> {
-  const session = await requireSession();
+  const session = await requireRol(['owner', 'admin']);
 
   const rows = await db
     .select({
@@ -59,6 +59,11 @@ async function buscarUsuarioAuthPorEmail(
 export async function invitarMiembro(input: InviteInput): Promise<InvitarResult> {
   // Solo owners y admins pueden invitar
   const session = await requireRol(['owner', 'admin']);
+
+  // Solo un owner puede invitar a alguien como owner (evita escalación vía invitación).
+  if (input.rol === 'owner' && session.rol !== 'owner') {
+    return err('SIN_PERMISO', 'Solo el dueño puede invitar a otro dueño');
+  }
 
   const email = input.email.trim().toLowerCase();
   if (!email) return err('CAMPO_REQUERIDO', 'El email es obligatorio');
@@ -127,6 +132,14 @@ export async function invitarMiembro(input: InviteInput): Promise<InvitarResult>
       .limit(1);
 
     if (filaVieja && filaVieja.id !== userId) {
+      // SEGURIDAD: solo borrar si la fila está REALMENTE huérfana, es decir, si
+      // su id ya no existe en Supabase Auth. Sin este chequeo, invitar el email
+      // de un usuario activo (con id desincronizado) borraría sus membresías en
+      // TODOS sus tenants (escritura cross-tenant disparada por una invitación).
+      const { data: authUser } = await admin.auth.admin.getUserById(filaVieja.id);
+      if (authUser?.user) {
+        return err('YA_EXISTE', 'Ese email pertenece a una cuenta activa. No se puede reasignar.');
+      }
       await db.delete(usersTenants).where(eq(usersTenants.userId, filaVieja.id));
       await db.delete(users).where(eq(users.id, filaVieja.id));
     }
@@ -148,6 +161,11 @@ export async function invitarMiembro(input: InviteInput): Promise<InvitarResult>
 /* ── Cambiar rol de un miembro ── */
 export async function cambiarRol(userId: string, nuevoRol: Rol) {
   const session = await requireRol(['owner', 'admin']);
+
+  // Solo un owner puede otorgar el rol owner (evita que un admin se auto-ascienda).
+  if (nuevoRol === 'owner' && session.rol !== 'owner') {
+    throw new Error('Solo el dueño puede asignar el rol de dueño');
+  }
 
   // El owner no puede perder su propio rol de owner
   if (userId === session.userId && nuevoRol !== 'owner') {

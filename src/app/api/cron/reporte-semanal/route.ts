@@ -30,6 +30,10 @@ export async function GET(req: Request) {
     if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+  } else if (process.env.NODE_ENV === 'production') {
+    // Fail-closed: sin CRON_SECRET en prod, cualquiera podría gatillar envíos masivos.
+    console.error('[cron/reporte-semanal] CRON_SECRET no configurado en producción — request rechazado');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const resendKey = process.env.RESEND_API_KEY;

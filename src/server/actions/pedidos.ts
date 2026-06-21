@@ -116,11 +116,12 @@ export async function recibirPedido(
         .set({ cantidadRecibida: l.cantidadRecibida })
         .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.id, l.lineaId)));
 
-      // Traer productoId de la línea
+      // Traer productoId de la línea — filtrando por tenant (la línea viene del
+      // input del cliente; sin byTenant un lineaId de otro tenant se colaría).
       const [linea] = await tx
         .select({ productoId: pedidosLineas.productoId })
         .from(pedidosLineas)
-        .where(eq(pedidosLineas.id, l.lineaId))
+        .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.id, l.lineaId)))
         .limit(1);
 
       if (linea?.productoId) {
@@ -129,7 +130,7 @@ export async function recibirPedido(
           .set({
             stockActual: sql`${productos.stockActual} + ${l.cantidadRecibida}::numeric`,
           })
-          .where(eq(productos.id, linea.productoId));
+          .where(and(byTenant(session.tenantId, productos), eq(productos.id, linea.productoId)));
       }
     }
   });
