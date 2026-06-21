@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Search, Plus, Trash2, Package, Wrench } from 'lucide-react';
+import { Search, Plus, Trash2, Package, Wrench, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -64,8 +64,13 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
       precioUnitario: l.precioUnitario,
     })) ?? []
   );
-  const [clienteId, setClienteId] = useState<string>(initialData?.clienteId ?? '');
-  const [clienteLibre, setClienteLibre] = useState(initialData?.clienteNombre ?? '');
+  // Cliente unificado: un solo campo. Si coincide con uno registrado lo linkea;
+  // si no, queda como nombre libre.
+  const [clienteTexto, setClienteTexto] = useState<string>(
+    initialData?.clienteNombre ??
+    clientes.find((c) => c.id === initialData?.clienteId)?.razonSocial ??
+    '',
+  );
   const [validezDias, setValidezDias] = useState(initialData?.validezDias ?? 15);
   const [descuento, setDescuento] = useState(initialData?.descuento ?? 0);
   const [notas, setNotas] = useState(initialData?.notas ?? '');
@@ -115,15 +120,16 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
   }
 
   function handleGuardar() {
-    if (lineas.length === 0) { toast.error('Agregá al menos un producto o servicio'); return; }
-    const nombreCliente = clienteId
-      ? (clientes.find((c) => c.id === clienteId)?.razonSocial ?? '')
-      : clienteLibre;
-    if (!nombreCliente.trim()) { toast.error('Indicá un cliente'); return; }
+    if (lineas.length === 0) { toast.error('Agregá al menos una tarea o producto'); return; }
+    const txt = clienteTexto.trim();
+    if (!txt) { toast.error('Indicá un cliente'); return; }
+
+    // ¿Coincide con un cliente registrado? → lo linkeamos; si no, nombre libre.
+    const match = clientes.find((c) => c.razonSocial.toLowerCase().trim() === txt.toLowerCase());
 
     const payload = {
-      clienteId: clienteId || null,
-      clienteNombre: clienteId ? null : clienteLibre.trim(),
+      clienteId: match?.id ?? null,
+      clienteNombre: match ? null : txt,
       validezDias,
       notas: notas.trim() || null,
       descuento: descuento.toFixed(2),
@@ -159,127 +165,68 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
   return (
     <div className="space-y-4">
 
-      {/* Descripciones ya usadas — autocompletado editable de líneas */}
+      <datalist id="gesto-clientes">
+        {clientes.map((c) => <option key={c.id} value={c.razonSocial} />)}
+      </datalist>
       {sugerencias.length > 0 && (
         <datalist id="gesto-desc-sugeridas">
           {sugerencias.map((s) => <option key={s} value={s} />)}
         </datalist>
       )}
 
-      {/* ── Cliente + validez ──────────────────────────────────────────── */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold tracking-tight">Cliente y condiciones</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-          <div className="space-y-1.5">
-            <label className={labelCls}>Cliente registrado</label>
-            <Select value={clienteId} onValueChange={(v) => { setClienteId(v); setClienteLibre(''); }}>
-              <SelectTrigger className={inputCls}>
-                <SelectValue placeholder="Seleccionar cliente..." />
-              </SelectTrigger>
-              <SelectContent>
-                {clientes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.razonSocial}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className={labelCls}>O escribí el nombre del cliente</label>
-            <Input
-              value={clienteLibre}
-              onChange={(e) => { setClienteLibre(e.target.value); setClienteId(''); }}
-              placeholder="Nombre libre..."
-              className={inputCls}
-              disabled={!!clienteId}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className={labelCls}>Validez (días)</label>
-            <Select value={String(validezDias)} onValueChange={(v) => setValidezDias(Number(v))}>
-              <SelectTrigger className={inputCls}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[7, 15, 30, 60, 90].map((d) => (
-                  <SelectItem key={d} value={String(d)}>{d} días</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5 sm:col-span-2">
-            <label className={labelCls}>Observaciones <span className="normal-case text-muted-foreground/40">(opcional)</span></label>
-            <Textarea
-              value={notas}
-              onChange={(e) => setNotas(e.target.value)}
-              placeholder="Condiciones de entrega, forma de pago, aclaraciones..."
-              rows={2}
-              className="bg-background/40 border-border/60 text-sm"
-            />
-          </div>
-        </div>
+      {/* ── Cliente (un solo campo) ────────────────────────────────────── */}
+      <div className="rounded-xl border border-border bg-card p-5 space-y-1.5">
+        <label className={labelCls}>Cliente</label>
+        <Input
+          list="gesto-clientes"
+          value={clienteTexto}
+          onChange={(e) => setClienteTexto(e.target.value)}
+          placeholder="Elegí un cliente o escribí un nombre nuevo..."
+          className={inputCls}
+        />
+        <p className="text-[11px] text-muted-foreground/50">
+          Si ya es cliente, elegilo de la lista; si no, escribí el nombre y listo.
+        </p>
       </div>
 
       {/* ── Agregar ítems ─────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold tracking-tight">Ítems del presupuesto</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button
+          onClick={agregarServicio}
+          className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary/10 border border-primary/25 text-sm font-medium text-primary hover:bg-primary/15 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Agregar tarea o mano de obra
+        </button>
 
-          <div className="space-y-2">
-            <p className={labelCls + ' flex items-center gap-1.5'}>
-              <Package className="h-3 w-3" /> Producto del catálogo
-            </p>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                className="pl-9 bg-background border-border/60 focus-visible:border-primary/50"
-                placeholder="Buscar por nombre o código..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="pl-9 bg-background/40 border-border/60 text-sm"
+            placeholder="¿Usás materiales del catálogo? Buscalos acá..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          {busqueda && (
+            <div className="absolute z-10 left-0 right-0 mt-1 rounded-lg border border-border bg-popover shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+              {productosFiltrados.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-5">Sin resultados en el catálogo</p>
+              ) : (
+                productosFiltrados.slice(0, 8).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => agregarProducto(p)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/[0.04] transition-colors text-left border-b border-border/30 last:border-0"
+                  >
+                    <p className="text-[13px] font-medium">{p.nombre}</p>
+                    <p className="text-sm font-semibold text-primary shrink-0 ml-3">
+                      {formatARS(Number(p.precioMayorista))}
+                    </p>
+                  </button>
+                ))
+              )}
             </div>
-            {busqueda && (
-              <div className="rounded-lg border border-border bg-background/60 overflow-hidden max-h-48 overflow-y-auto">
-                {productosFiltrados.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-5">Sin resultados</p>
-                ) : (
-                  productosFiltrados.slice(0, 8).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => agregarProducto(p)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/[0.04] transition-colors text-left border-b border-border/30 last:border-0"
-                    >
-                      <div>
-                        <p className="text-[13px] font-medium">{p.nombre}</p>
-                      </div>
-                      <p className="text-sm font-semibold text-primary shrink-0 ml-3">
-                        {formatARS(Number(p.precioMayorista))}
-                      </p>
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <p className={labelCls + ' flex items-center gap-1.5'}>
-              <Wrench className="h-3 w-3" /> Servicio o tarea a medida
-            </p>
-            <button
-              onClick={agregarServicio}
-              className="w-full h-[38px] flex items-center justify-center gap-2 rounded-md border border-dashed border-border/70 bg-background/20 text-sm text-muted-foreground hover:text-foreground hover:border-border hover:bg-background/40 transition-all"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Agregar servicio / tarea
-            </button>
-            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-              Describís la tarea y ponés el precio manualmente — ideal para mano de obra, honorarios, trabajos por hora, etc.
-            </p>
-          </div>
+          )}
         </div>
       </div>
 
@@ -287,15 +234,10 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         {lineas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 text-center px-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center">
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center">
-                <Wrench className="h-4 w-4 text-muted-foreground" />
-              </div>
+            <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center mb-3">
+              <Wrench className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">Buscá un producto o agregá un servicio para empezar</p>
+            <p className="text-sm text-muted-foreground">Agregá una tarea o un material para empezar</p>
           </div>
         ) : (
           <>
@@ -312,13 +254,13 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
               return (
                 <div
                   key={l.key}
-                  className={`border-b border-border/40 last:border-0 ${esServicio ? 'bg-amber-500/[0.03]' : ''}`}
+                  className={`border-b border-border/40 last:border-0 ${esServicio ? 'bg-primary/[0.03]' : ''}`}
                 >
                   {/* ── Desktop row ── */}
                   <div className="hidden sm:grid sm:grid-cols-[28px_1fr_72px_112px_92px_32px] gap-2 px-4 py-2.5 items-center">
                     <div className="flex items-center justify-center">
                       {esServicio
-                        ? <Wrench className="h-3.5 w-3.5 text-amber-500/70" />
+                        ? <Wrench className="h-3.5 w-3.5 text-primary/70" />
                         : <Package className="h-3.5 w-3.5 text-muted-foreground/50" />
                       }
                     </div>
@@ -352,11 +294,10 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
 
                   {/* ── Mobile card ── */}
                   <div className="sm:hidden px-3 py-3 space-y-2">
-                    {/* Fila 1: icono + descripción + eliminar */}
                     <div className="flex items-start gap-2">
                       <div className="h-7 w-7 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 mt-0.5">
                         {esServicio
-                          ? <Wrench className="h-3.5 w-3.5 text-amber-500/80" />
+                          ? <Wrench className="h-3.5 w-3.5 text-primary/80" />
                           : <Package className="h-3.5 w-3.5 text-muted-foreground/60" />
                         }
                       </div>
@@ -366,7 +307,7 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
                           value={l.descripcion}
                           onChange={(e) => actualizarLinea(l.key, 'descripcion', e.target.value)}
                           className="h-9 bg-background/40 border-border/60 text-sm"
-                          placeholder={esServicio ? 'Describí el servicio o tarea...' : 'Descripción...'}
+                          placeholder={esServicio ? 'Describí la tarea...' : 'Descripción...'}
                         />
                       </div>
                       <button
@@ -376,8 +317,6 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
-
-                    {/* Fila 2: cantidad + precio + subtotal */}
                     <div className="flex items-center gap-2 pl-9">
                       <div className="flex flex-col gap-0.5 w-20">
                         <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50">Cant.</span>
@@ -409,21 +348,13 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
               );
             })}
 
-            <div className="px-4 py-2.5 border-t border-border/60 flex items-center gap-3">
+            <div className="px-4 py-2.5 border-t border-border/60">
               <button
                 onClick={agregarServicio}
-                className="text-xs text-amber-500/80 hover:text-amber-500 transition-colors flex items-center gap-1.5"
+                className="text-xs text-primary/80 hover:text-primary transition-colors flex items-center gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Agregar servicio
-              </button>
-              <span className="text-border/60">·</span>
-              <button
-                onClick={() => setLineas((prev) => [...prev, { key: crypto.randomUUID(), tipo: 'producto', productoId: null, descripcion: '', cantidad: 1, precioUnitario: 0 }])}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Línea vacía
+                Agregar otra tarea
               </button>
             </div>
           </>
@@ -435,24 +366,6 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex flex-col sm:items-end gap-3">
             <div className="w-full sm:max-w-xs space-y-2">
-              {lineas.some((l) => l.tipo === 'producto') && lineas.some((l) => l.tipo === 'servicio') && (
-                <>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5"><Package className="h-3 w-3" /> Productos</span>
-                    <span className="font-mono tabular-nums">
-                      {formatARS(lineas.filter((l) => l.tipo === 'producto').reduce((a, l) => a + l.cantidad * l.precioUnitario, 0))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5"><Wrench className="h-3 w-3 text-amber-500/70" /> Servicios</span>
-                    <span className="font-mono tabular-nums">
-                      {formatARS(lineas.filter((l) => l.tipo === 'servicio').reduce((a, l) => a + l.cantidad * l.precioUnitario, 0))}
-                    </span>
-                  </div>
-                  <div className="h-px bg-border/40" />
-                </>
-              )}
-
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal</span>
                 <span className="font-mono tabular-nums">{formatARS(subtotal)}</span>
@@ -475,6 +388,39 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
           </div>
         </div>
       )}
+
+      {/* ── Más opciones (plegable) ──────────────────────────────────── */}
+      <details className="rounded-xl border border-border bg-card group">
+        <summary className="flex items-center justify-between px-5 py-3.5 cursor-pointer list-none select-none">
+          <span className="text-sm font-medium text-muted-foreground">Más opciones (validez, notas)</span>
+          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="px-5 pb-5 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className={labelCls}>Validez del presupuesto</label>
+            <Select value={String(validezDias)} onValueChange={(v) => setValidezDias(Number(v))}>
+              <SelectTrigger className={inputCls}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[7, 15, 30, 60, 90].map((d) => (
+                  <SelectItem key={d} value={String(d)}>{d} días</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className={labelCls}>Observaciones</label>
+            <Textarea
+              value={notas}
+              onChange={(e) => setNotas(e.target.value)}
+              placeholder="Condiciones de entrega, forma de pago, aclaraciones..."
+              rows={2}
+              className="bg-background/40 border-border/60 text-sm"
+            />
+          </div>
+        </div>
+      </details>
 
       {/* ── Acciones ─────────────────────────────────────────────────── */}
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-2">
