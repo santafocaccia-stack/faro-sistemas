@@ -11,7 +11,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.formatting.rule import FormulaRule
 
 OUT = r"C:\Users\Tomi\Documents\Software\faro-sistemas\roadmap-gesto.xlsx"
-HOY = "2026-06-20"
+HOY = "2026-06-21"
 
 # ---- Paleta "Brasas" ----
 NARANJA   = "C2410C"  # acento
@@ -106,9 +106,9 @@ TAREAS = [
     # Lanzamiento (bloqueantes)
     ("Lanzamiento (bloqueante)", "Dominio propio (ej: usegesto.app)", "Alta", "Pendiente", "URL actual no es presentable"),
     ("Lanzamiento (bloqueante)", "SMTP con Resend (invitación, bienvenida, reset con branding)", "Alta", "Pendiente", "Cron listo; falta RESEND_API_KEY en Vercel (rotar la vieja)"),
-    ("Lanzamiento (bloqueante)", "Landing page pública (rubro-adaptativa + demo en vivo)", "—", "Hecho", "/ pública (redirige a dashboard si hay sesión); demo POS interactivo por rubro + antes/después + pricing al MEP"),
+    ("Lanzamiento (bloqueante)", "Landing page pública (adaptativa por versión + demo en vivo)", "Alta", "Hecho", "v3 'de oficio' LIVE: switcher de versiones auto-rotativo, demo POS con ticket de papel, foto real + captura de Gesto en celular, antes/después, FAQ, pricing al MEP, paleta terracota (sin neón), responsive mobile. Login rediseñado (split de marca)"),
     ("Lanzamiento (bloqueante)", "PWA manifest + iconos (192/512, apple-touch-icon)", "Alta", "Pendiente", "POS se usa en tablet/celular"),
-    ("Lanzamiento (bloqueante)", "Términos de servicio + Política de privacidad", "Alta", "Pendiente", "Requerido para cobrar con MP / Ley 25.326"),
+    ("Lanzamiento (bloqueante)", "Términos de servicio + Política de privacidad", "Alta", "Hecho", "Páginas /legal/{terminos,privacidad,cookies,baja-de-datos} + links en footer + checkbox de aceptación en signup. Responsable: Faro Sistemas (nombre comercial de Tomás de Sousa, persona física). FALTA: completar placeholders [CUIT/domicilio/email/jurisdicción] + revisión de un abogado"),
 
     # Calidad / Seguridad
     ("Calidad / Seguridad", "Bugs críticos corregidos (stock al vender, numeración, loop /planes)", "—", "Hecho", ""),
@@ -139,9 +139,14 @@ TAREAS = [
     # Backlog destacado
     ("Backlog / Ideas", "Consultor de precios para cliente final (pantalla pública con QR)", "Media", "Pendiente", "Diferenciador único; ruta /p/[tenantSlug]"),
 
+    # Versiones / Verticales (mejoras por versión — feedback del dueño 2026-06-21)
+    ("Versiones / Verticales", "Mejorar login/registro: sumarle contenido útil (hoy se siente vacío)", "Media", "En progreso", "Split de marca ya hecho; falta valor real que sume"),
+    ("Versiones / Verticales", "Gesto Balanza funcional: integración con balanza digital + venta por peso", "Alta", "Pendiente", "Hoy figura 'próximamente'; armarla de verdad para que funcione con balanzas"),
+    ("Versiones / Verticales", "Gesto Food: POS propio (comandas, mesas, cocina/KDS) — muy distinto a Market", "Alta", "Pendiente", "Hoy figura 'próximamente'"),
+    ("Versiones / Verticales", "Gesto Servicios: emitir boletas además de presupuestos + simplificar botones/UI", "Alta", "Pendiente", "La interfaz es muy compleja; hacerla simple y funcional"),
+    ("Versiones / Verticales", "Gesto Atmosféricos: historial, agenda y pedidos para días futuros + arreglar ruta en Maps", "Alta", "Pendiente", "La función de Maps no toma bien las direcciones"),
+
     # Roadmap v2
-    ("Roadmap v2", "Gestión de mesas (Gesto Food)", "Baja", "Pendiente", ""),
-    ("Roadmap v2", "Integración balanza digital (Gesto Balanza)", "Baja", "Pendiente", ""),
     ("Roadmap v2", "Modificadores por ítem en POS (extras, variantes)", "Baja", "Pendiente", ""),
     ("Roadmap v2", "App mobile nativa con Capacitor (offline first)", "Baja", "Pendiente", ""),
     ("Roadmap v2", "Notificaciones push (stock, pedidos)", "Baja", "Pendiente", ""),
