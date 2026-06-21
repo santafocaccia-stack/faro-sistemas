@@ -282,27 +282,33 @@ const ESTADO_COLOR: Record<string, string> = {
   rechazado: '#dc2626', vencido: '#d97706', cobrado: '#16a34a',
 };
 
+const METODO_LABEL: Record<string, string> = {
+  efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta_debito: 'Tarjeta de débito',
+  tarjeta_credito: 'Tarjeta de crédito', mercado_pago: 'Mercado Pago', cheque: 'Cheque', otro: 'Otro',
+};
+
 export function PresupuestoPDF({
   numero, fecha, clienteNombre, lineas,
   subtotal, descuento, total, notas,
   negocioNombre, negocioCuit,
-  validezDias, estado,
-}: PdfBaseProps & { validezDias: number; estado: string }) {
+  validezDias, estado, tipo = 'presupuesto', metodoPago,
+}: PdfBaseProps & { validezDias: number; estado: string; tipo?: 'presupuesto' | 'boleta'; metodoPago?: string | null }) {
+  const esBoleta = tipo === 'boleta';
   const vencimiento = new Date(new Date(fecha).getTime() + validezDias * 86_400_000);
-  const estadoColor = ESTADO_COLOR[estado] ?? C.gris;
+  const estadoColor = esBoleta ? '#16a34a' : (ESTADO_COLOR[estado] ?? C.gris);
 
   return (
-    <Document title={`Presupuesto #${numero} — ${negocioNombre}`}>
+    <Document title={`${esBoleta ? 'Recibo' : 'Presupuesto'} #${numero} — ${negocioNombre}`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.topbar} />
         <View style={styles.body}>
           <View style={styles.header}>
             <Brand negocioNombre={negocioNombre} negocioCuit={negocioCuit} />
             <View style={styles.headerRight}>
-              <Text style={styles.docTitle}>PRESUPUESTO</Text>
+              <Text style={styles.docTitle}>{esBoleta ? 'RECIBO' : 'PRESUPUESTO'}</Text>
               <Text style={styles.docNum}>N.° {String(numero).padStart(5, '0')}</Text>
               <View style={[styles.badge, { backgroundColor: estadoColor + '22' }]}>
-                <Text style={[styles.badgeText, { color: estadoColor }]}>{ESTADO_LABEL[estado] ?? estado}</Text>
+                <Text style={[styles.badgeText, { color: estadoColor }]}>{esBoleta ? 'Pagado' : (ESTADO_LABEL[estado] ?? estado)}</Text>
               </View>
             </View>
           </View>
@@ -317,8 +323,8 @@ export function PresupuestoPDF({
               <Text style={styles.metaValue}>{fmtFecha(fecha)}</Text>
             </View>
             <View style={styles.metaCard}>
-              <Text style={styles.metaLabel}>Válido hasta</Text>
-              <Text style={styles.metaValue}>{fmtFecha(vencimiento)}</Text>
+              <Text style={styles.metaLabel}>{esBoleta ? 'Forma de pago' : 'Válido hasta'}</Text>
+              <Text style={styles.metaValue}>{esBoleta ? (METODO_LABEL[metodoPago ?? ''] ?? '—') : fmtFecha(vencimiento)}</Text>
             </View>
           </View>
 
@@ -333,10 +339,11 @@ export function PresupuestoPDF({
           ) : null}
 
           <View style={[styles.notasBox, { marginTop: notas ? 8 : 18 }]}>
-            <Text style={styles.notasLabel}>Condiciones</Text>
+            <Text style={styles.notasLabel}>{esBoleta ? 'Comprobante' : 'Condiciones'}</Text>
             <Text style={styles.notasText}>
-              Presupuesto válido por {validezDias} días desde su emisión ({fmtFecha(fecha)}).
-              Precios en pesos argentinos, IVA incluido si corresponde.
+              {esBoleta
+                ? `Comprobante de pago emitido el ${fmtFecha(fecha)}. No válido como factura. Precios en pesos argentinos.`
+                : `Presupuesto válido por ${validezDias} días desde su emisión (${fmtFecha(fecha)}). Precios en pesos argentinos, IVA incluido si corresponde.`}
             </Text>
           </View>
         </View>

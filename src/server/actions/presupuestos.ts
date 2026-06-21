@@ -27,6 +27,16 @@ export type PresupuestoInput = {
   lineas: LineaPresupuesto[];
 };
 
+/** Boleta = comprobante de cobro (no fiscal). Nace ya cobrada. */
+export type BoletaInput = {
+  clienteId?: string | null;
+  clienteNombre?: string | null;
+  notas?: string | null;
+  descuento: string;
+  metodoPago: MetodoPago;
+  lineas: LineaPresupuesto[];
+};
+
 // ── Descripciones usadas (autocompletado) ──────────────────────────────────────
 
 /**
@@ -70,7 +80,35 @@ export async function listarPresupuestos() {
     })
     .from(presupuestos)
     .leftJoin(clientes, eq(presupuestos.clienteId, clientes.id))
-    .where(byTenant(tenantId, presupuestos))
+    .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.tipo, 'presupuesto')))
+    .orderBy(desc(presupuestos.createdAt));
+
+  return rows.map((r) => ({
+    ...r,
+    clienteDisplay: r.clienteRazon ?? r.clienteNombre ?? 'Sin cliente',
+    total: Number(r.total),
+  }));
+}
+
+// ── Listar boletas (comprobantes de cobro) ─────────────────────────────────────
+
+export async function listarBoletas() {
+  const session = await requireAdmin();
+  const { tenantId } = session;
+
+  const rows = await db
+    .select({
+      id:            presupuestos.id,
+      numero:        presupuestos.numero,
+      clienteNombre: presupuestos.clienteNombre,
+      clienteRazon:  clientes.razonSocial,
+      cobradoAt:     presupuestos.cobradoAt,
+      metodoCobro:   presupuestos.metodoCobro,
+      total:         presupuestos.total,
+    })
+    .from(presupuestos)
+    .leftJoin(clientes, eq(presupuestos.clienteId, clientes.id))
+    .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.tipo, 'boleta')))
     .orderBy(desc(presupuestos.createdAt));
 
   return rows.map((r) => ({
@@ -135,7 +173,7 @@ export async function crearPresupuesto(input: PresupuestoInput) {
     const result = await tx
       .select({ maxNum: sql<number>`coalesce(max(${presupuestos.numero}), 0)::int` })
       .from(presupuestos)
-      .where(byTenant(tenantId, presupuestos));
+      .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.tipo, 'presupuesto')));
 
     const numero = (result[0]?.maxNum ?? 0) + 1;
 
@@ -173,6 +211,67 @@ export async function crearPresupuesto(input: PresupuestoInput) {
   });
 
   revalidatePath('/dashboard/presupuestos');
+  return creado;
+}
+
+// ── Crear boleta (comprobante de cobro no fiscal) ──────────────────────────────
+
+export async function crearBoleta(input: BoletaInput) {
+  const session = await requireAdmin();
+  const { tenantId } = session;
+
+  const subtotal = input.lineas.reduce((acc, l) => acc + Number(l.subtotal), 0);
+  const descuento = Number(input.descuento ?? 0);
+  const total = subtotal - descuento;
+
+  const creado = await db.transaction(async (tx) => {
+    // Numeración propia de boletas (independiente de los presupuestos)
+    const result = await tx
+      .select({ maxNum: sql<number>`coalesce(max(${presupuestos.numero}), 0)::int` })
+      .from(presupuestos)
+      .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.tipo, 'boleta')));
+
+    const numero = (result[0]?.maxNum ?? 0) + 1;
+
+    const [inserted] = await tx
+      .insert(presupuestos)
+      .values({
+        tenantId,
+        numero,
+        tipo:          'boleta',
+        clienteId:     input.clienteId    || null,
+        clienteNombre: input.clienteNombre || null,
+        validezDias:   0,
+        estado:        'cobrado',
+        cobradoAt:     new Date(),
+        metodoCobro:   input.metodoPago,
+        notas:         input.notas || null,
+        subtotal:      subtotal.toFixed(2),
+        descuento:     descuento.toFixed(2),
+        total:         total.toFixed(2),
+      })
+      .returning({ id: presupuestos.id });
+
+    if (!inserted) throw new Error('Error al crear la boleta');
+
+    if (input.lineas.length > 0) {
+      await tx.insert(presupuestosLineas).values(
+        input.lineas.map((l) => ({
+          presupuestoId:  inserted.id,
+          productoId:     l.productoId || null,
+          descripcion:    l.descripcion,
+          cantidad:       l.cantidad,
+          precioUnitario: l.precioUnitario,
+          subtotal:       l.subtotal,
+        })),
+      );
+    }
+
+    return inserted;
+  });
+
+  revalidatePath('/dashboard/boletas');
+  revalidatePath('/dashboard');
   return creado;
 }
 

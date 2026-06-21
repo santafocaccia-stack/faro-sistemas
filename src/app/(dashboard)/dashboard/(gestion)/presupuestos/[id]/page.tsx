@@ -19,6 +19,11 @@ const ESTADO_BADGE: Record<string, { label: string; cls: string }> = {
   cobrado:   { label: 'Cobrado',   cls: 'bg-success/10 text-success border-success/20' },
 };
 
+const METODO_LABEL: Record<string, string> = {
+  efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta_debito: 'Débito',
+  tarjeta_credito: 'Crédito', mercado_pago: 'Mercado Pago', cheque: 'Cheque', otro: 'Otro',
+};
+
 type Props = { params: Promise<{ id: string }> };
 
 export default async function DetallePresupuestoPage({ params }: Props) {
@@ -29,6 +34,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
   if (!data) notFound();
 
   const { pres, lineas, clienteDisplay } = data;
+  const esBoleta = pres.tipo === 'boleta';
   const badge = ESTADO_BADGE[pres.estado] ?? ESTADO_BADGE.borrador!;
 
   const vencimiento = new Date(new Date(pres.fecha).getTime() + pres.validezDias * 86_400_000);
@@ -39,23 +45,25 @@ export default async function DetallePresupuestoPage({ params }: Props) {
       {/* Back + acciones */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <Link
-          href="/dashboard/presupuestos"
+          href={esBoleta ? '/dashboard/boletas' : '/dashboard/presupuestos'}
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
         >
           <ChevronLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
-          Volver a presupuestos
+          {esBoleta ? 'Volver a boletas' : 'Volver a presupuestos'}
         </Link>
 
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-          <PresupuestoAcciones id={pres.id} estadoActual={pres.estado} />
-          <Link
-            href={`/dashboard/presupuestos/${pres.id}/editar`}
-            className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md text-xs font-medium border border-border/60 bg-background hover:border-border hover:bg-muted transition-colors"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            Editar
-          </Link>
-          {!pres.esPlantilla && <GuardarPlantillaButton presupuestoId={pres.id} />}
+          {!esBoleta && <PresupuestoAcciones id={pres.id} estadoActual={pres.estado} />}
+          {!esBoleta && (
+            <Link
+              href={`/dashboard/presupuestos/${pres.id}/editar`}
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md text-xs font-medium border border-border/60 bg-background hover:border-border hover:bg-muted transition-colors"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Editar
+            </Link>
+          )}
+          {!esBoleta && !pres.esPlantilla && <GuardarPlantillaButton presupuestoId={pres.id} />}
           <PresupuestoPDFButton presupuestoId={pres.id} />
         </div>
       </div>
@@ -70,7 +78,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
             </span>
           </div>
           <h1 className="text-[28px] font-semibold tracking-tight leading-tight">
-            Presupuesto {formatARS(Number(pres.total))}
+            {esBoleta ? 'Boleta' : 'Presupuesto'} {formatARS(Number(pres.total))}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {new Date(pres.fecha).toLocaleDateString('es-AR', {
@@ -86,13 +94,20 @@ export default async function DetallePresupuestoPage({ params }: Props) {
           <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">Cliente</p>
           <p className="text-[13px] font-medium">{clienteDisplay}</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">Válido hasta</p>
-          <p className="text-[13px] font-medium">
-            {vencimiento.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-            <span className="text-[11px] text-muted-foreground ml-1">({pres.validezDias} días)</span>
-          </p>
-        </div>
+        {esBoleta ? (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">Método de pago</p>
+            <p className="text-[13px] font-medium">{METODO_LABEL[pres.metodoCobro ?? ''] ?? '—'}</p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">Válido hasta</p>
+            <p className="text-[13px] font-medium">
+              {vencimiento.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              <span className="text-[11px] text-muted-foreground ml-1">({pres.validezDias} días)</span>
+            </p>
+          </div>
+        )}
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">Negocio</p>
           <p className="text-[13px] font-medium">Ver en configuración</p>

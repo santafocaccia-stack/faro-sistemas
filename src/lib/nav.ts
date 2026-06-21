@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, History, Package, Users,
   BookOpen, FileText, BarChart3, Truck, ClipboardList,
-  UtensilsCrossed, Scale, CalendarDays, Landmark, MapPin, type LucideIcon,
+  UtensilsCrossed, Scale, CalendarDays, Landmark, MapPin, Receipt, type LucideIcon,
 } from 'lucide-react';
 import type { PlanId } from './planes';
 import type { Rol } from '@/server/db/schema';
@@ -38,6 +38,7 @@ const PRODUCTOS: NavItem     = { href: '/dashboard/productos',        label: 'Pr
 const CLIENTES: NavItem      = { href: '/dashboard/clientes',         label: 'Clientes',       icon: Users };
 const CTA_CORRIENTE: NavItem = { href: '/dashboard/cc',               label: 'Cta. corriente', icon: BookOpen };
 const PRESUPUESTOS: NavItem  = { href: '/dashboard/presupuestos',     label: 'Presupuestos',   icon: FileText };
+const BOLETAS: NavItem       = { href: '/dashboard/boletas',          label: 'Boletas',        icon: Receipt };
 const PROVEEDORES: NavItem   = { href: '/dashboard/proveedores',      label: 'Proveedores',    icon: Truck };
 const PEDIDOS: NavItem       = { href: '/dashboard/pedidos',          label: 'Pedidos',        icon: ClipboardList };
 const REPORTES: NavItem      = { href: '/dashboard/reportes',         label: 'Reportes',       icon: BarChart3 };
@@ -54,6 +55,7 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
       INICIO,
       AGENDA,
       PRESUPUESTOS,
+      BOLETAS,
       CLIENTES,
       CTA_CORRIENTE,
     ],
@@ -150,7 +152,7 @@ export const POS_HREF = '/dashboard/ventas';
    - prestamista → cartera de préstamos y clientes.
    No ve reportes, configuración ni equipo. */
 export const EMPLEADO_HREFS_POR_PLAN: Record<PlanId, string[]> = {
-  servicios:    ['/dashboard/presupuestos', '/dashboard/agenda', '/dashboard/clientes'],
+  servicios:    ['/dashboard/presupuestos', '/dashboard/boletas', '/dashboard/agenda', '/dashboard/clientes'],
   market:       ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
   food:         ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],
   balanza:      ['/dashboard/ventas', '/dashboard/ventas/historial', '/dashboard/productos'],

@@ -10,9 +10,19 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { crearPresupuesto, editarPresupuesto } from '@/server/actions/presupuestos';
+import { crearPresupuesto, editarPresupuesto, crearBoleta } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
-import type { Producto, Cliente } from '@/server/db/schema';
+import type { Producto, Cliente, MetodoPago } from '@/server/db/schema';
+
+const METODOS: { value: MetodoPago; label: string }[] = [
+  { value: 'efectivo', label: 'Efectivo' },
+  { value: 'transferencia', label: 'Transferencia' },
+  { value: 'tarjeta_debito', label: 'Tarjeta de débito' },
+  { value: 'tarjeta_credito', label: 'Tarjeta de crédito' },
+  { value: 'mercado_pago', label: 'Mercado Pago' },
+  { value: 'cheque', label: 'Cheque' },
+  { value: 'otro', label: 'Otro' },
+];
 
 type TipoLinea = 'producto' | 'servicio';
 
@@ -46,9 +56,12 @@ type Props = {
   initialData?: InitialData;
   /** Descripciones que el negocio ya usó antes — sugerencias editables. */
   sugerencias?: string[];
+  /** 'presupuesto' (cotización) o 'boleta' (comprobante de cobro). */
+  modo?: 'presupuesto' | 'boleta';
 };
 
-export function PresupuestoForm({ productos, clientes, initialData, sugerencias = [] }: Props) {
+export function PresupuestoForm({ productos, clientes, initialData, sugerencias = [], modo = 'presupuesto' }: Props) {
+  const esBoleta = modo === 'boleta';
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!initialData;
@@ -74,6 +87,7 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
   const [validezDias, setValidezDias] = useState(initialData?.validezDias ?? 15);
   const [descuento, setDescuento] = useState(initialData?.descuento ?? 0);
   const [notas, setNotas] = useState(initialData?.notas ?? '');
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
 
   const productosFiltrados = productos.filter(
     (p) =>
@@ -127,23 +141,40 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
     // ¿Coincide con un cliente registrado? → lo linkeamos; si no, nombre libre.
     const match = clientes.find((c) => c.razonSocial.toLowerCase().trim() === txt.toLowerCase());
 
-    const payload = {
-      clienteId: match?.id ?? null,
-      clienteNombre: match ? null : txt,
-      validezDias,
-      notas: notas.trim() || null,
-      descuento: descuento.toFixed(2),
-      lineas: lineas.map((l) => ({
-        productoId: l.productoId,
-        descripcion: l.descripcion,
-        cantidad: l.cantidad.toString(),
-        precioUnitario: l.precioUnitario.toFixed(2),
-        subtotal: (l.cantidad * l.precioUnitario).toFixed(2),
-      })),
-    };
+    const clienteId = match?.id ?? null;
+    const clienteNombre = match ? null : txt;
+    const lineasPayload = lineas.map((l) => ({
+      productoId: l.productoId,
+      descripcion: l.descripcion,
+      cantidad: l.cantidad.toString(),
+      precioUnitario: l.precioUnitario.toFixed(2),
+      subtotal: (l.cantidad * l.precioUnitario).toFixed(2),
+    }));
 
     startTransition(async () => {
       try {
+        if (esBoleta) {
+          const { id } = await crearBoleta({
+            clienteId,
+            clienteNombre,
+            notas: notas.trim() || null,
+            descuento: descuento.toFixed(2),
+            metodoPago,
+            lineas: lineasPayload,
+          });
+          toast.success('Boleta emitida');
+          router.push(`/dashboard/presupuestos/${id}`);
+          return;
+        }
+
+        const payload = {
+          clienteId,
+          clienteNombre,
+          validezDias,
+          notas: notas.trim() || null,
+          descuento: descuento.toFixed(2),
+          lineas: lineasPayload,
+        };
         if (isEdit) {
           await editarPresupuesto(initialData.id, payload);
           toast.success('Presupuesto actualizado');
@@ -188,6 +219,23 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
           Si ya es cliente, elegilo de la lista; si no, escribí el nombre y listo.
         </p>
       </div>
+
+      {/* ── Método de pago (solo boleta) ──────────────────────────────── */}
+      {esBoleta && (
+        <div className="rounded-xl border border-border bg-card p-5 space-y-1.5">
+          <label className={labelCls}>Método de pago</label>
+          <Select value={metodoPago} onValueChange={(v) => setMetodoPago(v as MetodoPago)}>
+            <SelectTrigger className={inputCls}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {METODOS.map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* ── Agregar ítems ─────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-3">
@@ -392,23 +440,25 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
       {/* ── Más opciones (plegable) ──────────────────────────────────── */}
       <details className="rounded-xl border border-border bg-card group">
         <summary className="flex items-center justify-between px-5 py-3.5 cursor-pointer list-none select-none">
-          <span className="text-sm font-medium text-muted-foreground">Más opciones (validez, notas)</span>
+          <span className="text-sm font-medium text-muted-foreground">Más opciones ({esBoleta ? 'notas' : 'validez, notas'})</span>
           <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
         </summary>
         <div className="px-5 pb-5 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className={labelCls}>Validez del presupuesto</label>
-            <Select value={String(validezDias)} onValueChange={(v) => setValidezDias(Number(v))}>
-              <SelectTrigger className={inputCls}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[7, 15, 30, 60, 90].map((d) => (
-                  <SelectItem key={d} value={String(d)}>{d} días</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!esBoleta && (
+            <div className="space-y-1.5">
+              <label className={labelCls}>Validez del presupuesto</label>
+              <Select value={String(validezDias)} onValueChange={(v) => setValidezDias(Number(v))}>
+                <SelectTrigger className={inputCls}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[7, 15, 30, 60, 90].map((d) => (
+                    <SelectItem key={d} value={String(d)}>{d} días</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-1.5 sm:col-span-2">
             <label className={labelCls}>Observaciones</label>
             <Textarea
@@ -429,8 +479,8 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
         </Button>
         <Button onClick={handleGuardar} disabled={isPending || lineas.length === 0} className="glow-primary w-full sm:w-auto">
           {isPending
-            ? (isEdit ? 'Guardando...' : 'Creando...')
-            : (isEdit ? 'Guardar cambios' : 'Crear presupuesto')
+            ? (esBoleta ? 'Emitiendo...' : isEdit ? 'Guardando...' : 'Creando...')
+            : (esBoleta ? 'Cobrar y emitir boleta' : isEdit ? 'Guardar cambios' : 'Crear presupuesto')
           }
         </Button>
       </div>

@@ -51,10 +51,12 @@ export async function GET(
         negocioCuit={tenant?.cuit}
         validezDias={pres.validezDias}
         estado={pres.estado}
+        tipo={pres.tipo}
+        metodoPago={pres.metodoCobro}
       />,
     );
 
-    const filename = `presupuesto-${String(pres.numero).padStart(5, '0')}.pdf`;
+    const filename = `${pres.tipo === 'boleta' ? 'recibo' : 'presupuesto'}-${String(pres.numero).padStart(5, '0')}.pdf`;
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
