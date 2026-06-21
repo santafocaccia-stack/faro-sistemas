@@ -108,21 +108,21 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
               Tu negocio al alcance de <span className="gl-mark">tu mano</span>
             </h1>
             <p className="gl-sub">
-              Cobrá, controlá la cuenta corriente y mirá cuánto vendiste. Todo en un solo lugar, y desde el
-              celular — estés donde estés.
+              Vendé, cobrá y llevá la <span className="gl-mark2">cuenta corriente</span> de tu negocio.
+              <br className="gl-sub-br" /> Todo en un solo lugar, y desde el celular.
             </p>
             <div className="gl-herocta">
-              <a className="gl-btn gl-btn-fill" style={{ height: 50, padding: '0 26px', fontSize: 16 }} href="/signup">
+              <a className="gl-btn gl-btn-fill" style={{ height: 52, padding: '0 28px', fontSize: 16 }} href="/signup">
                 Empezá gratis <ArrowRight style={{ height: 18, width: 18 }} strokeWidth={2.4} />
               </a>
-              <a className="gl-btn gl-btn-line" style={{ height: 50, padding: '0 26px', fontSize: 16 }} href="#precios">
+              <a className="gl-btn gl-btn-line" style={{ height: 52, padding: '0 28px', fontSize: 16 }} href="#precios">
                 Ver planes
               </a>
             </div>
-            <div className="gl-stamps">
-              <span className="gl-stamp gl-rot1">14 días gratis</span>
-              <span className="gl-stamp gl-cream gl-rot2">Sin tarjeta</span>
-              <span className="gl-stamp gl-rot3">Cancelás cuando quieras</span>
+            <div className="gl-guarantee">
+              <span><Check strokeWidth={2.6} /> 14 días gratis</span>
+              <span><Check strokeWidth={2.6} /> Sin tarjeta</span>
+              <span><Check strokeWidth={2.6} /> Cancelás cuando quieras</span>
             </div>
           </div>
 
@@ -248,9 +248,7 @@ function AppWindow({ rubro }: { rubro: RubroDemo }) {
 
   return (
     <>
-      <p className="gl-hint" style={{ textAlign: 'center', maxWidth: '52ch', margin: '22px auto 0' }}>
-        {rubro.heroSub}
-      </p>
+      <p className="gl-rubrolede">{rubro.heroSub}</p>
       <div className="gl-stage">
         <div className="gl-window">
           <div className="gl-chrome">

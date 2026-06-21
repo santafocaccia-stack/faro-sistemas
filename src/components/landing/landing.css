@@ -87,10 +87,14 @@
 .gl-hero > .gl-wrap > .gl-h1 { animation-delay: .13s; }
 .gl-hero > .gl-wrap > .gl-sub { animation-delay: .25s; }
 .gl-hero > .gl-wrap > .gl-herocta { animation-delay: .35s; }
-.gl-hero > .gl-wrap > .gl-stamps { animation-delay: .45s; }
+.gl-hero > .gl-wrap > .gl-guarantee { animation-delay: .45s; }
 @keyframes gl-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 .gl-h1 { font-family: var(--gl-display), sans-serif; font-weight: 400; text-transform: uppercase; font-size: clamp(46px, 8vw, 104px); line-height: .92; letter-spacing: .002em; max-width: 15ch; margin: 22px auto 0; }
-.gl-sub { margin: 26px auto 0; max-width: 50ch; font-size: clamp(16px, 2vw, 20px); color: var(--muted-foreground); line-height: 1.6; font-weight: 400; }
+.gl-sub { margin: 28px auto 0; max-width: 42ch; font-size: clamp(18px, 2.3vw, 24px); color: color-mix(in oklch, var(--foreground) 84%, transparent); line-height: 1.45; font-weight: 400; }
+.gl-mark2 { color: var(--gl-accent); font-weight: 600; }
+.gl-guarantee { display: flex; flex-wrap: wrap; gap: 9px 22px; justify-content: center; margin-top: 24px; }
+.gl-guarantee span { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--muted-foreground); font-weight: 500; }
+.gl-guarantee svg { height: 15px; width: 15px; color: var(--gl-accent); }
 .gl-herocta { display: flex; gap: 13px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
 
 /* franja marquee */
@@ -102,6 +106,8 @@
 
 /* ── RUBRO SWITCHER (tarjetas) ───────────────────────── */
 .gl-hint { font-size: 13px; color: var(--gl-dim); margin-bottom: 16px; text-align: center; }
+.gl-rubrolede { text-align: center; max-width: 44ch; margin: 10px auto 2px; font-size: clamp(18px, 2.2vw, 26px); line-height: 1.4; color: var(--foreground); font-weight: 500; }
+.gl-rubrolede strong, .gl-rubrolede b { color: var(--gl-accent); }
 .gl-rubros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 900px; margin: 0 auto; }
 .gl-rubro { --r: var(--gl-accent); display: flex; align-items: center; gap: 13px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--border); background: var(--card); cursor: pointer; transition: transform .2s, border-color .2s, background .2s, box-shadow .2s; position: relative; font-family: inherit; color: var(--foreground); }
 .gl-rubro:hover { border-color: color-mix(in oklch, var(--r) 55%, transparent); transform: translateY(-2px); }
@@ -407,6 +413,7 @@
 }
 
 @media (max-width: 920px) {
+  .gl-sub-br { display: none; }
   .gl-rubros { grid-template-columns: 1fr 1fr; }
   .gl-scangrid { grid-template-columns: 1fr; gap: 40px; justify-items: center; text-align: center; }
   .gl-scancopy { display: flex; flex-direction: column; align-items: center; }
