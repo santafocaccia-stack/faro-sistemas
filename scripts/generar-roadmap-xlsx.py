@@ -95,6 +95,7 @@ TAREAS = [
     ("UX / Diseño", "Sidebar + mobile bottom nav con FAB Vender", "—", "Hecho", ""),
     ("UX / Diseño", "Skeleton loaders (7 rutas)", "—", "Hecho", ""),
     ("UX / Diseño", "Command palette ⌘K", "—", "Hecho", ""),
+    ("UX / Diseño", "Nomenclatura: los modos se presentan como 'versión' al usuario (Market, Servicios, etc.)", "—", "Hecho", "Landing (switcher, precios, cierre) + /planes + confirmación de transferencia; se usan los nombres reales de los planes (Market, no inventados como 'Kiosco')"),
     ("UX / Diseño", "Dark / light toggle", "Baja", "Pendiente", ""),
 
     # Negocio SaaS / Suscripción
@@ -125,7 +126,7 @@ TAREAS = [
     # Legal / Fiscal (Argentina) — para cobrar en regla y escalar
     ("Legal / Fiscal", "CUIT + Monotributo (o Responsable Inscripto)", "Alta", "Pendiente", "Bloquea cobrar en regla; ojo el tope anual de Monotributo con ingresos SaaS recurrentes"),
     ("Legal / Fiscal", "Registro de bases de datos ante la AAIP (Ley 25.326)", "Media", "Pendiente", "Sos responsable de la PII de los clientes y de SUS clientes"),
-    ("Legal / Fiscal", "Botón de baja + arrepentimiento de suscripción (Res. 424/2020)", "Media", "Pendiente", "Cancelación online fácil y visible; ya existe cancelarSuscripcion"),
+    ("Legal / Fiscal", "Botón de baja + arrepentimiento de suscripción (Res. 424/2020)", "Media", "En progreso", "Ya existe cancelarSuscripcion + página /legal/baja-de-datos que explica el proceso; falta el botón de arrepentimiento bien visible"),
     ("Legal / Fiscal", "Cláusulas de transferencia internacional de datos", "Baja", "Pendiente", "Datos en AWS us-east-1; Ley 25.326 exige resguardos (EE.UU. no es país adecuado por defecto)"),
     ("Legal / Fiscal", "Estructura societaria (SAS) + acuerdo escrito con socio", "Media", "Pendiente", "Separa patrimonio del riesgo; formaliza la participación de Facu"),
     ("Legal / Fiscal", "Contrato de servicio / SLA con clientes", "Media", "Pendiente", "Dueño de los datos (el cliente), uptime, soporte, límite de responsabilidad"),
