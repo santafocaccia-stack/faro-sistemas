@@ -1,10 +1,11 @@
 import Image from 'next/image';
-import { ScanLine, Receipt, BarChart3, Check, Wifi, BatteryFull, ArrowRight } from 'lucide-react';
+import { ScanLine, Receipt, BarChart3, ArrowRight } from 'lucide-react';
 import comerciante from '../../../public/landing/comerciante-escaneando.png';
+import capturaGesto from '../../../public/landing/captura-gesto.jpeg';
 
 /* Sección "Desde el celular": foto real de una comerciante escaneando un
-   producto + mockup del celular con la interfaz de Gesto flotando encima.
-   Refuerza el gancho "tu negocio al alcance de tu mano". */
+   producto + captura real de la app Gesto en un marco de celular flotando
+   encima. Refuerza el gancho "tu negocio al alcance de tu mano". */
 export function ScanShowcase() {
   const puntos = [
     { Icon: ScanLine, h: 'Escaneás con la cámara', p: 'El celular lee el código de barras del producto.' },
@@ -39,7 +40,7 @@ export function ScanShowcase() {
           </a>
         </div>
 
-        {/* Foto real + mockup del celular flotando */}
+        {/* Foto real + captura real de Gesto en un marco de celular */}
         <div className="gl-scanvisual">
           <div className="gl-phoneglow" aria-hidden />
           <div className="gl-scanphoto">
@@ -55,48 +56,13 @@ export function ScanShowcase() {
           </div>
 
           <div className="gl-phone gl-phone-float">
-            <div className="gl-phone-notch" />
-            <div className="gl-phone-screen">
-              <div className="gl-ps-top">
-                <span>9:41</span>
-                <span className="gl-ps-icons">
-                  <Wifi style={{ height: 13, width: 13 }} strokeWidth={2.2} />
-                  <BatteryFull style={{ height: 14, width: 14 }} strokeWidth={2.2} />
-                </span>
-              </div>
-              <div className="gl-ps-head">
-                <span className="gl-ps-glogo">G</span>
-                Escaneá un producto
-              </div>
-              <div className="gl-ps-cam">
-                <div className="gl-ps-barcode" />
-                <div className="gl-ps-frame">
-                  <span className="gl-ps-corner tl" />
-                  <span className="gl-ps-corner tr" />
-                  <span className="gl-ps-corner bl" />
-                  <span className="gl-ps-corner br" />
-                  <span className="gl-scanline" />
-                </div>
-                <div className="gl-ps-hint">Apuntá al código de barras</div>
-              </div>
-              <div className="gl-ps-detect">
-                <span className="gl-ps-dcheck">
-                  <Check strokeWidth={3} />
-                </span>
-                <div className="gl-ps-dtx">
-                  <b>Yerba La Tranquera 1kg</b>
-                  <span>se sumó al ticket</span>
-                </div>
-                <span className="gl-ps-dprice">$3.800</span>
-              </div>
-              <div className="gl-ps-foot">
-                <div className="gl-ps-ftx">
-                  <span className="gl-ps-flabel">3 productos</span>
-                  <span className="gl-ps-ftotal">$5.900</span>
-                </div>
-                <button className="gl-ps-cobrar">Cobrar</button>
-              </div>
-            </div>
+            <Image
+              src={capturaGesto}
+              alt="Pantalla de Gesto en el celular: punto de venta con lector de códigos"
+              className="gl-phone-img"
+              sizes="240px"
+              placeholder="blur"
+            />
           </div>
         </div>
       </div>

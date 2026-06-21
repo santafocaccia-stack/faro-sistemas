@@ -300,7 +300,8 @@
 .gl-scanimg { object-fit: cover; }
 .gl-scanphoto-grad { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, color-mix(in oklch, var(--background) 50%, transparent)); pointer-events: none; }
 .gl-phone { position: relative; z-index: 1; width: 290px; aspect-ratio: 9 / 19; background: #050403; border: 11px solid #1c1814; border-radius: 44px; box-shadow: 0 40px 90px -30px rgba(0,0,0,.85), inset 0 0 0 1px rgba(255,255,255,.05); overflow: hidden; }
-.gl-phone-float { position: absolute; right: -22px; bottom: -34px; z-index: 3; transform: scale(.6); transform-origin: bottom right; box-shadow: 0 36px 70px -22px rgba(0,0,0,.9); }
+.gl-phone-float { position: absolute; right: -22px; bottom: -34px; z-index: 3; aspect-ratio: auto; transform: scale(.62); transform-origin: bottom right; box-shadow: 0 36px 70px -22px rgba(0,0,0,.9); }
+.gl-phone-img { display: block; width: 100%; height: auto; }
 .gl-phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 92px; height: 24px; background: #050403; border-radius: 13px; z-index: 5; }
 .gl-phone-screen { position: absolute; inset: 0; background: var(--card); display: flex; flex-direction: column; font-family: var(--gl-ui), sans-serif; }
 .gl-ps-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px 6px; font-size: 12px; font-weight: 700; color: var(--foreground); }
