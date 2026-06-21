@@ -19,12 +19,14 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
   const [rubro, setRubro] = useState<RubroDemo>(RUBROS[0]!);
   const [auto, setAuto] = useState(true);
   const [hovering, setHovering] = useState(false);
+  const [inView, setInView] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
+  const switcherRef = useRef<HTMLDivElement>(null);
 
   // Auto-rotación del switcher: muestra cada rubro solo, hasta que el usuario
   // elige uno (click) o mientras pasa el mouse por encima del selector.
   useEffect(() => {
-    if (!auto || hovering) return;
+    if (!auto || hovering || !inView) return;
     const id = setInterval(() => {
       setRubro((cur) => {
         const i = RUBROS.findIndex((r) => r.id === cur.id);
@@ -32,7 +34,17 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
       });
     }, 5000);
     return () => clearInterval(id);
-  }, [auto, hovering]);
+  }, [auto, hovering, inView]);
+
+  // El switcher solo auto-rota mientras está visible en pantalla: si el
+  // usuario bajó al demo del POS, no cambia el rubro ni le resetea el carrito.
+  useEffect(() => {
+    const el = switcherRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setInView(e!.isIntersecting), { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   function elegir(r: RubroDemo) {
     setAuto(false);
@@ -153,6 +165,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
 
           <div
             className="gl-rubros"
+            ref={switcherRef}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
           >

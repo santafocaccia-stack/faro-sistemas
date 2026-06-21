@@ -104,7 +104,7 @@ export function PagarTransferencia({
           {/* Plan + monto */}
           <div className="flex items-end justify-between gap-3 mb-4">
             <div className="flex-1">
-              <label className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Plan</label>
+              <label className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">Versión</label>
               <Select value={planId} onValueChange={(v) => setPlanId(v as PlanId)}>
                 <SelectTrigger className="h-9 mt-1">
                   <SelectValue />
@@ -151,7 +151,7 @@ export function PagarTransferencia({
               </Button>
             }
             title="¿Ya hiciste la transferencia?"
-            description={`Vamos a verificar el ingreso de ${ARS(monto)} y activar tu plan ${plan.nombre}. Te confirmamos por email.`}
+            description={`Vamos a verificar el ingreso de ${ARS(monto)} y activar tu versión ${plan.nombre}. Te confirmamos por email.`}
             confirmLabel="Sí, ya transferí"
             variant="default"
             onConfirm={handleAvisar}

@@ -59,9 +59,9 @@ export const SOBRE_ACENTO = '#1a1408';
 export const RUBROS: RubroDemo[] = [
   {
     id: 'market',
-    chip: 'Kiosco',
+    chip: 'Market',
     chipIcon: Store,
-    chipTag: 'Kiosco y almacén',
+    chipTag: 'Comercios y almacenes',
     acento: '#d2723f',
     heroWord: 'Tu kiosco.',
     heroSub:
@@ -87,7 +87,7 @@ export const RUBROS: RubroDemo[] = [
     ],
     accion: 'Cobrar',
     accionWord: 'cobrar',
-    caja: 'Caja · Kiosco',
+    caja: 'Caja · Market',
     items: [
       { nombre: 'Alfajor Guaymallén', precio: 900 },
       { nombre: 'Coca 500ml', precio: 1200 },

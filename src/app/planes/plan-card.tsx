@@ -109,9 +109,9 @@ export function PlanCard({ plan, dolarMep, esPlanActual, suscripcionActiva, onCo
           : isPending
             ? 'Redirigiendo...'
             : esPlanActual && suscripcionActiva
-              ? 'Plan activo'
+              ? 'Versión activa'
               : esPlanActual
-                ? 'Continuar con este plan'
+                ? 'Continuar con esta versión'
                 : 'Contratar'}
       </button>
     </div>
