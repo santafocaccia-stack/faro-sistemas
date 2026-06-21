@@ -23,6 +23,9 @@ export const presupuestoEstadoEnum = pgEnum('presupuesto_estado', [
   'cobrado', // plan servicios: el presupuesto se cobró → registra el ingreso
 ]);
 
+// Tipo de comprobante: cotización (presupuesto) o comprobante de cobro (boleta).
+export const presupuestoTipoEnum = pgEnum('presupuesto_tipo', ['presupuesto', 'boleta']);
+
 export const presupuestos = pgTable(
   'presupuestos',
   {
@@ -32,6 +35,9 @@ export const presupuestos = pgTable(
       .references(() => tenants.id, { onDelete: 'cascade' }),
 
     numero: integer('numero').notNull(),
+
+    // Cotización (presupuesto) o comprobante de cobro (boleta)
+    tipo: presupuestoTipoEnum('tipo').notNull().default('presupuesto'),
 
     // Cliente: puede ser registrado o texto libre
     clienteId: uuid('cliente_id').references(() => clientes.id, { onDelete: 'set null' }),
@@ -69,6 +75,7 @@ export const presupuestos = pgTable(
   (t) => [
     index('idx_presupuestos_tenant').on(t.tenantId),
     index('idx_presupuestos_tenant_estado').on(t.tenantId, t.estado),
+    index('idx_presupuestos_tenant_tipo').on(t.tenantId, t.tipo),
   ],
 );
 
@@ -89,4 +96,5 @@ export type Presupuesto      = typeof presupuestos.$inferSelect;
 export type NewPresupuesto   = typeof presupuestos.$inferInsert;
 export type PresupuestoLinea = typeof presupuestosLineas.$inferSelect;
 export type PresupuestoEstado = (typeof presupuestoEstadoEnum.enumValues)[number];
+export type PresupuestoTipo = (typeof presupuestoTipoEnum.enumValues)[number];
 
