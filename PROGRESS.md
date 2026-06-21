@@ -61,8 +61,14 @@ Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
 4. **Notificación Horus**: pasar endpoint/token Phone Bridge o reconectar Remote Control.
 
 ## Pendientes técnicos prioritarios (de CLAUDE.md, no repetir todo)
-- Bloqueantes de lanzamiento: dominio propio, SMTP Resend con branding, landing pública,
-  PWA manifest+iconos, ToS + Política de privacidad.
+- Bloqueantes de lanzamiento: dominio propio, SMTP Resend con branding,
+  PWA manifest+iconos. **Landing pública ✓** (v3) y **páginas legales ✓** (ya abajo).
+- **Legal HECHO (2026-06-21)**: `/legal/{terminos,privacidad,cookies,baja-de-datos}`
+  como páginas Next con layout de marca (`src/app/legal/`), links en footer y checkbox
+  de aceptación en signup; `/legal` marcado público en `src/lib/supabase/middleware.ts`.
+  Responsable = Tomás de Sousa (persona física). **FALTA (acción del usuario)**: completar
+  placeholders resaltados — [CUIT], [DOMICILIO], [EMAIL DE CONTACTO], [JURISDICCIÓN] — y
+  que un abogado revise los textos (sobre todo tratamiento de datos de terceros y AFIP).
 - Seguridad: verificar firma webhook MP, rate limiting en auth, tests de venta/producto.
 
 ## Cómo seguir barato en el chat nuevo
