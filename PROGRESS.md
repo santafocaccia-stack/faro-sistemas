@@ -40,8 +40,15 @@ Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
   `src/components/landing/`: `landing-client.tsx`, `landing-scan.tsx`, `landing-pos.tsx`,
   `landing-sections.tsx`, `landing-data.ts`, `landing.css`; monta desde `src/app/page.tsx`.
   Mockup HTML autónomo de referencia en `C:\Users\Tomi\Documents\Claude Code\gesto-landing.html`.
+  **Refinamientos por feedback del dueño (2026-06-21)**: hero con garantías limpias
+  (sin sellos-cartel) + subtítulo más grande con "cuenta corriente" en acento;
+  descripción del rubro protagonista; acento de marca **fijo en naranja** con el color
+  por rubro scopeado a app+POS; sección "desde el celular" usa **captura real** de Gesto
+  (`public/landing/captura-gesto.jpeg`) en el marco en vez del mockup HTML; **login/auth
+  rediseñado** a split-screen cálido (`src/app/(auth)/layout.tsx`: panel de marca Anton +
+  beneficios; logo duplicado oculto en desktop en login/signup).
   **Posibles mejoras futuras** (no pedidas aún): testimonios reales, métricas de prueba
-  social honestas, más fotos por rubro, video corto del producto.
+  social honestas, más fotos por rubro, video corto del producto, calentar copy de signup.
 - **Precios vivos** endurecido tras revisión (flag server-side, Zod, rango de margen,
   confirm). Ver `docs/context/precios.md`. Falta: QA en vivo (los 3 planes) y decidir
   si se expone como acción destacada en Productos. Quedan 🟡 menores anotados.
