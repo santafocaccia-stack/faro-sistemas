@@ -73,7 +73,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
   } as CSSProperties;
 
   return (
-    <div className="gl-root" ref={rootRef} style={accentStyle}>
+    <div className="gl-root" ref={rootRef}>
       <div className="gl-grain" aria-hidden />
       <div className="gl-glow gl-glow-1" aria-hidden />
       <div className="gl-glow gl-glow-2" aria-hidden />
@@ -143,8 +143,8 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
           </div>
         </section>
 
-        {/* POR DENTRO — switcher + ventana de app */}
-        <section className="gl-blk gl-wrap gl-reveal" id="rubros">
+        {/* POR DENTRO — switcher + ventana de app (acento por rubro, scopeado) */}
+        <section className="gl-blk gl-wrap gl-reveal" id="rubros" style={accentStyle}>
           <div className="gl-shead">
             <span className="gl-eyebrow">Una app, tu rubro</span>
             <h2>Mirá cómo se ve por dentro</h2>
@@ -186,11 +186,11 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
           <AppWindow rubro={rubro} />
         </section>
 
-        {/* Desde el celular — mockup de escaneo */}
-        <ScanShowcase />
-
-        {/* POS interactivo (comparte rubro) */}
+        {/* POS interactivo (comparte rubro, acento scopeado) */}
         <LandingPos rubro={rubro} />
+
+        {/* Desde el celular — foto real + mockup de escaneo (naranja de marca) */}
+        <ScanShowcase />
 
         {/* Beneficios */}
         <div id="beneficios">

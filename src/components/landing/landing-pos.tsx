@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { ShoppingCart, Receipt, ScanLine, Plus, RotateCcw, Check } from 'lucide-react';
-import { fmtARS, type RubroDemo, type DemoItem } from './landing-data';
+import { fmtARS, hexToRgba, SOBRE_ACENTO, type RubroDemo, type DemoItem } from './landing-data';
 
 /* Sección "Probalo vos mismo": demo interactivo del POS que IMPRIME un ticket
    de papel al cobrar, adaptado al rubro activo. */
@@ -51,8 +51,14 @@ export function LandingPos({ rubro }: { rubro: RubroDemo }) {
     return [...map.entries()];
   }, [cart]);
 
+  const accentStyle = {
+    ['--gl-accent']: rubro.acento,
+    ['--gl-soft']: hexToRgba(rubro.acento, 0.14),
+    ['--gl-ink']: SOBRE_ACENTO,
+  } as CSSProperties;
+
   return (
-    <section className="gl-blk gl-wrap gl-reveal">
+    <section className="gl-blk gl-wrap gl-reveal" style={accentStyle}>
       <div className="gl-shead">
         <span className="gl-eyebrow">Probalo vos mismo</span>
         <h2>Mirá lo rápido que es</h2>
