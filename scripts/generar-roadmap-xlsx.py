@@ -67,6 +67,7 @@ TAREAS = [
     ("Ventas / POS", "Historial + detalle de venta (filtro por período)", "—", "Hecho", ""),
     ("Ventas / POS", "Descuentos en POS (% o $ por total)", "Media", "Pendiente", "Muy pedido en kioscos/carnicerías"),
     ("Ventas / POS", "Devoluciones / notas de crédito (reversar venta + ajuste stock)", "Media", "Pendiente", "Reversión de CC ya está hecha"),
+    ("Ventas / POS", "Lector de códigos USB en POS desktop (Enter agrega el producto escaneado)", "—", "Hecho", "Minorista + mayorista; el lector tipo supermercado escribe el código y Enter lo suma al carrito"),
 
     # Cuenta Corriente
     ("Cuenta Corriente", "Movimientos + registrar pago + saldo en tiempo real", "—", "Hecho", "registrarPago atómico FOR UPDATE"),
@@ -143,7 +144,7 @@ TAREAS = [
     ("Versiones / Verticales", "Mejorar login/registro: sumarle contenido útil (hoy se siente vacío)", "Media", "En progreso", "Split de marca ya hecho; falta valor real que sume"),
     ("Versiones / Verticales", "Gesto Balanza funcional: integración con balanza digital + venta por peso", "Alta", "Pendiente", "Hoy figura 'próximamente'; armarla de verdad para que funcione con balanzas"),
     ("Versiones / Verticales", "Gesto Food: POS propio (comandas, mesas, cocina/KDS) — muy distinto a Market", "Alta", "Pendiente", "Hoy figura 'próximamente'"),
-    ("Versiones / Verticales", "Gesto Servicios: emitir boletas además de presupuestos + simplificar botones/UI", "Alta", "Pendiente", "La interfaz es muy compleja; hacerla simple y funcional"),
+    ("Versiones / Verticales", "Gesto Servicios: emitir boletas además de presupuestos + simplificar botones/UI", "Alta", "En progreso", "Formulario de presupuesto SIMPLIFICADO (hecho: cliente unificado, mano de obra directa, opciones plegables); boletas = comprobante de cobro no fiscal (al cobrar un presupuesto + boleta directa) en curso"),
     ("Versiones / Verticales", "Gesto Atmosféricos: historial, agenda y pedidos para días futuros + arreglar ruta en Maps", "Alta", "Pendiente", "La función de Maps no toma bien las direcciones"),
 
     # Roadmap v2

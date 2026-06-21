@@ -66,6 +66,25 @@ export function PosMinorista({ productos, clientes, consumidorFinalId }: Props) 
     });
   }
 
+  // Lector de códigos USB (tipo supermercado): escribe el código + Enter.
+  // Al Enter agregamos el producto que coincide y limpiamos para el próximo scan.
+  function onBuscarKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const q = busqueda.trim();
+    if (!q) return;
+    // 1) coincidencia exacta por código de barras (lo que entrega el lector)
+    let prod = productos.find((p) => (p.codigo ?? '').toLowerCase() === q.toLowerCase());
+    // 2) si no, y la búsqueda deja un único resultado, ese
+    if (!prod && productosFiltrados.length === 1) prod = productosFiltrados[0];
+    if (prod) {
+      agregarAlCarrito(prod);
+      setBusqueda('');
+    } else {
+      toast.error('No se encontró un producto con ese código');
+    }
+  }
+
   function cambiarCantidad(productoId: string, delta: number) {
     setCart((prev) =>
       prev
@@ -129,9 +148,10 @@ export function PosMinorista({ productos, clientes, consumidorFinalId }: Props) 
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Buscar producto..."
+              placeholder="Buscar o escanear producto..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
+              onKeyDown={onBuscarKey}
               autoFocus
             />
           </div>
