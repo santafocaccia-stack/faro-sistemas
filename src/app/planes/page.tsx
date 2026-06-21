@@ -2,8 +2,10 @@ import { Check } from 'lucide-react';
 import { requireSession } from '@/server/auth/session';
 import { getDolarMep } from '@/lib/dolar';
 import { PLANES_ARRAY } from '@/lib/planes';
+import { getDatosTransferencia } from '@/lib/transferencia';
 import { PlanCard } from './plan-card';
 import { PlanesAcciones } from './planes-acciones';
+import { PagarTransferencia } from './transferencia';
 import { crearSuscripcionMP } from '@/server/actions/suscripcion';
 
 export default async function PlanesPage() {
@@ -15,6 +17,13 @@ export default async function PlanesPage() {
     : null;
 
   const trialVencido = diasRestantes !== null && diasRestantes <= 0;
+
+  const datosTransferencia = getDatosTransferencia();
+  const planesLite = PLANES_ARRAY.filter((p) => !p.proximamente).map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    precioUsd: p.precioUsd,
+  }));
 
   const mostrarDashboard =
     session.status === 'activo' || session.status === 'moroso' || !trialVencido;
@@ -93,6 +102,21 @@ export default async function PlanesPage() {
             onContratar={crearSuscripcionMP}
           />
         ))}
+      </div>
+
+      {/* Pago por transferencia — método activo hoy */}
+      <div className="mt-12 flex flex-col items-center gap-3 w-full">
+        <div className="flex items-center gap-3 w-full max-w-md">
+          <span className="h-px flex-1 bg-border/60" />
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-[0.08em]">Forma de pago</span>
+          <span className="h-px flex-1 bg-border/60" />
+        </div>
+        <PagarTransferencia
+          planes={planesLite}
+          planActual={session.plan}
+          dolarMep={dolarMep}
+          datos={datosTransferencia}
+        />
       </div>
 
       {/* Footer */}
