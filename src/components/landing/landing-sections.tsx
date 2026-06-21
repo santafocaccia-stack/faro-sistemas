@@ -8,13 +8,13 @@ import { fmtARS } from './landing-data';
 export function AntesDespues() {
   const sin = [
     'El cuaderno, la calculadora y a sumar a mano',
-    'El fiado anotado en papelitos que se pierden',
+    'Las cuentas de los clientes anotadas en papelitos',
     'No sabés cuánto te queda hasta fin de mes',
     'Te enterás que falta stock cuando ya no hay',
   ];
   const con = [
     'Cobrás y la venta queda anotada sola',
-    'El fiado de cada cliente, siempre claro',
+    'La cuenta corriente de cada cliente, siempre clara',
     'Sabés cuánto vendiste y cuánto te queda, en el momento',
     'El stock se descuenta solo en cada venta',
   ];
@@ -64,7 +64,7 @@ export function AntesDespues() {
 /* ── Features (bento) — ventajas, no funciones técnicas ──────────────────── */
 const FEATS = [
   { Icon: ShoppingCart, h: 'Cobrá sin hacer esperar', p: 'Escaneás el producto y listo. La cola se mueve y nadie se va sin comprar.', span: true },
-  { Icon: BookOpen, h: 'Que no se te escape el fiado', p: 'La cuenta de cada cliente, siempre clara. Quién te debe y cuánto, sin papelitos.' },
+  { Icon: BookOpen, h: 'Controlá la cuenta corriente', p: 'La cuenta de cada cliente, siempre clara. Quién te debe y cuánto, sin papelitos.' },
   { Icon: Package, h: 'Sabé qué te queda', p: 'El stock se descuenta solo en cada venta. Te avisa antes de que te quedes sin nada.' },
   { Icon: BarChart3, h: 'Mirá cómo va tu negocio', p: 'Cuánto vendiste y cuánto ganaste, hoy o este mes. Sin esperar a nadie.' },
   { Icon: FileText, h: 'Presupuestos en un toque', p: 'Lo armás, lo mandás por WhatsApp y queda guardado. Con tu nombre.' },

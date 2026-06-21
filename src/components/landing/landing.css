@@ -93,15 +93,21 @@
 .gl-mqdot { width: 7px; height: 7px; border-radius: 50%; background: var(--gl-ink); margin: 0 26px; opacity: .8; }
 @keyframes gl-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-/* ── RUBRO SWITCHER ──────────────────────────────────── */
-.gl-switcher { margin: 0 auto; max-width: 760px; }
-.gl-hint { font-size: 13px; color: var(--gl-dim); margin-bottom: 14px; }
-.gl-chips { display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; }
-.gl-chip { font-family: var(--gl-ui), sans-serif; font-size: 14px; font-weight: 600; padding: 9px 17px; border-radius: 100px; border: 2px solid var(--gl-border-strong); background: color-mix(in oklch, var(--foreground) 2%, transparent); color: var(--muted-foreground); cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 8px; }
-.gl-chip:hover { color: var(--foreground); border-color: var(--gl-dim); }
-.gl-chip.gl-on { color: var(--gl-ink); font-weight: 700; border-color: transparent; }
-.gl-cdot { height: 8px; width: 8px; border-radius: 50%; background: currentColor; opacity: .55; }
-.gl-chip.gl-on .gl-cdot { opacity: 1; background: var(--gl-ink); }
+/* ── RUBRO SWITCHER (tarjetas) ───────────────────────── */
+.gl-hint { font-size: 13px; color: var(--gl-dim); margin-bottom: 16px; text-align: center; }
+.gl-rubros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 900px; margin: 0 auto; }
+.gl-rubro { --r: var(--gl-accent); display: flex; align-items: center; gap: 13px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--border); background: var(--card); cursor: pointer; transition: transform .2s, border-color .2s, background .2s, box-shadow .2s; position: relative; font-family: inherit; color: var(--foreground); }
+.gl-rubro:hover { border-color: color-mix(in oklch, var(--r) 55%, transparent); transform: translateY(-2px); }
+.gl-rubro.gl-on { border-color: var(--r); background: linear-gradient(150deg, color-mix(in oklch, var(--r) 15%, transparent), var(--card) 70%); box-shadow: 0 12px 32px -14px var(--r); }
+.gl-rubro-ic { height: 42px; width: 42px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in oklch, var(--r) 16%, transparent); color: var(--r); flex-shrink: 0; transition: background .2s, color .2s; }
+.gl-rubro.gl-on .gl-rubro-ic { background: var(--r); color: var(--gl-ink); }
+.gl-rubro-ic svg { height: 21px; width: 21px; }
+.gl-rubro-tx { display: flex; flex-direction: column; min-width: 0; }
+.gl-rubro-name { font-family: var(--gl-display), sans-serif; text-transform: uppercase; font-size: 17px; letter-spacing: .01em; line-height: 1; }
+.gl-rubro-tag { font-size: 11.5px; color: var(--muted-foreground); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gl-rubro-check { margin-left: auto; height: 21px; width: 21px; border-radius: 50%; background: var(--r); color: var(--gl-ink); display: grid; place-items: center; opacity: 0; transform: scale(.5); transition: opacity .2s, transform .2s; flex-shrink: 0; }
+.gl-rubro.gl-on .gl-rubro-check { opacity: 1; transform: scale(1); }
+.gl-rubro-check svg { height: 13px; width: 13px; }
 
 /* ── APP WINDOW ──────────────────────────────────────── */
 .gl-stage { margin: 36px auto 0; max-width: 1100px; perspective: 2200px; }
@@ -240,6 +246,26 @@
 .gl-incl span { font-size: 12.5px; color: var(--muted-foreground); display: flex; align-items: center; gap: 7px; }
 .gl-incl svg { height: 14px; width: 14px; color: var(--gl-accent); }
 
+/* ticket de papel impreso */
+.gl-receipt-wrap { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 6px 0 10px; }
+.gl-receipt { --paper: #f4ecda; position: relative; width: 100%; max-width: 235px; background: var(--paper); color: #2b2620; font-family: var(--gl-mono), monospace; padding: 18px 18px 16px; border-radius: 2px; box-shadow: 0 20px 44px -18px rgba(0,0,0,.65); animation: gl-print .5s cubic-bezier(.2,.7,.2,1); }
+@keyframes gl-print { from { transform: translateY(-12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.gl-receipt::after { content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 9px; background: linear-gradient(45deg, var(--paper) 6px, transparent 0) 0 0, linear-gradient(-45deg, var(--paper) 6px, transparent 0) 0 0; background-size: 12px 100%; background-repeat: repeat-x; }
+.gl-receipt-brand { font-family: var(--gl-display), sans-serif; text-transform: uppercase; font-size: 23px; text-align: center; letter-spacing: .05em; line-height: 1; }
+.gl-receipt-sub { text-align: center; font-size: 11px; font-weight: 700; margin-top: 5px; }
+.gl-receipt-meta { text-align: center; font-size: 9.5px; color: #6b5f4f; margin-top: 3px; }
+.gl-receipt-sep { border-top: 1px dashed #b8a98c; margin: 11px 0; }
+.gl-receipt-line { display: flex; align-items: baseline; gap: 7px; font-size: 11px; margin: 5px 0; }
+.gl-receipt-qty { color: #6b5f4f; }
+.gl-receipt-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gl-receipt-amt { font-weight: 700; font-variant-numeric: tabular-nums; }
+.gl-receipt-total { display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+.gl-receipt-pay { text-align: center; font-size: 10px; color: #6b5f4f; margin-top: 12px; }
+.gl-receipt-barcode { height: 32px; margin: 10px 0 8px; background-image: repeating-linear-gradient(90deg, #2b2620 0 2px, transparent 2px 3px, #2b2620 3px 5px, transparent 5px 6px, #2b2620 6px 9px, transparent 9px 11px); }
+.gl-receipt-foot { text-align: center; font-size: 9.5px; color: #6b5f4f; letter-spacing: .08em; }
+.gl-cobrar-alt { background: var(--gl-raised); color: var(--foreground); border: 1px solid var(--gl-border-strong); }
+.gl-cobrar-alt:hover { filter: none; background: color-mix(in oklch, var(--foreground) 8%, transparent); }
+
 /* ── ANTES / DESPUÉS ─────────────────────────────────── */
 .gl-adgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 880px; margin: 0 auto; }
 .gl-ad { border-radius: 18px; padding: 28px; }
@@ -303,6 +329,7 @@
 .gl-reveal.gl-in { opacity: 1; transform: none; }
 
 @media (max-width: 920px) {
+  .gl-rubros { grid-template-columns: 1fr 1fr; }
   .gl-app { grid-template-columns: 1fr; }
   .gl-side { display: none; }
   .gl-kpis { grid-template-columns: 1fr 1fr; }

@@ -5,7 +5,7 @@
  * Importable desde el cliente (sin deps de servidor).
  */
 import {
-  ShoppingCart, BookOpen, FileText, Check, MapPin, Landmark, type LucideIcon,
+  ShoppingCart, BookOpen, FileText, Check, MapPin, Landmark, Store, Wrench, Truck, type LucideIcon,
 } from 'lucide-react';
 import type { PlanId } from '@/lib/planes';
 
@@ -31,6 +31,8 @@ export type Row = {
 export type RubroDemo = {
   id: PlanId;        // coincide con el plan → deriva nav real y si tiene POS
   chip: string;      // etiqueta del chip
+  chipIcon: LucideIcon; // ícono del selector de rubro
+  chipTag: string;   // subtítulo corto del selector ("Kiosco y almacén")
   acento: string;    // color de acento (hex)
   heroWord: string;  // palabra que se intercambia en el H1
   heroSub: string;   // subtítulo del hero
@@ -58,6 +60,8 @@ export const RUBROS: RubroDemo[] = [
   {
     id: 'market',
     chip: 'Kiosco',
+    chipIcon: Store,
+    chipTag: 'Kiosco y almacén',
     acento: '#ff7518',
     heroWord: 'Tu kiosco.',
     heroSub:
@@ -70,7 +74,7 @@ export const RUBROS: RubroDemo[] = [
       { l: 'Vendido hoy', v: 142300, money: true, t: '+18% vs ayer', hl: true },
       { l: 'Ventas', v: 37, money: false, t: '+6 que ayer' },
       { l: 'Ticket promedio', v: 3846, money: true, t: '+4%' },
-      { l: 'Fiado por cobrar', v: 28400, money: true, t: '5 clientes', down: true },
+      { l: 'En cuenta corriente', v: 28400, money: true, t: '5 clientes', down: true },
     ],
     chart: [62, 48, 71, 55, 83, 96, 142],
     peak: 6,
@@ -78,7 +82,7 @@ export const RUBROS: RubroDemo[] = [
     rows: [
       { icon: ShoppingCart, a: 'Coca 500 + Alfajor + Yerba', b: 'hace 2 min · efectivo', v: '$5.900', tag: ['ok', 'OK'] },
       { icon: ShoppingCart, a: 'Cigarrillos 20u', b: 'hace 9 min · débito', v: '$2.500', tag: ['ok', 'OK'] },
-      { icon: BookOpen, a: 'Fiado — Marta G.', b: 'hace 21 min · cuenta corriente', v: '$3.200', tag: ['warn', 'Fiado'] },
+      { icon: BookOpen, a: 'Cta. corriente — Marta G.', b: 'hace 21 min · suma a su cuenta', v: '$3.200', tag: ['warn', 'Cta. cte.'] },
       { icon: ShoppingCart, a: 'Agua + Caramelos x10', b: 'hace 34 min · efectivo', v: '$1.100', tag: ['ok', 'OK'] },
     ],
     accion: 'Cobrar',
@@ -92,50 +96,13 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Caramelos x10', precio: 300 },
       { nombre: 'Agua 500ml', precio: 800 },
     ],
-    incluye: ['Escaneás y cobrás', 'Stock siempre al día', 'Fiado de cada cliente', 'Cuánto vendiste hoy'],
-  },
-  {
-    id: 'balanza',
-    chip: 'Carnicería',
-    acento: '#c763cf',
-    heroWord: 'Tu carnicería.',
-    heroSub:
-      'Vendés al peso con la balanza, anotás el fiado y sabés cuánto entró. Sin cuaderno ni cuentas a mano.',
-    tenant: 'Carnicería El Buen Corte',
-    planLabel: 'Balanza',
-    user: 'elbuencorte',
-    title: 'Inicio',
-    kpis: [
-      { l: 'Vendido hoy', v: 389500, money: true, t: '+12% vs ayer', hl: true },
-      { l: 'Ventas', v: 52, money: false, t: '+9 que ayer' },
-      { l: 'Kilos vendidos', v: 148, money: false, t: 'kg hoy' },
-      { l: 'Fiado por cobrar', v: 64200, money: true, t: '8 clientes', down: true },
-    ],
-    chart: [210, 180, 260, 240, 310, 355, 389],
-    peak: 6,
-    listTitle: 'Últimas ventas',
-    rows: [
-      { icon: ShoppingCart, a: 'Asado 2,4kg', b: 'hace 1 min · $8.800/kg', v: '$21.120', tag: ['ok', 'OK'] },
-      { icon: ShoppingCart, a: 'Pollo 1,8kg', b: 'hace 7 min · efectivo', v: '$7.560', tag: ['ok', 'OK'] },
-      { icon: BookOpen, a: 'Fiado — Don Raúl', b: 'hace 15 min · cuenta corriente', v: '$14.300', tag: ['warn', 'Fiado'] },
-      { icon: ShoppingCart, a: 'Milanesa 1,1kg', b: 'hace 26 min · débito', v: '$9.900', tag: ['ok', 'OK'] },
-    ],
-    accion: 'Cobrar',
-    accionWord: 'cobrar',
-    caja: 'Caja · Carnicería',
-    items: [
-      { nombre: 'Bola de lomo /kg', precio: 9500 },
-      { nombre: 'Vacío /kg', precio: 11000 },
-      { nombre: 'Asado /kg', precio: 8800 },
-      { nombre: 'Pollo /kg', precio: 4200 },
-      { nombre: 'Milanesa /kg', precio: 9000 },
-      { nombre: 'Chorizo /kg', precio: 6500 },
-    ],
-    incluye: ['Vendés por kilo', 'Con balanza digital', 'Fiado al día', 'Cuánto entró hoy'],
+    incluye: ['Escaneás y cobrás', 'Stock siempre al día', 'Cuenta corriente al día', 'Cuánto vendiste hoy'],
   },
   {
     id: 'servicios',
     chip: 'Servicios',
+    chipIcon: Wrench,
+    chipTag: 'Oficios y técnicos',
     acento: '#5b8ce0',
     heroWord: 'Tus servicios.',
     heroSub:
@@ -175,6 +142,8 @@ export const RUBROS: RubroDemo[] = [
   {
     id: 'atmosfericos',
     chip: 'Atmosféricos',
+    chipIcon: Truck,
+    chipTag: 'Camión atmosférico',
     acento: '#1fb4c9',
     heroWord: 'Tu camión.',
     heroSub:
@@ -214,6 +183,8 @@ export const RUBROS: RubroDemo[] = [
   {
     id: 'prestamista',
     chip: 'Préstamos',
+    chipIcon: Landmark,
+    chipTag: 'Créditos y cobranzas',
     acento: '#25a87d',
     heroWord: 'Tu cartera.',
     heroSub:

@@ -1,32 +1,46 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ShoppingCart, Receipt, ScanLine, Plus, Check } from 'lucide-react';
+import { ShoppingCart, Receipt, ScanLine, Plus, RotateCcw, Check } from 'lucide-react';
 import { fmtARS, type RubroDemo, type DemoItem } from './landing-data';
 
-/* Sección "El mostrador": demo interactivo del POS, adaptado al rubro activo. */
+/* Sección "Probalo vos mismo": demo interactivo del POS que IMPRIME un ticket
+   de papel al cobrar, adaptado al rubro activo. */
 export function LandingPos({ rubro }: { rubro: RubroDemo }) {
   const [cart, setCart] = useState<DemoItem[]>([]);
-  const [cobrado, setCobrado] = useState(false);
+  const [recibo, setRecibo] = useState<{ n: string; hora: string } | null>(null);
 
   // Al cambiar de rubro, reseteamos el ticket.
   useEffect(() => {
     setCart([]);
-    setCobrado(false);
+    setRecibo(null);
   }, [rubro.id]);
 
+  const cobrado = recibo !== null;
   const total = cart.reduce((a, c) => a + c.precio, 0);
 
   function agregar(item: DemoItem) {
     if (cobrado) {
       setCart([item]);
-      setCobrado(false);
+      setRecibo(null);
     } else {
       setCart((c) => [...c, item]);
     }
   }
 
-  // Agrupamos por nombre para mostrar "×N" en el ticket.
+  function cobrar() {
+    if (!cart.length) return;
+    const d = new Date();
+    const hora = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    setRecibo({ n: String(Math.floor(1000 + Math.random() * 8999)), hora });
+  }
+
+  function nueva() {
+    setCart([]);
+    setRecibo(null);
+  }
+
+  // Agrupamos por nombre para mostrar "×N".
   const agrupado = useMemo(() => {
     const map = new Map<string, { precio: number; cant: number }>();
     for (const c of cart) {
@@ -43,8 +57,8 @@ export function LandingPos({ rubro }: { rubro: RubroDemo }) {
         <span className="gl-eyebrow">Probalo vos mismo</span>
         <h2>Mirá lo rápido que es</h2>
         <p>
-          Tocá los productos y armá el ticket. En tu local lo hacés con el escáner: pasás el producto y{' '}
-          <em>{rubro.accionWord}</em>.
+          Tocá los productos, cobrá y mirá cómo sale el ticket. En tu local lo hacés con el escáner: pasás el producto
+          y <em>{rubro.accionWord}</em>.
         </p>
       </div>
 
@@ -74,19 +88,33 @@ export function LandingPos({ rubro }: { rubro: RubroDemo }) {
         {/* Ticket */}
         <div className="gl-poscard gl-ticket">
           <div className="gl-tickethead">
-            <Receipt /> Ticket
+            <Receipt /> {cobrado ? 'Comprobante' : 'Ticket'}
           </div>
           <div className="gl-ticketbody">
-            {cobrado ? (
-              <div className="gl-done">
-                <div className="gl-ck">
-                  <Check strokeWidth={2.6} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>¡Listo! Comprobante generado</div>
-                  <div style={{ fontSize: 12, color: 'var(--gl-dim)', marginTop: 3 }}>
-                    Así de rápido, sin levantar la vista
+            {cobrado && recibo ? (
+              <div className="gl-receipt-wrap">
+                <div className="gl-receipt">
+                  <div className="gl-receipt-brand">GESTO</div>
+                  <div className="gl-receipt-sub">{rubro.tenant}</div>
+                  <div className="gl-receipt-meta">
+                    Comp. #{recibo.n} · {recibo.hora} hs
                   </div>
+                  <div className="gl-receipt-sep" />
+                  {agrupado.map(([nombre, o]) => (
+                    <div key={nombre} className="gl-receipt-line">
+                      <span className="gl-receipt-qty">{o.cant}×</span>
+                      <span className="gl-receipt-name">{nombre}</span>
+                      <span className="gl-receipt-amt">{fmtARS(o.precio * o.cant)}</span>
+                    </div>
+                  ))}
+                  <div className="gl-receipt-sep" />
+                  <div className="gl-receipt-total">
+                    <span>TOTAL</span>
+                    <span>{fmtARS(total)}</span>
+                  </div>
+                  <div className="gl-receipt-pay">Pago en efectivo · ¡Gracias!</div>
+                  <div className="gl-receipt-barcode" />
+                  <div className="gl-receipt-foot">gesto.com.ar</div>
                 </div>
               </div>
             ) : cart.length === 0 ? (
@@ -110,9 +138,15 @@ export function LandingPos({ rubro }: { rubro: RubroDemo }) {
               <span className="gl-tl">Total</span>
               <span className="gl-tv">{fmtARS(total)}</span>
             </div>
-            <button className="gl-cobrar" disabled={cart.length === 0} onClick={() => cart.length > 0 && setCobrado(true)}>
-              {rubro.accion}
-            </button>
+            {cobrado ? (
+              <button className="gl-cobrar gl-cobrar-alt" onClick={nueva}>
+                <RotateCcw style={{ height: 17, width: 17 }} strokeWidth={2.4} /> Nueva venta
+              </button>
+            ) : (
+              <button className="gl-cobrar" disabled={cart.length === 0} onClick={cobrar}>
+                {rubro.accion}
+              </button>
+            )}
           </div>
         </div>
       </div>

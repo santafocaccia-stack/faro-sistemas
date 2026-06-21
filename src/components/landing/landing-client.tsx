@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Search, Command, ShoppingCart, ArrowRight, UsersRound, Settings, LogOut, Bell,
-  CalendarDays, Lock, Store, TrendingUp,
+  CalendarDays, Lock, Store, TrendingUp, Check,
 } from 'lucide-react';
 import { navParaRol } from '@/lib/nav';
 import { planTiene } from '@/lib/planes';
@@ -12,7 +12,7 @@ import { LandingPos } from './landing-pos';
 import { AntesDespues, Features, Pricing, LandingFooter } from './landing-sections';
 import './landing.css';
 
-const MARQUEE = ['Vendé', 'Cobrá', 'Controlá el fiado', 'Mirá tus números', 'Cargá el stock', 'Pasá presupuestos'];
+const MARQUEE = ['Vendé', 'Cobrá', 'Cuenta corriente al día', 'Mirá tus números', 'Cargá el stock', 'Pasá presupuestos'];
 
 export function LandingClient({ dolarMep }: { dolarMep: number }) {
   const [rubro, setRubro] = useState<RubroDemo>(RUBROS[0]!);
@@ -121,24 +121,31 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
             <p>Elegí lo que tenés y la app se acomoda a tu negocio. Esto es lo que ves al entrar.</p>
           </div>
 
-          <div className="gl-switcher">
-            <p className="gl-hint">¿Qué tenés? Tocá tu rubro 👇</p>
-            <div className="gl-chips">
-              {RUBROS.map((r) => {
-                const on = r.id === rubro.id;
-                return (
-                  <button
-                    key={r.id}
-                    className={`gl-chip${on ? ' gl-on' : ''}`}
-                    style={on ? { background: r.acento } : undefined}
-                    onClick={() => setRubro(r)}
-                  >
-                    <span className="gl-cdot" style={on ? undefined : { background: r.acento }} />
-                    {r.chip}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="gl-rubros">
+            {RUBROS.map((r) => {
+              const on = r.id === rubro.id;
+              const RIcon = r.chipIcon;
+              return (
+                <button
+                  key={r.id}
+                  className={`gl-rubro${on ? ' gl-on' : ''}`}
+                  style={{ ['--r']: r.acento } as CSSProperties}
+                  onClick={() => setRubro(r)}
+                  aria-pressed={on}
+                >
+                  <span className="gl-rubro-ic">
+                    <RIcon strokeWidth={2} />
+                  </span>
+                  <span className="gl-rubro-tx">
+                    <span className="gl-rubro-name">{r.chip}</span>
+                    <span className="gl-rubro-tag">{r.chipTag}</span>
+                  </span>
+                  <span className="gl-rubro-check">
+                    <Check strokeWidth={3} />
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <AppWindow rubro={rubro} />
