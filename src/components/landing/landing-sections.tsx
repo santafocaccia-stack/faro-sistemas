@@ -1,5 +1,5 @@
 import {
-  Check, X, NotebookPen, Sparkles, ShoppingCart, BookOpen, Package, BarChart3, FileText, Users,
+  Check, X, NotebookPen, Sparkles, ShoppingCart, BookOpen, Package, BarChart3, FileText, Users, Plus,
 } from 'lucide-react';
 import { PLANES_ARRAY } from '@/lib/planes';
 import { fmtARS } from './landing-data';
@@ -149,6 +149,56 @@ export function Pricing({ dolarMep }: { dolarMep: number }) {
         })}
       </div>
       <p className="gl-pricenote">Dólar MEP de referencia: {fmtARS(dolarMep)} · Cancelás cuando quieras, sin permanencia.</p>
+    </section>
+  );
+}
+
+/* ── Preguntas frecuentes ────────────────────────────────────────────────── */
+const FAQS = [
+  {
+    q: '¿Necesito una computadora?',
+    a: 'No. Con tu celular alcanza para vender, cobrar y ver tus números. Si tenés computadora o tablet, también funciona igual.',
+  },
+  {
+    q: '¿Sirve para mi tipo de negocio?',
+    a: 'Gesto se adapta a tu rubro: kiosco, almacén, servicios, atmosféricos o préstamos. Elegís el tuyo y la app se acomoda a lo que hacés.',
+  },
+  {
+    q: '¿Es difícil de aprender?',
+    a: 'No. Está pensado para usarlo desde el primer día, sin manuales ni vueltas. Y si te trabás, te damos una mano.',
+  },
+  {
+    q: '¿Cómo pago?',
+    a: 'En pesos, con el precio fijado en dólares al cambio del día, así no se te licúa con la inflación. Cancelás cuando quieras, sin permanencia.',
+  },
+  {
+    q: '¿Mis datos están seguros?',
+    a: 'Sí. La información de tu negocio es solo tuya y está separada de la de cualquier otro comercio.',
+  },
+  {
+    q: '¿Puedo probarlo antes de pagar?',
+    a: 'Sí: 14 días gratis y sin tarjeta. Si no te sirve, no pagás nada.',
+  },
+];
+
+export function Faq() {
+  return (
+    <section className="gl-blk gl-wrap gl-reveal">
+      <div className="gl-shead">
+        <span className="gl-eyebrow">Dudas</span>
+        <h2>Preguntas frecuentes</h2>
+      </div>
+      <div className="gl-faq">
+        {FAQS.map((f) => (
+          <details key={f.q}>
+            <summary>
+              {f.q}
+              <Plus className="gl-faq-x" strokeWidth={2.4} style={{ height: 20, width: 20 }} />
+            </summary>
+            <div className="gl-faq-a">{f.a}</div>
+          </details>
+        ))}
+      </div>
     </section>
   );
 }

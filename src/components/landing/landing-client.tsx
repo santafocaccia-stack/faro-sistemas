@@ -10,7 +10,7 @@ import { planTiene } from '@/lib/planes';
 import { RUBROS, SOBRE_ACENTO, fmtARS, hexToRgba, type RubroDemo } from './landing-data';
 import { LandingPos } from './landing-pos';
 import { ScanShowcase } from './landing-scan';
-import { AntesDespues, Features, Pricing, LandingFooter } from './landing-sections';
+import { AntesDespues, Features, Pricing, Faq, LandingFooter } from './landing-sections';
 import './landing.css';
 
 const MARQUEE = ['Vendé', 'Cobrá', 'Cuenta corriente al día', 'Mirá tus números', 'Cargá el stock', 'Pasá presupuestos'];
@@ -38,6 +38,15 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
     setAuto(false);
     setRubro(r);
   }
+
+  // Scroll suave para los anclas del nav mientras la landing está montada.
+  useEffect(() => {
+    const prev = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = 'smooth';
+    return () => {
+      document.documentElement.style.scrollBehavior = prev;
+    };
+  }, []);
 
   // Reveal on scroll
   useEffect(() => {
@@ -99,8 +108,8 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
               Tu negocio al alcance de <span className="gl-mark">tu mano</span>
             </h1>
             <p className="gl-sub">
-              Cobrá, controlá el fiado y mirá cuánto vendiste. Todo en un solo lugar, y desde el celular —
-              estés donde estés.
+              Cobrá, controlá la cuenta corriente y mirá cuánto vendiste. Todo en un solo lugar, y desde el
+              celular — estés donde estés.
             </p>
             <div className="gl-herocta">
               <a className="gl-btn gl-btn-fill" style={{ height: 50, padding: '0 26px', fontSize: 16 }} href="/signup">
@@ -194,6 +203,9 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
         {/* Precios */}
         <Pricing dolarMep={dolarMep} />
 
+        {/* Preguntas frecuentes */}
+        <Faq />
+
         {/* CTA final */}
         <section className="gl-blk gl-wrap gl-reveal">
           <div className="gl-finale">
@@ -207,6 +219,13 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
       </main>
 
       <LandingFooter />
+
+      {/* CTA fijo en mobile */}
+      <div className="gl-stickycta">
+        <a className="gl-btn gl-btn-fill" href="/signup">
+          Empezá gratis · 14 días sin tarjeta
+        </a>
+      </div>
     </div>
   );
 }

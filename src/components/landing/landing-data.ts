@@ -65,7 +65,7 @@ export const RUBROS: RubroDemo[] = [
     acento: '#ff7518',
     heroWord: 'Tu kiosco.',
     heroSub:
-      'Cobrás con el escáner, llevás el stock y el fiado al día, y ves cuánto vendiste. Desde el mostrador o el celular.',
+      'Cobrás con el escáner, llevás el stock y la cuenta corriente al día, y ves cuánto vendiste. Desde el mostrador o el celular.',
     tenant: 'Kiosco Don José',
     planLabel: 'Market',
     user: 'donjose',
