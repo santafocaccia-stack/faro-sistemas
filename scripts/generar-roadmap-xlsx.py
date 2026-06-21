@@ -109,7 +109,7 @@ TAREAS = [
     ("Lanzamiento (bloqueante)", "SMTP con Resend (invitación, bienvenida, reset con branding)", "Alta", "Pendiente", "Cron listo; falta RESEND_API_KEY en Vercel (rotar la vieja)"),
     ("Lanzamiento (bloqueante)", "Landing page pública (adaptativa por versión + demo en vivo)", "Alta", "Hecho", "v3 'de oficio' LIVE: switcher de versiones auto-rotativo, demo POS con ticket de papel, foto real + captura de Gesto en celular, antes/después, FAQ, pricing al MEP, paleta terracota (sin neón), responsive mobile. Login rediseñado (split de marca)"),
     ("Lanzamiento (bloqueante)", "PWA manifest + iconos (192/512, apple-touch-icon)", "Alta", "Pendiente", "POS se usa en tablet/celular"),
-    ("Lanzamiento (bloqueante)", "Términos de servicio + Política de privacidad", "Alta", "Hecho", "Páginas /legal/{terminos,privacidad,cookies,baja-de-datos} + links en footer + checkbox de aceptación en signup. Responsable: Faro Sistemas (nombre comercial de Tomás de Sousa, persona física). FALTA: completar placeholders [CUIT/domicilio/email/jurisdicción] + revisión de un abogado"),
+    ("Lanzamiento (bloqueante)", "Términos de servicio + Política de privacidad", "Alta", "Hecho", "Páginas /legal/{terminos,privacidad,cookies,baja-de-datos} + links en footer + checkbox en signup. Prestador: Faro Sistemas (SIN datos fiscales por etapa pre-formalización; único contacto = email en constante CONTACTO_EMAIL, hoy el gmail). AL FORMALIZAR: cargar CUIT + domicilio + jurisdicción y que un abogado revise"),
 
     # Calidad / Seguridad
     ("Calidad / Seguridad", "Bugs críticos corregidos (stock al vender, numeración, loop /planes)", "—", "Hecho", ""),
@@ -144,7 +144,7 @@ TAREAS = [
     ("Versiones / Verticales", "Mejorar login/registro: sumarle contenido útil (hoy se siente vacío)", "Media", "En progreso", "Split de marca ya hecho; falta valor real que sume"),
     ("Versiones / Verticales", "Gesto Balanza funcional: integración con balanza digital + venta por peso", "Alta", "Pendiente", "Hoy figura 'próximamente'; armarla de verdad para que funcione con balanzas"),
     ("Versiones / Verticales", "Gesto Food: POS propio (comandas, mesas, cocina/KDS) — muy distinto a Market", "Alta", "Pendiente", "Hoy figura 'próximamente'"),
-    ("Versiones / Verticales", "Gesto Servicios: emitir boletas además de presupuestos + simplificar botones/UI", "Alta", "Hecho", "Form de presupuesto simplificado + BOLETAS de punta a punta: boleta directa (form modo boleta con método de pago), numeración propia, lista /dashboard/boletas + nav, detalle adaptado y PDF como RECIBO. Migración 0009 aplicada en dev+prod. Comprobante NO fiscal. Pendiente menor: seguir puliendo UI"),
+    ("Versiones / Verticales", "Gesto Servicios: emitir boletas además de presupuestos + simplificar botones/UI", "Alta", "Hecho", "Form de presupuesto simplificado + BOLETAS de punta a punta: boleta directa (form modo boleta con método de pago), numeración propia, lista /dashboard/boletas + nav, detalle adaptado y PDF como RECIBO. Migración 0009 aplicada en dev+prod. Comprobante NO fiscal. Pendiente menor: botón 'Emitir recibo' desde un presupuesto ya cobrado + seguir puliendo UI"),
     ("Versiones / Verticales", "Gesto Atmosféricos: historial, agenda y pedidos para días futuros + arreglar ruta en Maps", "Alta", "Pendiente", "La función de Maps no toma bien las direcciones"),
 
     # Roadmap v2
