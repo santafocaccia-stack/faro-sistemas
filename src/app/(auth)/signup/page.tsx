@@ -61,7 +61,7 @@ export default function SignupPage() {
   if (emailSent) {
     return (
       <div className="animate-fade-up text-center">
-        <div className="flex items-center justify-center mb-8">
+        <div className="flex items-center justify-center mb-8 lg:hidden">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
               <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>
@@ -94,7 +94,7 @@ export default function SignupPage() {
   return (
     <div className="animate-fade-up">
       {/* Logo + brand */}
-      <div className="flex items-center justify-center mb-8">
+      <div className="flex items-center justify-center mb-8 lg:hidden">
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
             <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>

@@ -41,8 +41,8 @@ export default function LoginPage() {
 
   return (
     <div className="animate-fade-up">
-      {/* Logo + brand */}
-      <div className="flex items-center justify-center mb-8">
+      {/* Logo + brand (solo mobile; en desktop está el panel de marca) */}
+      <div className="flex items-center justify-center mb-8 lg:hidden">
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
             <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>
@@ -56,8 +56,8 @@ export default function LoginPage() {
       {/* Card */}
       <div className="rounded-xl border border-border bg-card/80 backdrop-blur-xl p-7 shadow-[0_0_0_1px_oklch(1_0_0_/_0.04),0_24px_64px_oklch(0_0_0_/_0.4)]">
         <div className="mb-6">
-          <h1 className="text-xl font-semibold tracking-tight">Bienvenido de vuelta</h1>
-          <p className="text-sm text-muted-foreground mt-1">Ingresá a tu cuenta para continuar</p>
+          <h1 className="text-xl font-semibold tracking-tight">¡Hola de nuevo!</h1>
+          <p className="text-sm text-muted-foreground mt-1">Ingresá para seguir gestionando tu negocio.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
