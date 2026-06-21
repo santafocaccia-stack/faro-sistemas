@@ -37,9 +37,9 @@ export default function TerminosPage() {
 
       <h2 id="responsable">1. Quién presta el servicio</h2>
       <p>
-        Gesto es operado por <strong>{TITULAR_NOMBRE}</strong>, persona física, CUIT <Ph>[CUIT]</Ph>, con domicilio
-        en <Ph>[DOMICILIO]</Ph>, Argentina (en adelante, «Gesto», «nosotros»). Para cualquier consulta podés
-        escribir a <Ph>[EMAIL DE CONTACTO]</Ph>.
+        Gesto es un servicio de <strong>Faro Sistemas</strong>, nombre comercial de <strong>{TITULAR_NOMBRE}</strong>{' '}
+        (persona física), CUIT <Ph>[CUIT]</Ph>, con domicilio en <Ph>[DOMICILIO]</Ph>, Argentina (en adelante,
+        «Gesto», «nosotros»). Para cualquier consulta podés escribir a <Ph>[EMAIL DE CONTACTO]</Ph>.
       </p>
 
       <h2 id="servicio">2. Qué es Gesto</h2>

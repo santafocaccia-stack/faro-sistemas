@@ -62,7 +62,7 @@ export const RUBROS: RubroDemo[] = [
     chip: 'Kiosco',
     chipIcon: Store,
     chipTag: 'Kiosco y almacén',
-    acento: '#ff7518',
+    acento: '#d2723f',
     heroWord: 'Tu kiosco.',
     heroSub:
       'Cobrás con el escáner, llevás el stock y la cuenta corriente al día, y ves cuánto vendiste. Desde el mostrador o el celular.',

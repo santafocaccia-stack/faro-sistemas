@@ -36,9 +36,9 @@ export default function PrivacidadPage() {
 
       <h2 id="responsable">1. Responsable</h2>
       <p>
-        El responsable del tratamiento de los datos es <strong>{TITULAR_NOMBRE}</strong>, persona física, CUIT{' '}
-        <Ph>[CUIT]</Ph>, domicilio <Ph>[DOMICILIO]</Ph>, Argentina. Contacto para temas de privacidad:{' '}
-        <Ph>[EMAIL DE CONTACTO]</Ph>.
+        El responsable del tratamiento de los datos es <strong>Faro Sistemas</strong>, nombre comercial de{' '}
+        <strong>{TITULAR_NOMBRE}</strong> (persona física), CUIT <Ph>[CUIT]</Ph>, domicilio <Ph>[DOMICILIO]</Ph>,
+        Argentina. Contacto para temas de privacidad: <Ph>[EMAIL DE CONTACTO]</Ph>.
       </p>
 
       <h2 id="datos">2. Qué datos recolectamos</h2>

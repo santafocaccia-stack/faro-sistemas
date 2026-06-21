@@ -11,9 +11,9 @@
   --gl-raised: var(--card-raised);
   --gl-border-strong: color-mix(in oklch, var(--foreground) 18%, transparent);
   --gl-dim: color-mix(in oklch, var(--muted-foreground) 62%, transparent);
-  --gl-accent: var(--primary);
-  --gl-soft: color-mix(in oklch, var(--primary) 16%, transparent);
-  --gl-ink: #1a1408;
+  --gl-accent: #d2723f; /* brasa quemada, menos saturada que el primary neón */
+  --gl-soft: color-mix(in oklch, var(--gl-accent) 14%, transparent);
+  --gl-ink: #1a0f06;
 
   position: relative;
   background: var(--background);
@@ -37,8 +37,8 @@
   background: radial-gradient(ellipse 130% 90% at 50% -10%, transparent 55%, rgba(0,0,0,.5));
 }
 .gl-glow { position: absolute; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; transition: background .6s ease; }
-.gl-glow-1 { width: 640px; height: 640px; top: -280px; left: 50%; transform: translateX(-46%); background: radial-gradient(circle, var(--gl-accent), transparent 66%); opacity: .55; }
-.gl-glow-2 { width: 500px; height: 500px; top: 820px; right: -200px; background: radial-gradient(circle, var(--gl-accent), transparent 70%); opacity: .22; }
+.gl-glow-1 { width: 680px; height: 560px; top: -300px; left: 50%; transform: translateX(-46%); background: radial-gradient(ellipse, var(--gl-accent), transparent 68%); opacity: .26; }
+.gl-glow-2 { width: 500px; height: 500px; top: 820px; right: -200px; background: radial-gradient(circle, var(--gl-accent), transparent 72%); opacity: .1; }
 
 .gl-wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 2; }
 .gl-link { color: inherit; text-decoration: none; }
@@ -76,7 +76,7 @@
 .gl-btn-ghost:hover { color: var(--foreground); }
 .gl-btn-line { border-color: var(--gl-border-strong); color: var(--foreground); background: color-mix(in oklch, var(--foreground) 2%, transparent); }
 .gl-btn-line:hover { background: color-mix(in oklch, var(--foreground) 7%, transparent); }
-.gl-btn-fill { background: var(--gl-accent); color: var(--gl-ink); border-color: var(--gl-accent); box-shadow: 0 6px 22px -6px var(--gl-accent); transition: transform .12s, filter .2s, background .5s, box-shadow .5s, border-color .5s; }
+.gl-btn-fill { background: var(--gl-accent); color: var(--gl-ink); border-color: var(--gl-accent); box-shadow: 0 2px 10px -6px var(--gl-accent); transition: transform .12s, filter .2s, background .5s, box-shadow .5s, border-color .5s; }
 .gl-btn-fill:hover { filter: brightness(1.08); }
 @media (max-width: 860px) { .gl-navlinks { display: none; } }
 
