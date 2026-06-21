@@ -1,7 +1,10 @@
+import Image from 'next/image';
 import { ScanLine, Receipt, BarChart3, Check, Wifi, BatteryFull, ArrowRight } from 'lucide-react';
+import comerciante from '../../../public/landing/comerciante-escaneando.png';
 
-/* Sección "Desde el celular": mockup de un teléfono con la interfaz de Gesto
-   en modo escaneo — refuerza el gancho "tu negocio al alcance de tu mano". */
+/* Sección "Desde el celular": foto real de una comerciante escaneando un
+   producto + mockup del celular con la interfaz de Gesto flotando encima.
+   Refuerza el gancho "tu negocio al alcance de tu mano". */
 export function ScanShowcase() {
   const puntos = [
     { Icon: ScanLine, h: 'Escaneás con la cámara', p: 'El celular lee el código de barras del producto.' },
@@ -36,10 +39,22 @@ export function ScanShowcase() {
           </a>
         </div>
 
-        {/* Mockup de teléfono */}
-        <div className="gl-phonewrap">
+        {/* Foto real + mockup del celular flotando */}
+        <div className="gl-scanvisual">
           <div className="gl-phoneglow" aria-hidden />
-          <div className="gl-phone">
+          <div className="gl-scanphoto">
+            <Image
+              src={comerciante}
+              alt="Una comerciante escanea un producto con la app de Gesto en su celular"
+              fill
+              className="gl-scanimg"
+              sizes="(max-width: 920px) 90vw, 440px"
+              placeholder="blur"
+            />
+            <span className="gl-scanphoto-grad" aria-hidden />
+          </div>
+
+          <div className="gl-phone gl-phone-float">
             <div className="gl-phone-notch" />
             <div className="gl-phone-screen">
               <div className="gl-ps-top">
