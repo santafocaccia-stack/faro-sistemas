@@ -218,6 +218,8 @@ export function LandingFooter() {
           <a className="gl-link" href="/login">Ingresar</a>
           <a className="gl-link" href="/signup">Crear cuenta</a>
           <a className="gl-link" href="#precios">Precios</a>
+          <a className="gl-link" href="/legal/terminos">Términos</a>
+          <a className="gl-link" href="/legal/privacidad">Privacidad</a>
         </div>
       </div>
     </footer>

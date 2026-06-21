@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [acepta, setAcepta] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,6 +28,10 @@ export default function SignupPage() {
     }
     if (password.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (!acepta) {
+      setError('Tenés que aceptar los Términos y la Política de Privacidad.');
       return;
     }
 
@@ -160,10 +165,30 @@ export default function SignupPage() {
             </div>
           )}
 
+          <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
+            <input
+              type="checkbox"
+              checked={acepta}
+              onChange={(e) => setAcepta(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+            />
+            <span className="text-xs text-muted-foreground leading-relaxed">
+              Acepto los{' '}
+              <Link href="/legal/terminos" target="_blank" className="text-foreground hover:text-primary underline underline-offset-2">
+                Términos y Condiciones
+              </Link>{' '}
+              y la{' '}
+              <Link href="/legal/privacidad" target="_blank" className="text-foreground hover:text-primary underline underline-offset-2">
+                Política de Privacidad
+              </Link>
+              .
+            </span>
+          </label>
+
           <Button
             type="submit"
             className="w-full h-10 font-medium glow-primary"
-            disabled={loading}
+            disabled={loading || !acepta}
           >
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </Button>
