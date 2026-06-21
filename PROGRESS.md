@@ -2,11 +2,22 @@
 
 > Estado VIVO para retomar en chat nuevo gastando mínimo contexto.
 > El resto (stack, reglas, mapa, backlog largo) ya está en `CLAUDE.md` — NO lo releas.
-> Actualizado: 2026-06-02.
+> Actualizado: 2026-06-21.
 
 ## Dónde quedamos
-- Rama `master`, working tree **limpio**, sincronizado con `origin/master`. Build verde.
-- Última feature en curso/cerrada: **Precios vivos** (anti-inflación).
+- Rama `master`. Build/typecheck/lint verdes.
+- Últimas features cerradas: **#57 firma webhook MP** (fail-closed en prod) y
+  **cobro por transferencia + panel super-admin** (`/admin/suscripciones`).
+- **Pendiente de aplicar**: migración `0008_pagos_suscripcion.sql` en Supabase
+  (dev y prod). Es SQL manual idempotente (como 0005-0007) — pegar en el SQL editor.
+- **Env vars nuevas** a cargar (Vercel + `.env.local`): `SUPER_ADMIN_EMAILS`,
+  `TRANSFER_TITULAR/BANCO/CBU/ALIAS/CUIT`, `MP_WEBHOOK_SECRET`, `RESEND_API_KEY`.
+- **Auditoría de seguridad E2E (2026-06-21) — fixes aplicados** (tsc/lint/build/tests
+  verdes): IDOR token MP cerrado, `recibirPedido` con byTenant, escalación de rol
+  bloqueada, OAuth MP con `state` anti-CSRF, crons fail-closed, escape en emails,
+  guard test `src/server/__tests__/tenant-isolation.test.ts`. **RLS no protege la
+  capa de app** (Drizzle=postgres) → byTenant es la única defensa. Detalle y
+  pendientes en memoria `project_gesto_seguridad`.
 
 ## Últimos commits
 Ver `docs/context/_estado-git.md` (lo regenera el hook automáticamente — no duplicar acá).

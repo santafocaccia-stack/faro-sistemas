@@ -40,6 +40,7 @@
 - **Plantillas de servicios**: campo `esPlantilla`/`nombrePlantilla` en presupuestos + actions `guardarComoPlantilla`, `listarPlantillas`, `usarPlantilla`; botón en detalle del presupuesto; sección de plantillas en lista de presupuestos
 - **Reporte semanal por mail**: cron `vercel.json` (lunes 10am ARG), ruta `/api/cron/reporte-semanal`, template HTML Brasas; requiere `RESEND_API_KEY` + `CRON_SECRET` en Vercel env vars
 - **Precios vivos**: margen objetivo + actualización masiva con redondeo + alerta de margen bajo (ver `docs/context/precios.md`)
+- **Cobro por transferencia + panel super-admin**: `/admin/suscripciones` (guard `requireSuperAdmin` por `SUPER_ADMIN_EMAILS`) lista tenants y confirma pagos con 1 click (activa + suma 1 mes desde max(hoy,vto)); en `/planes` el cliente ve datos bancarios (`TRANSFER_*`) + monto al MEP y botón "Ya transferí" (avisa, NO activa); emails de aviso/acuse/comprobante vía Resend. Tabla `pagos_suscripcion` (migración `0008`). **NO es factura fiscal AFIP** (eso va por Tusfacturas, #61)
 
 ---
 
@@ -72,7 +73,7 @@
 
 | # | Tarea | Detalle |
 |---|---|---|
-| 12 | **Verificar firma de webhook MP** | Hoy cualquiera puede POST a `/api/mp-webhook` y manipular estados |
+| 12 | ~~**Verificar firma de webhook MP**~~ ✅ hecho | Firma HMAC-SHA256 timing-safe + **fail-closed en prod** (sin `MP_WEBHOOK_SECRET` rechaza todo). Falta: cargar `MP_WEBHOOK_SECRET` en Vercel |
 | 13 | **Rate limiting en auth** | Limitar intentos de login y signup (ej: `@upstash/ratelimit`) |
 | 14 | **Tests de integración** | Al menos los flows de venta y creación de producto |
 

@@ -33,6 +33,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+dev-server.log
+
+# datos generados por scripts (catálogo OFF, etc.)
+scripts/output/
 
 # env files (can opt-in for committing if needed)
 .env*
