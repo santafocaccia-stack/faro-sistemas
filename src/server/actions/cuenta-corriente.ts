@@ -57,6 +57,14 @@ export async function registrarPago(input: {
     if (!cliente) throw new Error('Cliente no encontrado');
 
     const saldoAnterior = Number(cliente.saldo ?? 0);
+    // Convención: saldo positivo = el cliente debe. Un pago no puede dejar
+    // saldo negativo (crédito a favor sin respaldo); se topea en la deuda real.
+    if (saldoAnterior <= 0) {
+      throw new Error('Este cliente no tiene deuda pendiente.');
+    }
+    if (monto > saldoAnterior) {
+      throw new Error(`El pago ($${monto.toLocaleString('es-AR')}) supera la deuda actual ($${saldoAnterior.toLocaleString('es-AR')}).`);
+    }
     const saldoPosterior = saldoAnterior - monto;
 
     const [pago] = await tx.insert(pagos).values({

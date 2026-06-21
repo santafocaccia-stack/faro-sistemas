@@ -46,10 +46,12 @@ export default async function ReportesPage({ searchParams }: Props) {
   // KPIs por plan
   const kpis: { label: string; valor: string; sub?: string }[] = esPos && rep
     ? [
-        { label: serie.metricaLabel, valor: formatARS(serie.totalActual), sub: 'período actual' },
+        // Todas las tarjetas miran la misma ventana (últimos 30 días) para no
+        // mezclarse con el período del gráfico (que sigue el tab de granularidad).
+        { label: serie.metricaLabel, valor: formatARS(rep.resumen.total), sub: 'últimos 30 días' },
         { label: 'Ticket promedio', valor: formatARS(rep.resumen.ticketPromedio), sub: 'últimos 30 días' },
-        { label: 'Minorista', valor: formatARS(rep.minorista.total), sub: `${rep.minorista.cantidad} ventas` },
-        { label: 'Mayorista', valor: formatARS(rep.mayorista.total), sub: `${rep.mayorista.cantidad} ventas` },
+        { label: 'Minorista', valor: formatARS(rep.minorista.total), sub: `${rep.minorista.cantidad} ventas · 30 días` },
+        { label: 'Mayorista', valor: formatARS(rep.mayorista.total), sub: `${rep.mayorista.cantidad} ventas · 30 días` },
       ]
     : esPrestamos && cartera
     ? [

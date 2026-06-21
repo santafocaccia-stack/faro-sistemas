@@ -1,6 +1,5 @@
 'use server';
 
-import { unstable_cache } from 'next/cache';
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { ventas, ventasLineas, pagos, productos, presupuestos, pagosPrestamo } from '@/server/db/schema';
@@ -132,12 +131,13 @@ function inicioDesde(periodo: Periodo) {
 }
 
 /**
- * Consultas DB cacheadas por (tenantId, periodo).
- * TTL conservador: 5 min para "hoy", 30 min para períodos históricos.
- * Se invalida con revalidateTag(`reporte-${tenantId}`) al crear una venta.
+ * Consultas DB del resumen de reportes (resumen, por canal, métodos de pago,
+ * por día, top productos) para un período. Se consulta en vivo —igual que el
+ * gráfico (obtenerSerieReporte)— para que SIEMPRE refleje el estado real.
+ * Antes estaba cacheado con unstable_cache (TTL 5 min) sin invalidación efectiva,
+ * lo que dejaba las tarjetas desactualizadas frente al gráfico.
  */
-const fetchReporteData = unstable_cache(
-  async (tenantId: string, periodo: Periodo) => {
+async function fetchReporteData(tenantId: string, periodo: Periodo) {
     const desde = inicioDesde(periodo);
     const filtroBase = and(
       byTenant(tenantId, ventas),
@@ -201,13 +201,7 @@ const fetchReporteData = unstable_cache(
     ]);
 
     return { resumen, porCanal, porMetodo, porDia, topProductos };
-  },
-  // Clave de cache: incluye tenantId y periodo en el keyParts para evitar colisiones
-  ['reporte'],
-  {
-    revalidate: 5 * 60, // 5 minutos TTL — datos frescos en cada visita sin hammear la DB
-  },
-);
+}
 
 export async function obtenerReporte(periodo: Periodo = 'mes') {
   const session = await requireAdmin();
