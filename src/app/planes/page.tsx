@@ -72,14 +72,14 @@ export default async function PlanesPage() {
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-warning/15 border border-warning/20 text-warning text-xs font-medium mb-4">
               Te quedan {diasRestantes} {diasRestantes === 1 ? 'día' : 'días'} de prueba
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight">Elegí tu plan</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Elegí tu versión</h1>
             <p className="text-sm text-muted-foreground mt-2">
               Precios en USD cobrados en pesos al dólar MEP del día.
             </p>
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight">Elegí tu plan</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Elegí tu versión</h1>
             <p className="text-sm text-muted-foreground mt-2">
               Precios en USD cobrados en pesos al dólar MEP del día.
             </p>

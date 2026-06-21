@@ -100,7 +100,7 @@ export function Pricing({ dolarMep }: { dolarMep: number }) {
     <section id="precios" className="gl-blk gl-wrap gl-reveal">
       <div className="gl-shead">
         <span className="gl-eyebrow">Precios</span>
-        <h2>Un plan para lo tuyo</h2>
+        <h2>Elegí tu versión</h2>
         <p>Precios en dólares para que no se los coma la inflación. Pagás en pesos, al dólar MEP del día.</p>
       </div>
       <div className="gl-pricegrid">

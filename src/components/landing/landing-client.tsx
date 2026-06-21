@@ -148,7 +148,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
           <div className="gl-shead">
             <span className="gl-eyebrow">Una versión para cada negocio</span>
             <h2>Mirá cómo se ve por dentro</h2>
-            <p>Elegí tu rubro y mirá la versión de Gesto para vos. Esto es lo que ves al entrar.</p>
+            <p>Elegí tu negocio y mirá tu versión de Gesto por dentro. Esto es lo que ves al entrar.</p>
           </div>
 
           <div
@@ -210,7 +210,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
         <section className="gl-blk gl-wrap gl-reveal">
           <div className="gl-finale">
             <h2>Probá Gesto gratis 14 días</h2>
-            <p>Creá tu cuenta, elegí tu rubro y empezá a cobrar. Sin tarjeta y sin vueltas.</p>
+            <p>Creá tu cuenta, elegí tu versión y empezá a cobrar. Sin tarjeta y sin vueltas.</p>
             <a className="gl-btn gl-btn-fill" style={{ height: 52, padding: '0 30px', fontSize: 17 }} href="/signup">
               Empezá gratis <ArrowRight style={{ height: 19, width: 19 }} strokeWidth={2.4} />
             </a>
