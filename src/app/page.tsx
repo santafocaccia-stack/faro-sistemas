@@ -1,9 +1,16 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { Bricolage_Grotesque, Onest, JetBrains_Mono } from 'next/font/google';
 import { createClient } from '@/lib/supabase/server';
 import { getDolarMep } from '@/lib/dolar';
-import { LandingDemo } from '@/components/landing/landing-demo';
-import { AntesDespues, Pricing, LandingFooter } from '@/components/landing/landing-sections';
+import { LandingClient } from '@/components/landing/landing-client';
+
+/* Tipografía de la landing — distinta del UI de la app (Geist):
+   display con carácter (Bricolage), UI neutra moderna (Onest) y mono de
+   herramienta (JetBrains). Se exponen como CSS vars que consume landing.css. */
+const display = Bricolage_Grotesque({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--gl-display', display: 'swap' });
+const ui = Onest({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--gl-ui', display: 'swap' });
+const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--gl-mono', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Gesto — El sistema de gestión para tu negocio',
@@ -32,11 +39,8 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <LandingDemo />
-      <AntesDespues />
-      <Pricing dolarMep={dolarMep} />
-      <LandingFooter />
-    </main>
+    <div className={`${display.variable} ${ui.variable} ${mono.variable}`}>
+      <LandingClient dolarMep={dolarMep} />
+    </div>
   );
 }

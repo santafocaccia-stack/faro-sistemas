@@ -1,0 +1,339 @@
+'use client';
+
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import {
+  Search, Command, ShoppingCart, ArrowRight, UsersRound, Settings, LogOut, Bell,
+  CalendarDays, Lock, Check, TrendingUp,
+} from 'lucide-react';
+import { navParaRol, POS_HREF } from '@/lib/nav';
+import { planTiene } from '@/lib/planes';
+import { RUBROS, SOBRE_ACENTO, fmtARS, hexToRgba, type RubroDemo } from './landing-data';
+import { LandingPos } from './landing-pos';
+import { AntesDespues, Features, Pricing, LandingFooter } from './landing-sections';
+import './landing.css';
+
+export function LandingClient({ dolarMep }: { dolarMep: number }) {
+  const [rubro, setRubro] = useState<RubroDemo>(RUBROS[0]!);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Reveal on scroll
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const io = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('gl-in');
+            io.unobserve(e.target);
+          }
+        }),
+      { threshold: 0.12 },
+    );
+    root.querySelectorAll('.gl-reveal').forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
+  const accentStyle = {
+    ['--gl-accent']: rubro.acento,
+    ['--gl-soft']: hexToRgba(rubro.acento, 0.14),
+    ['--gl-ink']: SOBRE_ACENTO,
+  } as CSSProperties;
+
+  return (
+    <div className="gl-root" ref={rootRef} style={accentStyle}>
+      <div className="gl-grain" aria-hidden />
+      <div className="gl-glow gl-glow-1" aria-hidden />
+      <div className="gl-glow gl-glow-2" aria-hidden />
+
+      {/* HEADER */}
+      <header className="gl-header">
+        <div className="gl-wrap gl-nav">
+          <div className="gl-brand">
+            <span className="gl-logo">G</span>Gesto
+          </div>
+          <nav className="gl-navlinks">
+            <a href="#producto">Producto</a>
+            <a href="#rubros">Rubros</a>
+            <a href="#precios">Precios</a>
+          </nav>
+          <div className="gl-navcta">
+            <a className="gl-btn gl-btn-ghost" href="/login">Ingresar</a>
+            <a className="gl-btn gl-btn-fill" href="/signup">Empezá gratis</a>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        {/* HERO */}
+        <section className="gl-hero gl-wrap" id="producto">
+          <span className="gl-badge">
+            <span className="gl-dot" />
+            Hecho para PyMEs argentinas · cobrás en pesos al dólar MEP
+          </span>
+          <h1 className="gl-h1">
+            Un sistema. <span className="gl-ink">{rubro.heroWord}</span>
+            <br />
+            Cobrado en segundos.
+          </h1>
+          <p className="gl-sub">{rubro.heroSub}</p>
+          <div className="gl-herocta">
+            <a className="gl-btn gl-btn-fill" style={{ height: 48, padding: '0 24px', fontSize: 15 }} href="/signup">
+              Empezá gratis <ArrowRight style={{ height: 17, width: 17 }} strokeWidth={2.2} />
+            </a>
+            <a className="gl-btn gl-btn-line" style={{ height: 48, padding: '0 24px', fontSize: 15 }} href="#precios">
+              Ver planes
+            </a>
+          </div>
+          <div className="gl-micro">
+            <Check style={{ height: 14, width: 14 }} strokeWidth={2} />
+            14 días gratis · sin tarjeta · cancelás cuando quieras
+          </div>
+
+          {/* SWITCHER */}
+          <div className="gl-switcher" id="rubros">
+            <p className="gl-hint">¿Qué tenés? Elegí tu rubro y mirá cómo se transforma la app 👇</p>
+            <div className="gl-chips">
+              {RUBROS.map((r) => {
+                const on = r.id === rubro.id;
+                return (
+                  <button
+                    key={r.id}
+                    className={`gl-chip${on ? ' gl-on' : ''}`}
+                    style={on ? { background: r.acento } : undefined}
+                    onClick={() => setRubro(r)}
+                  >
+                    <span className="gl-cdot" style={on ? undefined : { background: r.acento }} />
+                    {r.chip}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* APP WINDOW */}
+          <AppWindow rubro={rubro} />
+        </section>
+
+        {/* POS interactivo (comparte rubro) */}
+        <LandingPos rubro={rubro} />
+
+        {/* Secciones presentacionales */}
+        <AntesDespues />
+        <Features />
+        <Pricing dolarMep={dolarMep} />
+
+        {/* CTA final */}
+        <section className="gl-blk gl-wrap gl-reveal">
+          <div className="gl-finale">
+            <h2>
+              Tu negocio, ordenado
+              <br />
+              antes de que cierre la caja de hoy.
+            </h2>
+            <p>Creá tu cuenta, elegí tu rubro y empezá a cobrar. 14 días gratis, sin tarjeta.</p>
+            <a className="gl-btn gl-btn-fill" style={{ height: 50, padding: '0 28px', fontSize: 16 }} href="/signup">
+              Empezá gratis con Gesto <ArrowRight style={{ height: 18, width: 18 }} strokeWidth={2.2} />
+            </a>
+          </div>
+        </section>
+      </main>
+
+      <LandingFooter />
+    </div>
+  );
+}
+
+/* ── Ventana de la app (sidebar real por plan + dashboard del rubro) ──────── */
+function AppWindow({ rubro }: { rubro: RubroDemo }) {
+  const nav = navParaRol(rubro.id, 'owner').primary;
+  const tienePOS = planTiene(rubro.id, 'pos');
+
+  // Animación de barras: arrancan en 0 y suben al cambiar de rubro.
+  const [barsReady, setBarsReady] = useState(false);
+  useEffect(() => {
+    setBarsReady(false);
+    const t = setTimeout(() => setBarsReady(true), 40);
+    return () => clearTimeout(t);
+  }, [rubro.id]);
+
+  const maxChart = Math.max(...rubro.chart);
+  const dias = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+  return (
+    <div className="gl-stage">
+      <div className="gl-window">
+        <div className="gl-chrome">
+          <div className="gl-lights">
+            <i />
+            <i />
+            <i />
+          </div>
+          <div className="gl-url">
+            <Lock style={{ height: 12, width: 12, opacity: 0.6 }} />
+            app.gesto.com.ar/dashboard
+          </div>
+          <div className="gl-live">
+            <span className="gl-dot" />
+            en vivo
+          </div>
+        </div>
+
+        <div className="gl-app">
+          {/* SIDEBAR */}
+          <aside className="gl-side">
+            <div className="gl-sidehead">
+              <span className="gl-logo">G</span>
+              <div className="gl-meta">
+                <div className="gl-tn">{rubro.tenant}</div>
+                <div className="gl-pl">{rubro.planLabel}</div>
+              </div>
+            </div>
+            <div className="gl-search">
+              <Search style={{ height: 14, width: 14 }} strokeWidth={2} />
+              Buscar...
+              <span className="gl-kbd">
+                <Command style={{ height: 10, width: 10, verticalAlign: '-1px' }} />K
+              </span>
+            </div>
+            {tienePOS && (
+              <div className="gl-vender">
+                <ShoppingCart style={{ height: 17, width: 17 }} strokeWidth={2.2} />
+                Vender
+                <ArrowRight className="gl-ar" style={{ height: 14, width: 14 }} strokeWidth={2} />
+              </div>
+            )}
+            <div className="gl-navlist gl-flex" style={tienePOS ? undefined : { paddingTop: 8 }}>
+              {nav.map((item, i) => {
+                const Icon = item.icon;
+                const on = i === 0;
+                return (
+                  <div key={item.href} className={`gl-navitem${on ? ' gl-on' : ''}`}>
+                    <Icon strokeWidth={on ? 2 : 1.8} />
+                    {item.label}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="gl-navsec">Sistema</div>
+            <div className="gl-navlist">
+              <div className="gl-navitem">
+                <UsersRound strokeWidth={1.8} />
+                Equipo
+              </div>
+              <div className="gl-navitem">
+                <Settings strokeWidth={1.8} />
+                Configuración
+              </div>
+            </div>
+            <div className="gl-sidefoot">
+              <div className="gl-avatar">{rubro.tenant.charAt(0)}</div>
+              <div className="gl-uinfo">
+                <div className="gl-un">{rubro.user}</div>
+                <div className="gl-ue">@gesto.app</div>
+              </div>
+              <LogOut style={{ height: 15, width: 15, color: 'var(--gl-dim)', marginLeft: 'auto' }} strokeWidth={1.9} />
+            </div>
+          </aside>
+
+          {/* MAIN */}
+          <div className="gl-main">
+            <div className="gl-topbar">
+              <div>
+                <div className="gl-tt">{rubro.title}</div>
+                <div className="gl-td">Sábado 21 de junio · actualizado recién</div>
+              </div>
+              <div className="gl-actions">
+                <span className="gl-pillbtn">
+                  <CalendarDays style={{ height: 14, width: 14 }} strokeWidth={2} />
+                  Hoy
+                </span>
+                <div className="gl-iconbtn">
+                  <Bell strokeWidth={1.9} />
+                </div>
+              </div>
+            </div>
+            <div className="gl-screen">
+              <div className="gl-kpis">
+                {rubro.kpis.map((k) => (
+                  <div key={k.l} className={`gl-kpi${k.hl ? ' gl-hl' : ''}`}>
+                    <div className="gl-kl">{k.l}</div>
+                    <div className="gl-kv">
+                      <CountUp value={k.v} money={k.money} trigger={rubro.id} />
+                    </div>
+                    <div className={`gl-kt${k.down ? ' gl-down' : ''}`}>
+                      {!k.down && <TrendingUp style={{ height: 12, width: 12 }} strokeWidth={2.2} />}
+                      {k.t}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="gl-panels">
+                <div className="gl-panel">
+                  <div className="gl-ph">
+                    <h4>Ventas de la semana</h4>
+                    <span className="gl-more">últimos 7 días</span>
+                  </div>
+                  <div className="gl-chart">
+                    {rubro.chart.map((v, i) => (
+                      <div key={i} className={`gl-bar${i === rubro.peak ? ' gl-peak' : ''}`}>
+                        <div
+                          className="gl-stick"
+                          style={{ height: barsReady ? `${Math.round((v / maxChart) * 100)}%` : '0%' }}
+                        />
+                        <div className="gl-bl">{dias[i]}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="gl-panel">
+                  <div className="gl-ph">
+                    <h4>{rubro.listTitle}</h4>
+                    <span className="gl-more">ver todo</span>
+                  </div>
+                  <div className="gl-rows">
+                    {rubro.rows.map((x, i) => {
+                      const Icon = x.icon;
+                      return (
+                        <div key={i} className="gl-row">
+                          <div className="gl-ri">
+                            <Icon strokeWidth={2} />
+                          </div>
+                          <div className="gl-rmeta">
+                            <div className="gl-ra">{x.a}</div>
+                            <div className="gl-rb">{x.b}</div>
+                          </div>
+                          <span className={`gl-tag gl-${x.tag[0]}`}>{x.tag[1]}</span>
+                          <span className="gl-rv">{x.v}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Count-up animado para los KPIs. Re-corre al cambiar de rubro. */
+function CountUp({ value, money, trigger }: { value: number; money: boolean; trigger: string }) {
+  const [display, setDisplay] = useState(value);
+  useEffect(() => {
+    let raf = 0;
+    const t0 = performance.now();
+    const dur = 750;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / dur);
+      const eased = 1 - Math.pow(1 - k, 3);
+      setDisplay(value * eased);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value, trigger]);
+  return <>{money ? fmtARS(display) : Math.round(display)}</>;
+}

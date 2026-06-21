@@ -1,19 +1,52 @@
 /**
- * Datos del demo interactivo de la landing, por rubro. Es copy de marketing
- * (curado), no la fuente de verdad del producto — alineado con los rubros de
- * `src/lib/planes.ts`. Importable desde el cliente (sin deps de servidor).
+ * Datos del rediseño de la landing, por rubro. Es copy de marketing (curado),
+ * no la fuente de verdad del producto — alineado con los rubros de
+ * `src/lib/planes.ts` y la navegación real de `src/lib/nav.ts`.
+ * Importable desde el cliente (sin deps de servidor).
  */
+import {
+  ShoppingCart, BookOpen, FileText, Check, MapPin, Landmark, type LucideIcon,
+} from 'lucide-react';
+import type { PlanId } from '@/lib/planes';
+
 export type DemoItem = { nombre: string; precio: number };
 
+export type Kpi = {
+  l: string;     // etiqueta
+  v: number;     // valor numérico (para el count-up)
+  money: boolean;// formatear como $ o como entero
+  t: string;     // texto de tendencia
+  hl?: boolean;  // tarjeta destacada (acento)
+  down?: boolean;// tendencia "negativa" (rojo, sin flecha)
+};
+
+export type Row = {
+  icon: LucideIcon;
+  a: string;                       // título de la fila
+  b: string;                       // subtítulo
+  v: string;                       // valor (ya formateado)
+  tag: [ 'ok' | 'warn' | 'bad', string ];
+};
+
 export type RubroDemo = {
-  id: string;
-  nombre: string; // etiqueta del chip
-  acento: string; // color de acento (hex)
-  eyebrow: string;
-  titulo: string;
-  sub: string;
-  accion: string; // texto del botón de cobro
-  caja: string; // "Caja · Kiosco"
+  id: PlanId;        // coincide con el plan → deriva nav real y si tiene POS
+  chip: string;      // etiqueta del chip
+  acento: string;    // color de acento (hex)
+  heroWord: string;  // palabra que se intercambia en el H1
+  heroSub: string;   // subtítulo del hero
+  tenant: string;    // nombre del negocio demo
+  planLabel: string; // nombre corto del plan (badge del sidebar)
+  user: string;      // usuario demo
+  title: string;     // título de la pantalla activa
+  kpis: Kpi[];
+  chart: number[];   // 7 valores (L..D)
+  peak: number;      // índice de la barra destacada
+  listTitle: string;
+  rows: Row[];
+  // Demo del POS
+  accion: string;     // texto del botón de cobro
+  accionWord: string; // verbo para la prosa ("scan, scan, cobrar")
+  caja: string;       // "Caja · Kiosco"
   items: DemoItem[];
   incluye: string[];
 };
@@ -24,12 +57,32 @@ export const SOBRE_ACENTO = '#1a1408';
 export const RUBROS: RubroDemo[] = [
   {
     id: 'market',
-    nombre: 'Kiosco',
+    chip: 'Kiosco',
     acento: '#ff7518',
-    eyebrow: 'Sistema de gestión para tu negocio',
-    titulo: 'Tu kiosco, cobrado en segundos.',
-    sub: 'Punto de venta con lector de códigos, control de stock y fiado de clientes.',
+    heroWord: 'Tu kiosco.',
+    heroSub:
+      'Punto de venta con lector de códigos, control de stock y fiado de clientes. El mismo Gesto, afilado para el mostrador.',
+    tenant: 'Kiosco Don José',
+    planLabel: 'Market',
+    user: 'donjose',
+    title: 'Inicio',
+    kpis: [
+      { l: 'Vendido hoy', v: 142300, money: true, t: '+18% vs ayer', hl: true },
+      { l: 'Ventas', v: 37, money: false, t: '+6 que ayer' },
+      { l: 'Ticket promedio', v: 3846, money: true, t: '+4%' },
+      { l: 'Fiado por cobrar', v: 28400, money: true, t: '5 clientes', down: true },
+    ],
+    chart: [62, 48, 71, 55, 83, 96, 142],
+    peak: 6,
+    listTitle: 'Últimas ventas',
+    rows: [
+      { icon: ShoppingCart, a: 'Coca 500 + Alfajor + Yerba', b: 'hace 2 min · efectivo', v: '$5.900', tag: ['ok', 'OK'] },
+      { icon: ShoppingCart, a: 'Cigarrillos 20u', b: 'hace 9 min · débito', v: '$2.500', tag: ['ok', 'OK'] },
+      { icon: BookOpen, a: 'Fiado — Marta G.', b: 'hace 21 min · cuenta corriente', v: '$3.200', tag: ['warn', 'Fiado'] },
+      { icon: ShoppingCart, a: 'Agua + Caramelos x10', b: 'hace 34 min · efectivo', v: '$1.100', tag: ['ok', 'OK'] },
+    ],
     accion: 'Cobrar',
+    accionWord: 'cobrar',
     caja: 'Caja · Kiosco',
     items: [
       { nombre: 'Alfajor Guaymallén', precio: 900 },
@@ -43,12 +96,32 @@ export const RUBROS: RubroDemo[] = [
   },
   {
     id: 'balanza',
-    nombre: 'Carnicería',
+    chip: 'Carnicería',
     acento: '#c763cf',
-    eyebrow: 'Sistema de gestión para tu negocio',
-    titulo: 'Tu carnicería, vendida al peso.',
-    sub: 'Balanza integrada, precio por kilo y cuenta corriente de clientes.',
+    heroWord: 'Tu carnicería.',
+    heroSub:
+      'Venta al peso con balanza integrada, precio por kilo y cuenta corriente. Pesás, cobrás y queda registrado solo.',
+    tenant: 'Carnicería El Buen Corte',
+    planLabel: 'Balanza',
+    user: 'elbuencorte',
+    title: 'Inicio',
+    kpis: [
+      { l: 'Vendido hoy', v: 389500, money: true, t: '+12% vs ayer', hl: true },
+      { l: 'Ventas', v: 52, money: false, t: '+9 que ayer' },
+      { l: 'Kilos vendidos', v: 148, money: false, t: 'kg hoy' },
+      { l: 'Fiado por cobrar', v: 64200, money: true, t: '8 clientes', down: true },
+    ],
+    chart: [210, 180, 260, 240, 310, 355, 389],
+    peak: 6,
+    listTitle: 'Últimas ventas',
+    rows: [
+      { icon: ShoppingCart, a: 'Asado 2,4kg', b: 'hace 1 min · $8.800/kg', v: '$21.120', tag: ['ok', 'OK'] },
+      { icon: ShoppingCart, a: 'Pollo 1,8kg', b: 'hace 7 min · efectivo', v: '$7.560', tag: ['ok', 'OK'] },
+      { icon: BookOpen, a: 'Fiado — Don Raúl', b: 'hace 15 min · cuenta corriente', v: '$14.300', tag: ['warn', 'Fiado'] },
+      { icon: ShoppingCart, a: 'Milanesa 1,1kg', b: 'hace 26 min · débito', v: '$9.900', tag: ['ok', 'OK'] },
+    ],
     accion: 'Cobrar',
+    accionWord: 'cobrar',
     caja: 'Caja · Carnicería',
     items: [
       { nombre: 'Bola de lomo /kg', precio: 9500 },
@@ -62,12 +135,32 @@ export const RUBROS: RubroDemo[] = [
   },
   {
     id: 'servicios',
-    nombre: 'Servicios',
+    chip: 'Servicios',
     acento: '#5b8ce0',
-    eyebrow: 'Sistema de gestión para tu negocio',
-    titulo: 'Tus servicios, presupuestados al toque.',
-    sub: 'Presupuestos en PDF, seguimiento de clientes y registro de cobros.',
+    heroWord: 'Tus servicios.',
+    heroSub:
+      'Presupuestos en PDF, agenda de trabajos y seguimiento de cobros. Mandás el presupuesto por WhatsApp y queda todo registrado.',
+    tenant: 'Frío Sur Climatización',
+    planLabel: 'Servicios',
+    user: 'friosur',
+    title: 'Inicio',
+    kpis: [
+      { l: 'Cobrado este mes', v: 1240000, money: true, t: '+22% vs mayo', hl: true },
+      { l: 'Trabajos del mes', v: 18, money: false, t: '+3 que mayo' },
+      { l: 'Presupuestos abiertos', v: 7, money: false, t: 'esperando OK' },
+      { l: 'Por cobrar', v: 310000, money: true, t: '4 trabajos', down: true },
+    ],
+    chart: [180, 220, 160, 290, 240, 310, 380],
+    peak: 6,
+    listTitle: 'Presupuestos recientes',
+    rows: [
+      { icon: FileText, a: 'Instalación split 3000f', b: 'Familia Pérez · hoy', v: '$185.000', tag: ['warn', 'Enviado'] },
+      { icon: Check, a: 'Service A/A — oficina', b: 'Estudio Lemos · ayer', v: '$48.000', tag: ['ok', 'Aprobado'] },
+      { icon: FileText, a: 'Cambio de compresor', b: 'Bar La Esquina · ayer', v: '$92.000', tag: ['warn', 'Enviado'] },
+      { icon: Check, a: 'Mano de obra + materiales', b: 'Sra. Díaz · 2 días', v: '$31.000', tag: ['ok', 'Cobrado'] },
+    ],
     accion: 'Armar presupuesto',
+    accionWord: 'presupuestar',
     caja: 'Presupuesto · Servicios',
     items: [
       { nombre: 'Mano de obra', precio: 25000 },
@@ -77,16 +170,36 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Service A/A', precio: 18000 },
       { nombre: 'Materiales', precio: 6000 },
     ],
-    incluye: ['Presupuestos en PDF', 'Plantillas de servicio', 'Clientes', 'Historial de cobros'],
+    incluye: ['Presupuestos en PDF', 'Plantillas de servicio', 'Agenda de trabajos', 'Historial de cobros'],
   },
   {
     id: 'atmosfericos',
-    nombre: 'Atmosféricos',
+    chip: 'Atmosféricos',
     acento: '#1fb4c9',
-    eyebrow: 'Sistema de gestión para tu negocio',
-    titulo: 'Tus pozos, en ruta y al día.',
-    sub: 'Pedidos del día, ruta optimizada en Google Maps y cobros por cliente.',
+    heroWord: 'Tu camión.',
+    heroSub:
+      'Pedidos del día, ruta optimizada en Google Maps y cobros por cliente. Ordenás la jornada antes de salir del galpón.',
+    tenant: 'Atmosféricos del Litoral',
+    planLabel: 'Atmosféricos',
+    user: 'litoral',
+    title: 'Pedidos del día',
+    kpis: [
+      { l: 'Pedidos de hoy', v: 9, money: false, t: '2 urgentes', hl: true },
+      { l: 'En ruta', v: 3, money: false, t: 'camión en viaje' },
+      { l: 'Cobrado hoy', v: 432000, money: true, t: '+15% vs ayer' },
+      { l: 'Por cobrar', v: 180000, money: true, t: '3 clientes', down: true },
+    ],
+    chart: [5, 7, 4, 8, 6, 9, 9],
+    peak: 6,
+    listTitle: 'Ruta de hoy',
+    rows: [
+      { icon: MapPin, a: 'Destape pozo — Av. Mitre 1240', b: '09:30 · próxima parada', v: '$35.000', tag: ['warn', 'En ruta'] },
+      { icon: MapPin, a: 'Cámara séptica — B° Norte', b: '11:00 · agendado', v: '$55.000', tag: ['ok', 'Pendiente'] },
+      { icon: MapPin, a: 'Urgencia 24h — Ruta 11 km4', b: 'hecho 08:10', v: '$60.000', tag: ['ok', 'Cobrado'] },
+      { icon: MapPin, a: 'Pozo ciego — Las Lomas', b: '14:30 · agendado', v: '$40.000', tag: ['ok', 'Pendiente'] },
+    ],
     accion: 'Agendar pedido',
+    accionWord: 'agendar',
     caja: 'Pedidos · Atmosféricos',
     items: [
       { nombre: 'Destape de pozo', precio: 35000 },
@@ -96,16 +209,36 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Urgencia 24h', precio: 60000 },
       { nombre: 'Visita', precio: 15000 },
     ],
-    incluye: ['Pedidos del día', 'Ruta en Google Maps', 'Historial por cliente', 'Cobros'],
+    incluye: ['Pedidos del día', 'Ruta en Google Maps', 'Historial por cliente', 'Cobros por cliente'],
   },
   {
     id: 'prestamista',
-    nombre: 'Préstamos',
+    chip: 'Préstamos',
     acento: '#25a87d',
-    eyebrow: 'Sistema de gestión para tu negocio',
-    titulo: 'Tu cartera de créditos, ordenada.',
-    sub: 'Cuotas automáticas, cálculo de mora y total prestado, a cobrar y en mora.',
+    heroWord: 'Tu cartera.',
+    heroSub:
+      'Cronograma de cuotas, cálculo de mora y total prestado, a cobrar y en mora. Sabés a quién cobrar hoy y cuánto.',
+    tenant: 'Créditos Aurora',
+    planLabel: 'Préstamos',
+    user: 'aurora',
+    title: 'Inicio',
+    kpis: [
+      { l: 'Cartera activa', v: 4850000, money: true, t: '64 créditos', hl: true },
+      { l: 'A cobrar hoy', v: 96000, money: true, t: '11 cuotas' },
+      { l: 'En mora', v: 142000, money: true, t: '6 clientes', down: true },
+      { l: 'Cobrado este mes', v: 1180000, money: true, t: '+9% vs mayo' },
+    ],
+    chart: [180, 210, 240, 260, 290, 330, 118],
+    peak: 5,
+    listTitle: 'Cuotas de hoy',
+    rows: [
+      { icon: Landmark, a: 'Cuota 4/12 — Gómez', b: 'vence hoy · semanal', v: '$12.000', tag: ['warn', 'Hoy'] },
+      { icon: Landmark, a: 'Cuota 8/10 — Ferreyra', b: 'vence hoy · semanal', v: '$8.500', tag: ['warn', 'Hoy'] },
+      { icon: Landmark, a: 'Cuota 2/6 — Sosa', b: 'atrasada 4 días', v: '$9.000', tag: ['bad', 'Mora'] },
+      { icon: Check, a: 'Cuota 5/12 — Ibáñez', b: 'pagada hoy 10:20', v: '$11.000', tag: ['ok', 'Pagada'] },
+    ],
     accion: 'Registrar',
+    accionWord: 'registrar',
     caja: 'Cartera · Préstamos',
     items: [
       { nombre: 'Préstamo nuevo', precio: 100000 },
@@ -115,9 +248,19 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Interés mensual', precio: 9000 },
       { nombre: 'Mora', precio: 3000 },
     ],
-    incluye: ['Cronograma de cuotas', 'Cálculo de mora', 'Cartera total', 'Pagos'],
+    incluye: ['Cronograma de cuotas', 'Cálculo de mora', 'Cartera total', 'Registro de pagos'],
   },
 ];
 
 export const fmtARS = (n: number) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Math.round(n));
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(
+    Math.round(n),
+  );
+
+/** rgba con alpha a partir de un hex #rrggbb (para los halos de acento). */
+export function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}

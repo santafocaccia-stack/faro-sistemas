@@ -24,6 +24,16 @@ Ver `docs/context/_estado-git.md` (lo regenera el hook automáticamente — no d
 Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
 
 ## Próximo paso sugerido
+- **Landing pública v2 — REDISEÑO HECHO** (2026-06-21, tsc/dev verdes). Concepto
+  "el producto es el héroe": ventana de app realista que se transforma entera por
+  rubro (sidebar+KPIs+pantalla), POS interactivo, antes/después, bento, pricing al MEP.
+  Tema "Brasas" reusando tokens OKLCH reales; tipografía nueva Bricolage Grotesque +
+  Onest + JetBrains Mono (via `next/font`, vars `--gl-*`). Archivos en
+  `src/components/landing/`: `landing-client.tsx` (estado de rubro + hero + ventana),
+  `landing-pos.tsx`, `landing-sections.tsx`, `landing-data.ts`, `landing.css`; monta
+  desde `src/app/page.tsx`. Nav real derivada de `navParaRol`/`planTiene`, pricing de
+  `PLANES_ARRAY`. **Falta**: QA visual en navegador (capturas), responsive fino, deploy.
+  Mockup HTML autónomo de referencia en `C:\Users\Tomi\Documents\Claude Code\gesto-landing.html`.
 - **Precios vivos** endurecido tras revisión (flag server-side, Zod, rango de margen,
   confirm). Ver `docs/context/precios.md`. Falta: QA en vivo (los 3 planes) y decidir
   si se expone como acción destacada en Productos. Quedan 🟡 menores anotados.
