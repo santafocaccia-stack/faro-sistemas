@@ -415,7 +415,7 @@
 
 @media (max-width: 920px) {
   .gl-sub-br { display: none; }
-  .gl-rubros { grid-template-columns: 1fr 1fr; }
+  .gl-rubros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gl-scangrid { grid-template-columns: 1fr; gap: 40px; justify-items: center; text-align: center; }
   .gl-scancopy { display: flex; flex-direction: column; align-items: center; }
   .gl-scanlist { text-align: left; }
@@ -432,6 +432,10 @@
   .gl-pricegrid { grid-template-columns: 1fr; }
   .gl-window { transform: none; }
   .gl-prodgrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .gl-rubros { grid-template-columns: 1fr; }
+  .gl-wrap { padding-left: 20px; padding-right: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .gl-reveal { opacity: 1; transform: none; transition: none; }

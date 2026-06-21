@@ -146,9 +146,9 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
         {/* POR DENTRO — switcher + ventana de app (acento por rubro, scopeado) */}
         <section className="gl-blk gl-wrap gl-reveal" id="rubros" style={accentStyle}>
           <div className="gl-shead">
-            <span className="gl-eyebrow">Una app, tu rubro</span>
+            <span className="gl-eyebrow">Una versión para cada negocio</span>
             <h2>Mirá cómo se ve por dentro</h2>
-            <p>Elegí lo que tenés y la app se acomoda a tu negocio. Esto es lo que ves al entrar.</p>
+            <p>Elegí tu rubro y mirá la versión de Gesto para vos. Esto es lo que ves al entrar.</p>
           </div>
 
           <div
