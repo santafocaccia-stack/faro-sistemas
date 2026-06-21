@@ -24,16 +24,24 @@ Ver `docs/context/_estado-git.md` (lo regenera el hook automáticamente — no d
 Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
 
 ## Próximo paso sugerido
-- **Landing pública v2 — REDISEÑO HECHO** (2026-06-21, tsc/dev verdes). Concepto
-  "el producto es el héroe": ventana de app realista que se transforma entera por
-  rubro (sidebar+KPIs+pantalla), POS interactivo, antes/después, bento, pricing al MEP.
-  Tema "Brasas" reusando tokens OKLCH reales; tipografía nueva Bricolage Grotesque +
-  Onest + JetBrains Mono (via `next/font`, vars `--gl-*`). Archivos en
-  `src/components/landing/`: `landing-client.tsx` (estado de rubro + hero + ventana),
-  `landing-pos.tsx`, `landing-sections.tsx`, `landing-data.ts`, `landing.css`; monta
-  desde `src/app/page.tsx`. Nav real derivada de `navParaRol`/`planTiene`, pricing de
-  `PLANES_ARRAY`. **Falta**: QA visual en navegador (capturas), responsive fino, deploy.
+- **Landing pública v3 "de oficio" — LIVE y pulida** (2026-06-21, tsc/build verdes, QA
+  visual con Playwright). Identidad de cartel de comercio sobre el tema "Brasas":
+  tipografía Anton (titulares-letrero) + Hanken Grotesk + JetBrains Mono (via `next/font`,
+  vars `--gl-*`); sellos de goma, subrayado pintado, grano + viñeta, franja marquee.
+  Secciones: hero con titular fijo ("Tu negocio al alcance de tu mano") + entrada
+  animada; "por dentro" con **switcher de rubro en tarjetas auto-rotativo** (5s, barra
+  de progreso, pausa en hover) que transforma la ventana de app (nav real de
+  `navParaRol`/`planTiene`, KPIs); **sección "desde el celular"** con **foto real**
+  (`public/landing/comerciante-escaneando.png`, generada con Higgsfield/nano_banana_pro)
+  + mockup de celular Gesto flotando; **demo POS que imprime un ticket de papel** al
+  cobrar; antes/después; bento de beneficios; pricing de `PLANES_ARRAY` al MEP; **FAQ**
+  (acordeón); CTA fijo en mobile; scroll suave. Copy reescrito: voz simple/directa,
+  "cuenta corriente" (no "fiado"), sin Carnicería/Food (próximamente). Archivos en
+  `src/components/landing/`: `landing-client.tsx`, `landing-scan.tsx`, `landing-pos.tsx`,
+  `landing-sections.tsx`, `landing-data.ts`, `landing.css`; monta desde `src/app/page.tsx`.
   Mockup HTML autónomo de referencia en `C:\Users\Tomi\Documents\Claude Code\gesto-landing.html`.
+  **Posibles mejoras futuras** (no pedidas aún): testimonios reales, métricas de prueba
+  social honestas, más fotos por rubro, video corto del producto.
 - **Precios vivos** endurecido tras revisión (flag server-side, Zod, rango de margen,
   confirm). Ver `docs/context/precios.md`. Falta: QA en vivo (los 3 planes) y decidir
   si se expone como acción destacada en Productos. Quedan 🟡 menores anotados.
