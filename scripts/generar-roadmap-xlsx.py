@@ -106,7 +106,7 @@ TAREAS = [
     # Lanzamiento (bloqueantes)
     ("Lanzamiento (bloqueante)", "Dominio propio (ej: usegesto.app)", "Alta", "Pendiente", "URL actual no es presentable"),
     ("Lanzamiento (bloqueante)", "SMTP con Resend (invitación, bienvenida, reset con branding)", "Alta", "Pendiente", "Cron listo; falta RESEND_API_KEY en Vercel (rotar la vieja)"),
-    ("Lanzamiento (bloqueante)", "Landing page pública (hoy / redirige al dashboard)", "Alta", "Pendiente", ""),
+    ("Lanzamiento (bloqueante)", "Landing page pública (rubro-adaptativa + demo en vivo)", "—", "Hecho", "/ pública (redirige a dashboard si hay sesión); demo POS interactivo por rubro + antes/después + pricing al MEP"),
     ("Lanzamiento (bloqueante)", "PWA manifest + iconos (192/512, apple-touch-icon)", "Alta", "Pendiente", "POS se usa en tablet/celular"),
     ("Lanzamiento (bloqueante)", "Términos de servicio + Política de privacidad", "Alta", "Pendiente", "Requerido para cobrar con MP / Ley 25.326"),
 
