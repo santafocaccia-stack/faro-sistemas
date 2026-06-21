@@ -1,5 +1,5 @@
 import {
-  Check, X, NotebookPen, Sparkles, ShoppingCart, ScanLine, BookOpen, BarChart3, FileText, Users,
+  Check, X, NotebookPen, Sparkles, ShoppingCart, BookOpen, Package, BarChart3, FileText, Users,
 } from 'lucide-react';
 import { PLANES_ARRAY } from '@/lib/planes';
 import { fmtARS } from './landing-data';
@@ -7,33 +7,33 @@ import { fmtARS } from './landing-data';
 /* ── Antes / Después ─────────────────────────────────────────────────────── */
 export function AntesDespues() {
   const sin = [
-    'Cuaderno, calculadora y a sumar a mano',
-    'El fiado en papelitos que se pierden',
-    '"¿Cuánto gané?" — ni idea hasta fin de mes',
-    'El stock lo sabés cuando te quedás sin nada',
+    'El cuaderno, la calculadora y a sumar a mano',
+    'El fiado anotado en papelitos que se pierden',
+    'No sabés cuánto te queda hasta fin de mes',
+    'Te enterás que falta stock cuando ya no hay',
   ];
   const con = [
-    'Cobrás con código de barras o por kilo',
-    'El fiado de cada cliente, siempre al día',
-    'Cuánto vendiste y ganaste, en tiempo real',
-    'Stock que se descuenta solo en cada venta',
+    'Cobrás y la venta queda anotada sola',
+    'El fiado de cada cliente, siempre claro',
+    'Sabés cuánto vendiste y cuánto te queda, en el momento',
+    'El stock se descuenta solo en cada venta',
   ];
   return (
     <section className="gl-blk gl-wrap gl-reveal">
       <div className="gl-shead">
-        <span className="gl-eyebrow">El antes y el después</span>
+        <span className="gl-eyebrow">Antes y después</span>
         <h2>¿Cuánto vendiste hoy?</h2>
-        <p>La misma pregunta, dos mundos. Gesto cambia el segundo.</p>
+        <p>La misma pregunta, dos respuestas. Con Gesto la sabés sin pensar.</p>
       </div>
       <div className="gl-adgrid">
         <div className="gl-ad gl-bad">
           <span className="gl-adtag">
-            <NotebookPen style={{ height: 14, width: 14 }} /> Sin Gesto
+            <NotebookPen style={{ height: 17, width: 17 }} /> Sin Gesto
           </span>
           <ul>
             {sin.map((t) => (
               <li key={t}>
-                <X strokeWidth={2} />
+                <X strokeWidth={2.4} />
                 <span>{t}</span>
               </li>
             ))}
@@ -41,7 +41,7 @@ export function AntesDespues() {
         </div>
         <div className="gl-ad gl-good">
           <span className="gl-adtag">
-            <Sparkles style={{ height: 14, width: 14 }} /> Con Gesto
+            <Sparkles style={{ height: 17, width: 17 }} /> Con Gesto
           </span>
           <div className="gl-admoney">
             <span className="gl-m">{fmtARS(142300)}</span>
@@ -50,7 +50,7 @@ export function AntesDespues() {
           <ul>
             {con.map((t) => (
               <li key={t}>
-                <Check strokeWidth={2} />
+                <Check strokeWidth={2.4} />
                 <span>{t}</span>
               </li>
             ))}
@@ -61,14 +61,14 @@ export function AntesDespues() {
   );
 }
 
-/* ── Features (bento) ────────────────────────────────────────────────────── */
+/* ── Features (bento) — ventajas, no funciones técnicas ──────────────────── */
 const FEATS = [
-  { Icon: ShoppingCart, h: 'Punto de venta veloz', p: 'Cobrá con lector de códigos o por kilo. Carrito que recalcula precios por canal mayorista o minorista.', span: true },
-  { Icon: ScanLine, h: 'Stock que se cuida solo', p: 'Cada venta descuenta el stock al instante. Te avisa antes de que te quedes sin nada.' },
-  { Icon: BookOpen, h: 'Fiado ordenado', p: 'La cuenta corriente de cada cliente, siempre al día. Nada de papelitos sueltos.' },
-  { Icon: BarChart3, h: 'Reportes en vivo', p: 'Cuánto vendiste y ganaste hoy, esta semana, este mes. Sin esperar al contador.' },
-  { Icon: FileText, h: 'Presupuestos en PDF', p: 'Armás el presupuesto y lo mandás por WhatsApp en segundos, con tu marca.' },
-  { Icon: Users, h: 'Tu equipo, con permisos', p: 'El empleado opera la caja; vos ves los números. Cada quien con su acceso.' },
+  { Icon: ShoppingCart, h: 'Cobrá sin hacer esperar', p: 'Escaneás el producto y listo. La cola se mueve y nadie se va sin comprar.', span: true },
+  { Icon: BookOpen, h: 'Que no se te escape el fiado', p: 'La cuenta de cada cliente, siempre clara. Quién te debe y cuánto, sin papelitos.' },
+  { Icon: Package, h: 'Sabé qué te queda', p: 'El stock se descuenta solo en cada venta. Te avisa antes de que te quedes sin nada.' },
+  { Icon: BarChart3, h: 'Mirá cómo va tu negocio', p: 'Cuánto vendiste y cuánto ganaste, hoy o este mes. Sin esperar a nadie.' },
+  { Icon: FileText, h: 'Presupuestos en un toque', p: 'Lo armás, lo mandás por WhatsApp y queda guardado. Con tu nombre.' },
+  { Icon: Users, h: 'Tu empleado atiende, vos mirás', p: 'Cada uno con su acceso: el que atiende usa la caja, vos ves los números.' },
 ];
 
 export function Features() {
@@ -76,8 +76,8 @@ export function Features() {
     <section className="gl-blk gl-wrap gl-reveal">
       <div className="gl-shead">
         <span className="gl-eyebrow">Todo en una</span>
-        <h2>Las herramientas del negocio, juntas</h2>
-        <p>Sin planillas sueltas ni cinco apps distintas. Cada función habla con las demás.</p>
+        <h2>Lo que tu negocio necesita, junto</h2>
+        <p>Sin planillas sueltas ni cinco apps distintas. Una sola, y desde el celular.</p>
       </div>
       <div className="gl-bento">
         {FEATS.map(({ Icon, h, p, span }) => (
@@ -100,8 +100,8 @@ export function Pricing({ dolarMep }: { dolarMep: number }) {
     <section id="precios" className="gl-blk gl-wrap gl-reveal">
       <div className="gl-shead">
         <span className="gl-eyebrow">Precios</span>
-        <h2>Un plan para tu rubro</h2>
-        <p>Precios en dólares para no licuarse con la inflación. Pagás en pesos al dólar MEP del día.</p>
+        <h2>Un plan para lo tuyo</h2>
+        <p>Precios en dólares para que no se los coma la inflación. Pagás en pesos, al dólar MEP del día.</p>
       </div>
       <div className="gl-pricegrid">
         {PLANES_ARRAY.map((plan) => {
@@ -117,7 +117,7 @@ export function Pricing({ dolarMep }: { dolarMep: number }) {
                   <span className="gl-pdot" style={{ background: plan.color }} />
                   {plan.nombre.replace('Gesto ', '')}
                 </h3>
-                {plan.proximamente && <span className="gl-soon">Próximamente</span>}
+                {plan.proximamente && <span className="gl-soon">Pronto</span>}
               </div>
               <div className="gl-pd">{plan.descripcion}</div>
               <div className="gl-pprice">
@@ -159,10 +159,10 @@ export function LandingFooter() {
     <footer className="gl-footer">
       <div className="gl-wrap gl-footin">
         <div className="gl-fb">
-          <span className="gl-logo" style={{ height: 28, width: 28, fontSize: 14 }}>
+          <span className="gl-logo" style={{ height: 30, width: 30, fontSize: 16 }}>
             G
           </span>
-          Gesto · Gestión comercial para PyMEs argentinas
+          Gesto · El sistema para tu negocio
         </div>
         <div className="gl-footlinks">
           <a className="gl-link" href="/login">Ingresar</a>

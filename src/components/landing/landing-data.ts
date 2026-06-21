@@ -61,7 +61,7 @@ export const RUBROS: RubroDemo[] = [
     acento: '#ff7518',
     heroWord: 'Tu kiosco.',
     heroSub:
-      'Punto de venta con lector de códigos, control de stock y fiado de clientes. El mismo Gesto, afilado para el mostrador.',
+      'Cobrás con el escáner, llevás el stock y el fiado al día, y ves cuánto vendiste. Desde el mostrador o el celular.',
     tenant: 'Kiosco Don José',
     planLabel: 'Market',
     user: 'donjose',
@@ -92,7 +92,7 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Caramelos x10', precio: 300 },
       { nombre: 'Agua 500ml', precio: 800 },
     ],
-    incluye: ['Lector de códigos', 'Stock en tiempo real', 'Fiado de clientes', 'Reportes de ventas'],
+    incluye: ['Escaneás y cobrás', 'Stock siempre al día', 'Fiado de cada cliente', 'Cuánto vendiste hoy'],
   },
   {
     id: 'balanza',
@@ -100,7 +100,7 @@ export const RUBROS: RubroDemo[] = [
     acento: '#c763cf',
     heroWord: 'Tu carnicería.',
     heroSub:
-      'Venta al peso con balanza integrada, precio por kilo y cuenta corriente. Pesás, cobrás y queda registrado solo.',
+      'Vendés al peso con la balanza, anotás el fiado y sabés cuánto entró. Sin cuaderno ni cuentas a mano.',
     tenant: 'Carnicería El Buen Corte',
     planLabel: 'Balanza',
     user: 'elbuencorte',
@@ -131,7 +131,7 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Milanesa /kg', precio: 9000 },
       { nombre: 'Chorizo /kg', precio: 6500 },
     ],
-    incluye: ['Venta por kilogramo', 'Balanza digital', 'Cuenta corriente', 'Reportes'],
+    incluye: ['Vendés por kilo', 'Con balanza digital', 'Fiado al día', 'Cuánto entró hoy'],
   },
   {
     id: 'servicios',
@@ -139,7 +139,7 @@ export const RUBROS: RubroDemo[] = [
     acento: '#5b8ce0',
     heroWord: 'Tus servicios.',
     heroSub:
-      'Presupuestos en PDF, agenda de trabajos y seguimiento de cobros. Mandás el presupuesto por WhatsApp y queda todo registrado.',
+      'Pasás presupuestos en un toque y los mandás por WhatsApp. Llevás la agenda y los cobros de cada cliente.',
     tenant: 'Frío Sur Climatización',
     planLabel: 'Servicios',
     user: 'friosur',
@@ -170,7 +170,7 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Service A/A', precio: 18000 },
       { nombre: 'Materiales', precio: 6000 },
     ],
-    incluye: ['Presupuestos en PDF', 'Plantillas de servicio', 'Agenda de trabajos', 'Historial de cobros'],
+    incluye: ['Presupuestos por WhatsApp', 'Agenda de trabajos', 'Tus clientes ordenados', 'Lo que te deben'],
   },
   {
     id: 'atmosfericos',
@@ -178,7 +178,7 @@ export const RUBROS: RubroDemo[] = [
     acento: '#1fb4c9',
     heroWord: 'Tu camión.',
     heroSub:
-      'Pedidos del día, ruta optimizada en Google Maps y cobros por cliente. Ordenás la jornada antes de salir del galpón.',
+      'Organizás los pedidos del día, salís con la ruta lista y registrás cada cobro. Todo el camión, ordenado.',
     tenant: 'Atmosféricos del Litoral',
     planLabel: 'Atmosféricos',
     user: 'litoral',
@@ -209,7 +209,7 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Urgencia 24h', precio: 60000 },
       { nombre: 'Visita', precio: 15000 },
     ],
-    incluye: ['Pedidos del día', 'Ruta en Google Maps', 'Historial por cliente', 'Cobros por cliente'],
+    incluye: ['Pedidos del día', 'Ruta en el mapa', 'Historial de cada cliente', 'Cobros al día'],
   },
   {
     id: 'prestamista',
@@ -217,7 +217,7 @@ export const RUBROS: RubroDemo[] = [
     acento: '#25a87d',
     heroWord: 'Tu cartera.',
     heroSub:
-      'Cronograma de cuotas, cálculo de mora y total prestado, a cobrar y en mora. Sabés a quién cobrar hoy y cuánto.',
+      'Llevás cada préstamo, las cuotas y lo que está en mora. Sabés a quién cobrarle hoy y cuánto te deben.',
     tenant: 'Créditos Aurora',
     planLabel: 'Préstamos',
     user: 'aurora',
@@ -248,7 +248,7 @@ export const RUBROS: RubroDemo[] = [
       { nombre: 'Interés mensual', precio: 9000 },
       { nombre: 'Mora', precio: 3000 },
     ],
-    incluye: ['Cronograma de cuotas', 'Cálculo de mora', 'Cartera total', 'Registro de pagos'],
+    incluye: ['Cuotas automáticas', 'Quién está en mora', 'Tu cartera completa', 'Pagos al día'],
   },
 ];
 

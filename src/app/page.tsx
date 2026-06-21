@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { Bricolage_Grotesque, Onest, JetBrains_Mono } from 'next/font/google';
+import { Anton, Hanken_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { createClient } from '@/lib/supabase/server';
 import { getDolarMep } from '@/lib/dolar';
 import { LandingClient } from '@/components/landing/landing-client';
 
-/* Tipografía de la landing — distinta del UI de la app (Geist):
-   display con carácter (Bricolage), UI neutra moderna (Onest) y mono de
-   herramienta (JetBrains). Se exponen como CSS vars que consume landing.css. */
-const display = Bricolage_Grotesque({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--gl-display', display: 'swap' });
-const ui = Onest({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--gl-ui', display: 'swap' });
+/* Tipografía de la landing — identidad de cartel / de oficio, distinta del
+   UI de la app (Geist): Anton para titulares-letrero de impacto, Hanken
+   Grotesk para texto/UI y JetBrains Mono para sellos y datos. Se exponen
+   como CSS vars que consume landing.css. */
+const display = Anton({ subsets: ['latin'], weight: '400', variable: '--gl-display', display: 'swap' });
+const ui = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], variable: '--gl-ui', display: 'swap' });
 const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--gl-mono', display: 'swap' });
 
 export const metadata: Metadata = {

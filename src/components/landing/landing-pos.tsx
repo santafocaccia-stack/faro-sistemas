@@ -40,11 +40,11 @@ export function LandingPos({ rubro }: { rubro: RubroDemo }) {
   return (
     <section className="gl-blk gl-wrap gl-reveal">
       <div className="gl-shead">
-        <span className="gl-eyebrow">El mostrador</span>
-        <h2>Cobrá una venta sin levantar la vista</h2>
+        <span className="gl-eyebrow">Probalo vos mismo</span>
+        <h2>Mirá lo rápido que es</h2>
         <p>
-          Tocá los productos y mirá cómo se arma el ticket. En el local real lo hacés con el lector de códigos: scan,
-          scan, <em>{rubro.accionWord}</em>.
+          Tocá los productos y armá el ticket. En tu local lo hacés con el escáner: pasás el producto y{' '}
+          <em>{rubro.accionWord}</em>.
         </p>
       </div>
 
