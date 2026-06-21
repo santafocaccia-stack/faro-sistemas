@@ -9,6 +9,7 @@ import { navParaRol } from '@/lib/nav';
 import { planTiene } from '@/lib/planes';
 import { RUBROS, SOBRE_ACENTO, fmtARS, hexToRgba, type RubroDemo } from './landing-data';
 import { LandingPos } from './landing-pos';
+import { ScanShowcase } from './landing-scan';
 import { AntesDespues, Features, Pricing, LandingFooter } from './landing-sections';
 import './landing.css';
 
@@ -16,7 +17,27 @@ const MARQUEE = ['Vendé', 'Cobrá', 'Cuenta corriente al día', 'Mirá tus núm
 
 export function LandingClient({ dolarMep }: { dolarMep: number }) {
   const [rubro, setRubro] = useState<RubroDemo>(RUBROS[0]!);
+  const [auto, setAuto] = useState(true);
+  const [hovering, setHovering] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Auto-rotación del switcher: muestra cada rubro solo, hasta que el usuario
+  // elige uno (click) o mientras pasa el mouse por encima del selector.
+  useEffect(() => {
+    if (!auto || hovering) return;
+    const id = setInterval(() => {
+      setRubro((cur) => {
+        const i = RUBROS.findIndex((r) => r.id === cur.id);
+        return RUBROS[(i + 1) % RUBROS.length]!;
+      });
+    }, 5000);
+    return () => clearInterval(id);
+  }, [auto, hovering]);
+
+  function elegir(r: RubroDemo) {
+    setAuto(false);
+    setRubro(r);
+  }
 
   // Reveal on scroll
   useEffect(() => {
@@ -121,7 +142,11 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
             <p>Elegí lo que tenés y la app se acomoda a tu negocio. Esto es lo que ves al entrar.</p>
           </div>
 
-          <div className="gl-rubros">
+          <div
+            className="gl-rubros"
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => setHovering(false)}
+          >
             {RUBROS.map((r) => {
               const on = r.id === rubro.id;
               const RIcon = r.chipIcon;
@@ -130,7 +155,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
                   key={r.id}
                   className={`gl-rubro${on ? ' gl-on' : ''}`}
                   style={{ ['--r']: r.acento } as CSSProperties}
-                  onClick={() => setRubro(r)}
+                  onClick={() => elegir(r)}
                   aria-pressed={on}
                 >
                   <span className="gl-rubro-ic">
@@ -143,6 +168,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
                   <span className="gl-rubro-check">
                     <Check strokeWidth={3} />
                   </span>
+                  {on && auto && !hovering && <span key={r.id} className="gl-rubro-prog" />}
                 </button>
               );
             })}
@@ -150,6 +176,9 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
 
           <AppWindow rubro={rubro} />
         </section>
+
+        {/* Desde el celular — mockup de escaneo */}
+        <ScanShowcase />
 
         {/* POS interactivo (comparte rubro) */}
         <LandingPos rubro={rubro} />
