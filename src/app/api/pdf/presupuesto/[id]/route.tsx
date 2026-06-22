@@ -6,7 +6,7 @@ import { PresupuestoPDF } from '@/components/pdf-document';
 import { requireSession } from '@/server/auth/session';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   // Auth explícita: requireSession() puede lanzar un redirect() que en
@@ -31,6 +31,10 @@ export async function GET(
 
     const { pres, lineas, clienteDisplay } = data;
 
+    // ?recibo=1 → genera el comprobante de pago de un presupuesto ya cobrado
+    // (mismo registro, sin duplicar el ingreso).
+    const esRecibo = req.nextUrl.searchParams.get('recibo') === '1';
+
     const buffer = await renderToBuffer(
       <PresupuestoPDF
         numero={pres.numero}
@@ -51,12 +55,12 @@ export async function GET(
         negocioCuit={tenant?.cuit}
         validezDias={pres.validezDias}
         estado={pres.estado}
-        tipo={pres.tipo}
+        tipo={esRecibo ? 'boleta' : pres.tipo}
         metodoPago={pres.metodoCobro}
       />,
     );
 
-    const filename = `${pres.tipo === 'boleta' ? 'recibo' : 'presupuesto'}-${String(pres.numero).padStart(5, '0')}.pdf`;
+    const filename = `${(esRecibo || pres.tipo === 'boleta') ? 'recibo' : 'presupuesto'}-${String(pres.numero).padStart(5, '0')}.pdf`;
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {

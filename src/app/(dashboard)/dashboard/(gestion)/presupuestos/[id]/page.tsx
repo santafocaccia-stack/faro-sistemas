@@ -6,7 +6,7 @@ import { formatARS } from '@/lib/utils';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { PresupuestoPDFButton } from '@/components/pdf-download-button';
+import { PresupuestoPDFButton, ReciboPDFButton } from '@/components/pdf-download-button';
 import { PresupuestoAcciones } from '@/components/presupuesto-acciones';
 import { GuardarPlantillaButton } from '@/components/plantilla-button';
 
@@ -65,6 +65,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
           )}
           {!esBoleta && !pres.esPlantilla && <GuardarPlantillaButton presupuestoId={pres.id} />}
           <PresupuestoPDFButton presupuestoId={pres.id} />
+          {!esBoleta && pres.estado === 'cobrado' && <ReciboPDFButton presupuestoId={pres.id} />}
         </div>
       </div>
 

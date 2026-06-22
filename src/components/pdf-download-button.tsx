@@ -1,6 +1,6 @@
 'use client';
 
-import { Download } from 'lucide-react';
+import { Download, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -36,6 +36,22 @@ export function PresupuestoPDFButton({ presupuestoId, className }: { presupuesto
       <a href={`/api/pdf/presupuesto/${presupuestoId}`} download>
         <Download className="h-3.5 w-3.5" />
         Descargar PDF
+      </a>
+    </Button>
+  );
+}
+
+/** Comprobante de pago (RECIBO) de un presupuesto ya cobrado. */
+export function ReciboPDFButton({ presupuestoId, className }: { presupuestoId: string; className?: string }) {
+  return (
+    <Button
+      size="sm"
+      asChild
+      className={`h-8 gap-1.5 text-xs font-medium glow-primary ${className ?? ''}`}
+    >
+      <a href={`/api/pdf/presupuesto/${presupuestoId}?recibo=1`} download>
+        <Receipt className="h-3.5 w-3.5" />
+        Descargar recibo
       </a>
     </Button>
   );
