@@ -6,11 +6,12 @@ import {
   CalendarDays, Lock, Store, TrendingUp, Check,
 } from 'lucide-react';
 import { navParaRol } from '@/lib/nav';
-import { planTiene } from '@/lib/planes';
+import { planTiene, type PlanId } from '@/lib/planes';
 import { RUBROS, SOBRE_ACENTO, fmtARS, hexToRgba, type RubroDemo } from './landing-data';
 import { LandingPos } from './landing-pos';
 import { ScanShowcase } from './landing-scan';
 import { AntesDespues, Features, Pricing, Faq, LandingFooter } from './landing-sections';
+import { AuthWizard } from './auth-wizard';
 import './landing.css';
 
 const MARQUEE = ['Vendé', 'Cobrá', 'Cuenta corriente al día', 'Mirá tus números', 'Cargá el stock', 'Pasá presupuestos'];
@@ -78,6 +79,15 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
     return () => io.disconnect();
   }, []);
 
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardVersion, setWizardVersion] = useState<PlanId | null>(null);
+  function abrirRegistro(version: PlanId | null = null) {
+    setWizardVersion(version);
+    setWizardOpen(true);
+  }
+  const WHATSAPP_URL =
+    'https://wa.me/5490000000000?text=' + encodeURIComponent('Hola, quiero saber más sobre Gesto');
+
   const accentStyle = {
     ['--gl-accent']: rubro.acento,
     ['--gl-soft']: hexToRgba(rubro.acento, 0.14),
@@ -103,7 +113,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
           </nav>
           <div className="gl-navcta">
             <a className="gl-btn gl-btn-ghost" href="/login">Ingresar</a>
-            <a className="gl-btn gl-btn-fill" href="/signup">Empezá gratis</a>
+            <button type="button" className="gl-btn gl-btn-fill" onClick={() => abrirRegistro()}>Empezá gratis</button>
           </div>
         </div>
       </header>
@@ -124,9 +134,9 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
               <br className="gl-sub-br" /> Todo en un solo lugar, y desde el celular.
             </p>
             <div className="gl-herocta">
-              <a className="gl-btn gl-btn-fill" style={{ height: 52, padding: '0 28px', fontSize: 16 }} href="/signup">
+              <button type="button" className="gl-btn gl-btn-fill" style={{ height: 52, padding: '0 28px', fontSize: 16 }} onClick={() => abrirRegistro()}>
                 Empezá gratis <ArrowRight style={{ height: 18, width: 18 }} strokeWidth={2.4} />
-              </a>
+              </button>
               <a className="gl-btn gl-btn-line" style={{ height: 52, padding: '0 28px', fontSize: 16 }} href="#precios">
                 Ver planes
               </a>
@@ -224,9 +234,9 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
           <div className="gl-finale">
             <h2>Probá Gesto gratis 14 días</h2>
             <p>Creá tu cuenta, elegí tu versión y empezá a cobrar. Sin tarjeta y sin vueltas.</p>
-            <a className="gl-btn gl-btn-fill" style={{ height: 52, padding: '0 30px', fontSize: 17 }} href="/signup">
+            <button type="button" className="gl-btn gl-btn-fill" style={{ height: 52, padding: '0 30px', fontSize: 17 }} onClick={() => abrirRegistro()}>
               Empezá gratis <ArrowRight style={{ height: 19, width: 19 }} strokeWidth={2.4} />
-            </a>
+            </button>
           </div>
         </section>
       </main>
@@ -235,10 +245,25 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
 
       {/* CTA fijo en mobile */}
       <div className="gl-stickycta">
-        <a className="gl-btn gl-btn-fill" href="/signup">
+        <button type="button" className="gl-btn gl-btn-fill" onClick={() => abrirRegistro()}>
           Empezá gratis · 14 días sin tarjeta
-        </a>
+        </button>
       </div>
+
+      {/* WhatsApp flotante */}
+      <a
+        className="gl-wa"
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Escribinos por WhatsApp"
+      >
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden>
+          <path d="M17.47 14.38c-.3-.15-1.74-.86-2-.95-.27-.1-.46-.15-.65.15-.2.3-.75.95-.92 1.14-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.6.13-.13.3-.34.45-.5.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.58-.9-2.16-.24-.57-.48-.49-.65-.5l-.56-.01c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.15.2 2.03 3.1 4.92 4.35.69.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.74-.71 1.98-1.4.25-.69.25-1.28.17-1.4-.07-.13-.26-.2-.56-.35z M12 2a10 10 0 0 0-8.6 15.07L2 22l5.05-1.32A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3 .78.8-2.92-.2-.3A8.2 8.2 0 1 1 12 20.2z" />
+        </svg>
+      </a>
+
+      <AuthWizard open={wizardOpen} onClose={() => setWizardOpen(false)} versionInicial={wizardVersion} />
     </div>
   );
 }

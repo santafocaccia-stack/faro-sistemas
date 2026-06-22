@@ -137,6 +137,17 @@ export default function OnboardingPage() {
   const [error, setError] = useState('');
   const enviandoRef = useRef(false); // guard contra doble submit
 
+  // Heredar la versión elegida en el wizard de registro de la landing.
+  useEffect(() => {
+    try {
+      const elegido = localStorage.getItem('gesto_plan_elegido');
+      if (elegido && PLANES_ARRAY.some((p) => p.id === elegido)) {
+        setPlan(elegido as PlanId);
+      }
+      localStorage.removeItem('gesto_plan_elegido');
+    } catch { /* noop */ }
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (enviandoRef.current) return; // ignorar segundo click
