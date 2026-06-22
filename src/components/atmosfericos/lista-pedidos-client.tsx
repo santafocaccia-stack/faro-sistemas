@@ -17,6 +17,7 @@ import Link from 'next/link';
 import {
   MapPin, GripVertical, CheckCircle2, Truck, XCircle,
   Plus, Phone, Droplets, DollarSign, User, ChevronDown, Navigation, History,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { ModalCompletarPedido } from './modal-completar-pedido';
@@ -53,10 +54,28 @@ const ESTADO_COLOR: Record<string, string> = {
   cancelado:  'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300',
 };
 
+/** Suma n días a una fecha YYYY-MM-DD (en horario local, sin líos de timezone). */
+function addDias(iso: string, n: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y!, m! - 1, d! + n);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+function etiquetaFecha(iso: string, hoy: string): string {
+  if (iso === hoy) return 'Hoy';
+  if (iso === addDias(hoy, 1)) return 'Mañana';
+  if (iso === addDias(hoy, -1)) return 'Ayer';
+  return new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
 export function ListaPedidosClient({
   pedidosIniciales, clientesDisponibles, fecha, tenantId, esGestor,
 }: Props) {
   const router = useRouter();
+  const hoyStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+  function irAFecha(f: string) {
+    router.push(`/dashboard/atmosfericos?fecha=${f}`);
+  }
   const [pedidos, setPedidos] = useState<PedidoDelDia[]>(pedidosIniciales);
   const [modalCompletar, setModalCompletar] = useState<PedidoDelDia | null>(null);
   const [modalNuevo, setModalNuevo] = useState(false);
@@ -159,12 +178,40 @@ export function ListaPedidosClient({
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pedidos del día</h1>
-          <p className="text-sm text-muted-foreground">
-            {new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', {
-              weekday: 'long', day: 'numeric', month: 'long',
-            })}
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">Pedidos · {etiquetaFecha(fecha, hoyStr)}</h1>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <button
+              type="button"
+              onClick={() => irAFecha(addDias(fecha, -1))}
+              className="h-7 w-7 flex items-center justify-center rounded-md border border-border/60 hover:bg-muted transition-colors"
+              aria-label="Día anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => e.target.value && irAFecha(e.target.value)}
+              className="h-7 px-2 rounded-md border border-border/60 bg-background text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => irAFecha(addDias(fecha, 1))}
+              className="h-7 w-7 flex items-center justify-center rounded-md border border-border/60 hover:bg-muted transition-colors"
+              aria-label="Día siguiente"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            {fecha !== hoyStr && (
+              <button
+                type="button"
+                onClick={() => irAFecha(hoyStr)}
+                className="h-7 px-2.5 rounded-md border border-border/60 hover:bg-muted transition-colors text-xs font-medium"
+              >
+                Hoy
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           <Link href="/dashboard/atmosfericos/historial">
