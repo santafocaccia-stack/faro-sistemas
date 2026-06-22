@@ -28,6 +28,7 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
   const [direccion, setDireccion] = useState('');
   const [localidad, setLocalidad] = useState('');
   const [referencias, setReferencias] = useState('');
+  const [mapsLink, setMapsLink] = useState('');
   const [litrosPozo, setLitrosPozo] = useState('');
   const [notas, setNotas] = useState('');
   const [loading, setLoading] = useState(false);
@@ -63,6 +64,7 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
         direccion,
         localidad:      localidad || null,
         referencias:    referencias || null,
+        mapsLink:       mapsLink || null,
         fechaProgramada: fecha,
         litrosPozo:     litrosPozo || null,
         notas:          notas || null,
@@ -177,6 +179,21 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
               placeholder="Casa amarilla, portón verde..."
               className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
+          </div>
+
+          {/* Ubicación exacta en Maps */}
+          <div>
+            <label className="text-sm font-medium mb-1 block">Ubicación en Google Maps (opcional)</label>
+            <input
+              type="url"
+              value={mapsLink}
+              onChange={(e) => setMapsLink(e.target.value)}
+              placeholder="Pegá el link de Maps de la ubicación"
+              className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Si la dirección no cae bien en Maps, buscala una vez, tocá «Compartir» y pegá el link acá: la ruta va directo al punto exacto.
+            </p>
           </div>
 
           {/* Litros del pozo */}

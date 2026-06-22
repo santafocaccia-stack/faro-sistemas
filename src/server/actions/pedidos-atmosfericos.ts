@@ -18,6 +18,7 @@ export type PedidoAtmosInput = {
   direccion: string;
   localidad?: string | null;
   referencias?: string | null;
+  mapsLink?: string | null;
   fechaProgramada: string; // YYYY-MM-DD
   litrosPozo?: string | null;
   notas?: string | null;
@@ -46,6 +47,7 @@ export async function listarPedidosDelDia(fecha?: string) {
       direccion:       pedidosAtmosfericos.direccion,
       localidad:       pedidosAtmosfericos.localidad,
       referencias:     pedidosAtmosfericos.referencias,
+      mapsLink:        pedidosAtmosfericos.mapsLink,
       orden:           pedidosAtmosfericos.orden,
       estado:          pedidosAtmosfericos.estado,
       fechaProgramada: pedidosAtmosfericos.fechaProgramada,
@@ -126,6 +128,7 @@ export async function crearPedido(input: PedidoAtmosInput) {
       direccion,
       localidad:      localidad ?? null,
       referencias:    input.referencias ?? null,
+      mapsLink:       input.mapsLink?.trim() || null,
       fechaProgramada: input.fechaProgramada,
       litrosPozo:     litrosPozo ?? null,
       notas:          input.notas ?? null,

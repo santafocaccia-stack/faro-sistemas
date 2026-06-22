@@ -389,7 +389,7 @@ export function ListaPedidosClient({
                           {/* Acciones */}
                           <div className="flex gap-2 flex-wrap pt-1">
                             <a
-                              href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad })}
+                              href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad, mapsLink: pedido.mapsLink })}
                               target="_blank"
                               rel="noopener noreferrer"
                             >

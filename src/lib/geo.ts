@@ -1,41 +1,58 @@
 /**
  * Helpers de geolocalización para navegación con Google Maps.
  *
- * Decisión clave: usamos el formato de PATH (/maps/dir/A/B/C) y NO el de query
- * (?api=1&waypoints=...). En el formato query las paradas intermedias van como
- * `waypoints` y Google las pasa por su optimizador de ruta, que ante una
- * dirección ambigua elige la interpretación más cercana a la ruta — y termina
- * desviando a una calle homónima cercana. En el formato path cada parada es un
- * punto fijo y se geocodea igual que el destino final.
+ * Estrategia: si el pedido tiene una "ubicación exacta" (link de Google Maps
+ * que pegó el operario), intentamos extraer sus coordenadas y navegamos a ese
+ * punto fijo — Google geocodea perfecto con lat,lng. Si no hay link (o no se
+ * pueden extraer coords), caemos al texto de la dirección.
  *
- * Tampoco agregamos país/provincia: ensuciar la dirección con texto extra
- * llega a mover el punto que devuelve el geocoder. Se respeta exactamente lo
- * que cargó el usuario (dirección + localidad).
+ * Para el texto usamos el formato de PATH (/maps/dir/A/B/C) y NO el de query
+ * (waypoints), porque el optimizador de waypoints desvía a calles homónimas.
+ * Tampoco ensuciamos la dirección con país/provincia (mueve el geocoder).
  */
 
-type Parada = { direccion: string; localidad?: string | null };
+type Parada = { direccion: string; localidad?: string | null; mapsLink?: string | null };
 
 /** Compone "direccion, localidad" omitiendo partes vacías. */
 function direccionTexto(parada: Parada): string {
   return [parada.direccion, parada.localidad].filter(Boolean).join(', ');
 }
 
-/** Codifica una parada como segmento de path para una URL de Google Maps. */
+/** Intenta extraer "lat,lng" de un link de Google Maps. Devuelve null si no puede. */
+export function extraerCoords(link?: string | null): string | null {
+  if (!link) return null;
+  const patrones = [
+    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,                       // .../data=...!3dLAT!4dLNG
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/,                           // /place/...@LAT,LNG,zoom
+    /[?&](?:q|ll|destination|center)=(-?\d+\.\d+),(-?\d+\.\d+)/, // ?q=LAT,LNG
+  ];
+  for (const re of patrones) {
+    const m = link.match(re);
+    if (m) return `${m[1]},${m[2]}`;
+  }
+  return null;
+}
+
+/** Segmento de una parada para la URL de ruta: coords exactas si las hay, si no el texto. */
+function segmentoParada(parada: Parada): string {
+  return encodeURIComponent(extraerCoords(parada.mapsLink) ?? direccionTexto(parada));
+}
+
+/** Segmento solo-texto (para búsqueda/diagnóstico). */
 function segmento(parada: Parada): string {
   return encodeURIComponent(direccionTexto(parada));
 }
 
-/** URL de Google Maps para navegar a un único destino (origen = GPS del dispositivo). */
+/** URL para navegar a un único destino (origen = GPS del dispositivo). */
 export function mapsUrlDestino(parada: Parada): string {
-  // El primer segmento vacío (doble slash) hace que Maps use la ubicación actual.
+  const coords = extraerCoords(parada.mapsLink);
+  if (coords) return `https://www.google.com/maps/dir//${encodeURIComponent(coords)}`;
+  // Pegó un link pero sin coords extraíbles (ej. short link): lo abrimos tal cual.
+  if (parada.mapsLink && /^https?:\/\//.test(parada.mapsLink.trim())) return parada.mapsLink.trim();
   return `https://www.google.com/maps/dir//${segmento(parada)}`;
 }
 
-/**
- * URL de BÚSQUEDA (geocoding aislado, sin ruta). Sirve para diagnosticar:
- * si esta variante cae bien pero la de ruta no, el problema es el formato de
- * ruta; si esta también cae mal, el problema es la dirección en sí.
- */
+/** URL de BÚSQUEDA (geocoding aislado, sin ruta) — solo para diagnóstico. */
 export function mapsUrlBusqueda(parada: Parada): string {
   return `https://www.google.com/maps/search/?api=1&query=${segmento(parada)}`;
 }
@@ -46,13 +63,12 @@ export function direccionParaLog(parada: Parada): string {
 }
 
 /**
- * URL de Google Maps con todas las paradas en orden, usando el formato de path.
- * Origen omitido (primer segmento vacío) → usa la ubicación actual del dispositivo.
- * Todas las paradas se tratan como puntos fijos (sin optimizador de waypoints).
+ * URL con todas las paradas en orden (formato path). Cada parada usa sus
+ * coordenadas exactas si tiene link de Maps; si no, el texto de la dirección.
+ * Origen omitido (primer segmento vacío) → usa la ubicación actual.
  */
 export function mapsUrlRuta(paradas: Parada[]): string {
   if (paradas.length === 0) return '';
-  const segs = paradas.map(segmento);
-  // ['', ...segs].join('/') => "/seg1/seg2"; con el "dir/" queda "dir//seg1/seg2"
+  const segs = paradas.map(segmentoParada);
   return `https://www.google.com/maps/dir/${['', ...segs].join('/')}`;
 }

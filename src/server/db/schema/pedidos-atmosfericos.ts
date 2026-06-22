@@ -36,6 +36,7 @@ export const pedidosAtmosfericos = pgTable(
     direccion:      text('direccion').notNull(),
     localidad:      text('localidad'),
     referencias:    text('referencias'),       // "casa amarilla, portón verde"
+    mapsLink:       text('maps_link'),          // link/ubicación exacta de Google Maps (opcional)
 
     // Orden en la ruta del día (el jefe lo define, 0-based)
     orden: integer('orden').notNull().default(0),
