@@ -1,7 +1,8 @@
 import {
   Check, X, NotebookPen, Sparkles, ShoppingCart, BookOpen, Package, BarChart3, FileText, Users, Plus,
+  ShieldCheck, CreditCard,
 } from 'lucide-react';
-import { PLANES_ARRAY } from '@/lib/planes';
+import { PLANES_ARRAY, type PlanId } from '@/lib/planes';
 import { fmtARS } from './landing-data';
 
 /* ── Antes / Después ─────────────────────────────────────────────────────── */
@@ -95,7 +96,7 @@ export function Features() {
 }
 
 /* ── Planes (precio en USD, cobrado en pesos al MEP) ─────────────────────── */
-export function Pricing({ dolarMep }: { dolarMep: number }) {
+export function Pricing({ dolarMep, onElegir }: { dolarMep: number; onElegir: (plan: PlanId) => void }) {
   return (
     <section id="precios" className="gl-blk gl-wrap gl-reveal">
       <div className="gl-shead">
@@ -133,20 +134,31 @@ export function Pricing({ dolarMep }: { dolarMep: number }) {
                   </li>
                 ))}
               </ul>
-              <a
-                href="/signup"
-                className="gl-pbtn"
-                style={
-                  plan.proximamente
-                    ? { background: 'var(--gl-raised)', color: 'var(--muted-foreground)', border: '1px solid var(--border)' }
-                    : { background: plan.color, color: 'var(--gl-ink)' }
-                }
-              >
-                {plan.proximamente ? 'Avisame cuando salga' : 'Probar 14 días gratis'}
-              </a>
+              {plan.proximamente ? (
+                <span
+                  className="gl-pbtn"
+                  style={{ background: 'var(--gl-raised)', color: 'var(--muted-foreground)', border: '1px solid var(--border)', cursor: 'default' }}
+                >
+                  Pronto disponible
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="gl-pbtn"
+                  style={{ background: plan.color, color: 'var(--gl-ink)' }}
+                  onClick={() => onElegir(plan.id)}
+                >
+                  Probar {plan.nombre.replace('Gesto ', '')} gratis
+                </button>
+              )}
             </div>
           );
         })}
+      </div>
+      <div className="gl-trust">
+        <span><ShieldCheck strokeWidth={2} /> Datos encriptados (SSL)</span>
+        <span><CreditCard strokeWidth={2} /> 14 días gratis, sin tarjeta</span>
+        <span><Check strokeWidth={2.4} /> Cancelás cuando quieras</span>
       </div>
       <p className="gl-pricenote">Dólar MEP de referencia: {fmtARS(dolarMep)} · Cancelás cuando quieras, sin permanencia.</p>
     </section>

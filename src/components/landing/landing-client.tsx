@@ -107,9 +107,10 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
             <span className="gl-logo">G</span>Gesto
           </div>
           <nav className="gl-navlinks">
-            <a href="#rubros">Cómo funciona</a>
+            <a href="#rubros">Versiones</a>
             <a href="#beneficios">Beneficios</a>
             <a href="#precios">Precios</a>
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">Ayuda</a>
           </nav>
           <div className="gl-navcta">
             <a className="gl-btn gl-btn-ghost" href="/login">Ingresar</a>
@@ -224,7 +225,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
         <AntesDespues />
 
         {/* Precios */}
-        <Pricing dolarMep={dolarMep} />
+        <Pricing dolarMep={dolarMep} onElegir={abrirRegistro} />
 
         {/* Preguntas frecuentes */}
         <Faq />
