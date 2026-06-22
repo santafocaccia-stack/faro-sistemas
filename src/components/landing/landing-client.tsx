@@ -86,7 +86,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
     setWizardOpen(true);
   }
   const WHATSAPP_URL =
-    'https://wa.me/5490000000000?text=' + encodeURIComponent('Hola, quiero saber más sobre Gesto');
+    'https://wa.me/5491166644837?text=' + encodeURIComponent('Hola, quiero saber más sobre Gesto');
 
   const accentStyle = {
     ['--gl-accent']: rubro.acento,

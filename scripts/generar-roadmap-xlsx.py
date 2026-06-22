@@ -158,7 +158,7 @@ TAREAS = [
     # ── Marketing / Conversión (análisis de IAs externas) ──
     ("Marketing / Conversión", "Registro en mini-wizard modal (versión -> cuenta), sin mandar al login frío", "Alta", "Hecho", "Modal in-page (no popup) que abren los CTA 'Empezá gratis'. Paso 1 elegís versión, paso 2 creás cuenta; la versión se hereda al onboarding"),
     ("Marketing / Conversión", "Login con Google (OAuth)", "Alta", "En progreso", "Código cableado en el wizard y disponible. FALTA: habilitar el provider Google en Supabase (Auth -> Providers) con credenciales de Google Cloud Console"),
-    ("Marketing / Conversión", "Botón de WhatsApp flotante en la landing", "Alta", "Hecho", "Sugerido por Deepseek y Gemini. FALTA: reemplazar el número placeholder por el real"),
+    ("Marketing / Conversión", "Botón de WhatsApp flotante en la landing", "Alta", "Hecho", "Sugerido por Deepseek y Gemini. Número real cargado (wa.me/5491166644837), mensaje pre-cargado"),
     ("Marketing / Conversión", "Landing pages por vertical (/market, /atmosfericos, /balanza) para pauta en Meta Ads", "Alta", "Pendiente", "Gemini: la página de destino tiene que hablarle solo a ese rubro para no diluir la conversión"),
     ("Marketing / Conversión", "Dominio propio (ej. gesto.com.ar) apuntado en Vercel", "Alta", "Pendiente", "Gemini: faro-sistemas.vercel.app no transmite 'Gesto' y resta confianza"),
     ("Marketing / Conversión", "Nav de la landing con Versiones y Ayuda (hoy solo Precios)", "Media", "Pendiente", "Deepseek"),
