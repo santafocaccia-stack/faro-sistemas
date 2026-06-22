@@ -161,10 +161,11 @@ TAREAS = [
     ("Marketing / Conversión", "Botón de WhatsApp flotante en la landing", "Alta", "Hecho", "Sugerido por Deepseek y Gemini. Número real cargado (wa.me/5491166644837), mensaje pre-cargado"),
     ("Marketing / Conversión", "Landing pages por vertical (/market, /atmosfericos, /balanza) para pauta en Meta Ads", "Alta", "Pendiente", "Gemini: la página de destino tiene que hablarle solo a ese rubro para no diluir la conversión"),
     ("Marketing / Conversión", "Dominio propio (ej. gesto.com.ar) apuntado en Vercel", "Alta", "Pendiente", "Gemini: faro-sistemas.vercel.app no transmite 'Gesto' y resta confianza"),
-    ("Marketing / Conversión", "Nav de la landing con Versiones y Ayuda (hoy solo Precios)", "Media", "Pendiente", "Deepseek"),
-    ("Marketing / Conversión", "Sello 'datos encriptados' + destacar '14 días sin tarjeta' como badge", "Media", "Pendiente", "Deepseek: confianza sin necesitar testimonios"),
+    ("Marketing / Conversión", "Nav de la landing con Versiones y Ayuda (hoy solo Precios)", "Media", "Hecho", "Nav: 'Versiones' (antes 'Cómo funciona') + 'Ayuda' al WhatsApp"),
+    ("Marketing / Conversión", "CTA por versión en precios (abre el wizard con esa versión)", "Media", "Hecho", "Cada tarjeta: 'Probar [versión] gratis' -> abre el wizard con esa versión preelegida"),
+    ("Marketing / Conversión", "Precio en ARS más visible (manteniendo USD como principal)", "Media", "Hecho", "El ARS se agrandó (16px, seminegrita); el USD sigue siendo el número grande. Se mantiene el cobro al MEP en USD"),
+    ("Marketing / Conversión", "Sello 'datos encriptados' + destacar '14 días sin tarjeta' como badge", "Media", "Hecho", "Sellos bajo los planes: datos encriptados (SSL), 14 días sin tarjeta, cancelás cuando quieras"),
     ("Marketing / Conversión", "Testimonios / casos de éxito", "Media", "Pendiente", "Dejar el espacio diseñado y llenarlo con los primeros clientes reales (no inventar)"),
-    ("Marketing / Conversión", "Decidir precio en ARS prominente y USD como referencia", "Media", "Pendiente", "Deepseek; toca la decisión de negocio de cobro al MEP en USD"),
 ]
 
 # ================= Construcción del libro =================
