@@ -65,12 +65,12 @@ export const PLANES = {
     descripcion: 'Para carnicerías, verdulerías y venta por peso',
     features: [
       'Todo lo de Market',
-      'Integración con balanza digital',
-      'Venta por kilogramo',
+      'Venta por kilogramo (peso a mano o con atajos)',
+      'Lee etiquetas de balanza por PLU',
       'Categorías y grupos de variantes',
     ],
     color: 'oklch(0.62 0.16 320)',
-    proximamente: true,
+    proximamente: false,
   },
   prestamista: {
     id: 'prestamista' as PlanId,
