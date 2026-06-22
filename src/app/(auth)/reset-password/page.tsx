@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -68,9 +68,8 @@ export default function ResetPasswordPage() {
             <label htmlFor="password" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
               Nueva contraseña
             </label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="Mínimo 8 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -85,9 +84,8 @@ export default function ResetPasswordPage() {
             <label htmlFor="confirm" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
               Confirmar contraseña
             </label>
-            <Input
+            <PasswordInput
               id="confirm"
-              type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required

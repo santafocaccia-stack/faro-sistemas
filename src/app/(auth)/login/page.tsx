@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,9 +26,14 @@ export default function LoginPage() {
     });
 
     if (error) {
+      const msg = error.message.toLowerCase();
       setError(
-        error.message.toLowerCase().includes('invalid')
+        msg.includes('invalid')
           ? 'Email o contraseña incorrectos.'
+          : msg.includes('confirm')
+          ? 'Todavía no confirmaste tu email. Revisá tu casilla (y la carpeta de spam).'
+          : msg.includes('rate') || msg.includes('many')
+          ? 'Demasiados intentos. Esperá un momento e intentá de nuevo.'
           : error.message,
       );
       setLoading(false);
@@ -89,9 +95,8 @@ export default function LoginPage() {
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -123,6 +128,20 @@ export default function LoginPage() {
           Crear una nueva
         </Link>
       </p>
+
+      {/* Pie: legales + ayuda */}
+      <div className="mt-8 flex items-center justify-center gap-3 text-[11px] text-muted-foreground/60">
+        <Link href="/legal/terminos" className="hover:text-foreground transition-colors">Términos</Link>
+        <span aria-hidden>·</span>
+        <Link href="/legal/privacidad" className="hover:text-foreground transition-colors">Privacidad</Link>
+        <span aria-hidden>·</span>
+        <a
+          href="mailto:tomasemanueldesousa@gmail.com?subject=Ayuda%20con%20Gesto"
+          className="hover:text-foreground transition-colors"
+        >
+          ¿Necesitás ayuda?
+        </a>
+      </div>
     </div>
   );
 }

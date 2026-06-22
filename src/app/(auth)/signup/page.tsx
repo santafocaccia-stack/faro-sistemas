@@ -7,6 +7,7 @@ import { Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -46,7 +47,14 @@ export default function SignupPage() {
     });
 
     if (error) {
-      setError(error.message);
+      const msg = error.message.toLowerCase();
+      setError(
+        msg.includes('already') || msg.includes('registered')
+          ? 'Ya existe una cuenta con ese email. Probá iniciar sesión.'
+          : msg.includes('rate') || msg.includes('many')
+          ? 'Demasiados intentos. Esperá un momento e intentá de nuevo.'
+          : error.message,
+      );
       setLoading(false);
       return;
     }
@@ -134,9 +142,8 @@ export default function SignupPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">Contraseña</label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="Mínimo 8 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -148,9 +155,8 @@ export default function SignupPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="confirm" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">Confirmar contraseña</label>
-            <Input
+            <PasswordInput
               id="confirm"
-              type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required
