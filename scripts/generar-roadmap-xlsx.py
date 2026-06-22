@@ -142,7 +142,7 @@ TAREAS = [
     ("Backlog / Ideas", "Consultor de precios para cliente final (pantalla pública con QR)", "Media", "Pendiente", "Diferenciador único; ruta /p/[tenantSlug]"),
 
     # Versiones / Verticales (mejoras por versión — feedback del dueño 2026-06-21)
-    ("Versiones / Verticales", "Mejorar login/registro: sumarle contenido útil (hoy se siente vacío)", "Media", "En progreso", "Split de marca ya hecho; falta valor real que sume"),
+    ("Versiones / Verticales", "Mejorar login/registro: sumarle contenido útil (hoy se siente vacío)", "Media", "Hecho", "Split de marca + recuperación de contraseña ya estaban. Sumado: ver/ocultar contraseña (PasswordInput) en login/signup/reset, errores específicos (email sin confirmar, rate-limit, email ya registrado), pie con Términos/Privacidad/ayuda por mail, indicador de fuerza de contraseña"),
     ("Versiones / Verticales", "Gesto Balanza funcional: integración con balanza digital + venta por peso", "Alta", "Pendiente", "Hoy figura 'próximamente'; armarla de verdad para que funcione con balanzas"),
     ("Versiones / Verticales", "Gesto Food: POS propio (comandas, mesas, cocina/KDS) — muy distinto a Market", "Alta", "Pendiente", "Hoy figura 'próximamente'"),
     ("Versiones / Verticales", "Gesto Servicios: emitir boletas además de presupuestos + simplificar botones/UI", "Alta", "Hecho", "Form de presupuesto simplificado + BOLETAS de punta a punta: boleta directa (form modo boleta con método de pago), numeración propia, lista /dashboard/boletas + nav, detalle adaptado y PDF como RECIBO. Migración 0009 aplicada en dev+prod. Comprobante NO fiscal. Botón 'Emitir recibo' desde un presupuesto cobrado HECHO (PDF como recibo, sin duplicar ingreso). Pendiente menor: seguir puliendo UI"),
