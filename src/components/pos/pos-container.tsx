@@ -18,6 +18,7 @@ import { PosModalCobrar } from '@/components/pos/pos-modal-cobrar';
 import { PosModalLineaSuelta } from '@/components/pos/pos-modal-linea-suelta';
 import { PostVentaModal, type VentaCompletada } from '@/components/pos/pos-modal-post-venta';
 import { PosModalSinStock, type ConfirmacionSinStock } from '@/components/pos/pos-modal-sin-stock';
+import { PosModalPeso } from '@/components/pos/pos-modal-peso';
 import type { Producto, Cliente, Categoria } from '@/server/db/schema';
 
 type Props = {
@@ -182,6 +183,14 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
   /** ¿Mostrar el panel de búsqueda? (chips + dropdown) */
   const panelBusquedaVisible = busquedaFocused || busqueda.trim() !== '' || categoriaFiltroPos !== null;
 
+  const [productoPesando, setProductoPesando] = useState<Producto | null>(null);
+
+  /** Producto por kg → abre el modal de peso; el resto se agrega como unidad. */
+  function intentarAgregar(p: Producto) {
+    if (p.tipoUnidad === 'por_kg') { setProductoPesando(p); return; }
+    agregarConChequeoStock(p);
+  }
+
   /**
    * Agrega un producto al carrito con chequeo de stock.
    * Stock efectivo = stockActual del producto − lo que ya hay en el carrito.
@@ -250,7 +259,7 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
         (p.codigoPlu && p.codigoPlu.trim().toLowerCase() === trimmed.toLowerCase()),
     );
     if (encontrado) {
-      agregarConChequeoStock(encontrado);
+      intentarAgregar(encontrado);
     } else {
       beepError();
       toast.error(`Código "${trimmed}" no encontrado`, { duration: 2200 });
@@ -258,6 +267,11 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
   }
 
   function agregarDesdeResultado(p: Producto) {
+    if (p.tipoUnidad === 'por_kg') {
+      setProductoPesando(p);
+      setBusqueda('');
+      return;
+    }
     agregarConChequeoStock(p);
     setBusqueda('');
     searchRef.current?.focus();
@@ -773,6 +787,19 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
       <PosModalSinStock
         confirmacion={confirmSinStock}
         onClose={() => setConfirmSinStock(null)}
+      />
+
+      {/* Modal de peso (productos por kg, sin balanza) */}
+      <PosModalPeso
+        producto={productoPesando ? {
+          nombre: productoPesando.nombre,
+          precioKg: Number(esMayorista ? productoPesando.precioMayorista : productoPesando.precioMinorista),
+        } : null}
+        onClose={() => setProductoPesando(null)}
+        onConfirmar={(kg) => {
+          if (productoPesando) agregarPorPeso(productoPesando, kg);
+          setProductoPesando(null);
+        }}
       />
     </div>
   );
