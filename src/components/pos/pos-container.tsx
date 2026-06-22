@@ -9,6 +9,7 @@ import {
   ChevronDown, X,
 } from 'lucide-react';
 import { usePosCart, selectTotal, selectCantidadItems, type LineaCart } from '@/lib/stores/pos-cart';
+import { parseEtiquetaBalanza } from '@/lib/balanza';
 import { crearVenta, type LineaVenta } from '@/server/actions/ventas';
 import { formatARS, cn } from '@/lib/utils';
 import { beep, beepError, vibrar, sonidoHabilitado, setSonidoHabilitado } from '@/lib/feedback';
@@ -212,12 +213,37 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
     agregar();
   }
 
+  /** Agrega un producto por peso (kg) — p. ej. desde una etiqueta de balanza. */
+  function agregarPorPeso(p: Producto, kg: number) {
+    const precio = Number(esMayorista ? p.precioMayorista : p.precioMinorista);
+    agregarProducto({ productoId: p.id, nombre: p.nombre, precio, cantidad: kg });
+    beep();
+    vibrar(40);
+    toast.success(`${p.nombre} · ${kg.toFixed(3).replace('.', ',')} kg`, { duration: 1800 });
+  }
+
   // ── Manejo de código escaneado o tecleado ────────────────────
   function manejarCodigo(codigo: string) {
     const trimmed = codigo.trim();
     if (!trimmed) return;
     // Si hay un modal de confirmación abierto, ignorar escaneos
     if (confirmSinStock) return;
+
+    // Etiqueta de balanza con peso embebido (EAN-13 prefijo 2) → buscar por PLU
+    const etiqueta = parseEtiquetaBalanza(trimmed);
+    if (etiqueta) {
+      const prod = productosActivos.find(
+        (p) => p.codigoPlu && String(parseInt(p.codigoPlu, 10)) === etiqueta.plu,
+      );
+      if (prod) {
+        agregarPorPeso(prod, etiqueta.kg);
+      } else {
+        beepError();
+        toast.error(`PLU ${etiqueta.plu} no encontrado`, { duration: 2200 });
+      }
+      return;
+    }
+
     const encontrado = productosActivos.find(
       (p) =>
         (p.codigo && p.codigo.trim().toLowerCase() === trimmed.toLowerCase()) ||

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Printer, Share2, Download, X, Loader2, Clock } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { toast } from 'sonner';
+import { BotonImprimirTermica } from './boton-imprimir-termica';
 
 /**
  * Formatea una fecha con zona horaria forzada a Argentina (UTC-3).
@@ -270,6 +271,7 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
 
             {/* Acciones */}
             <div className="shrink-0 border-t border-border/60 px-5 py-3 space-y-2 bg-card">
+              <BotonImprimirTermica venta={venta} disabled={!!venta.procesando} />
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
