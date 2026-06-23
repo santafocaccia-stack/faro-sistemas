@@ -5,7 +5,19 @@
 > Actualizado: 2026-06-21.
 
 ## Dónde quedamos
-- Rama `master`. Build/typecheck/lint/tests verdes (51 tests).
+- Rama `master`. Build/typecheck/lint/tests verdes (60 tests).
+- **Módulo Gastos + balance mensual con IA (2026-06-23) — deployado** (commit `7f27a32`):
+  `/dashboard/gastos` para los 6 planes (capacidad `gastos`, admin). Carga de egresos
+  con categorías sugeridas por rubro, balance del mes (ingresos del plan vs gastos),
+  ganancia/margen, comparación vs mes anterior y **análisis narrativo con Claude**
+  (`src/lib/ia/analisis-mensual.ts`, fallback determinístico sin API key). Cálculo puro
+  testeado (`src/lib/balance.ts`, 9 tests). Migración `0011_gastos.sql` **aplicada en
+  PROD** (no en dev: timeout IPv6, reintentar). Verificado en prod: página, carga de
+  gasto y análisis fallback OK. **Pendiente tuyo:** cargar `ANTHROPIC_API_KEY` en Vercel
+  para el análisis con IA real (sin eso usa el resumen automático).
+- **QA de UIs por plan (2026-06-23)**: smoke test OK en los 6 planes (dashboards,
+  historiales, agenda, reportes cargan 200 sin errores de consola). Único hallazgo:
+  `/dashboard/cocina` (KDS de food) da 404 — está "pronto", conviene página "próximamente".
 - **Auditoría de fechas y pagos (2026-06-23) — fixes aplicados**: helper compartido
   `src/lib/fechas.ts` (`sumarMeses` clampea fin de mes + `hoyArgentina`). Mata el
   overflow de `setMonth` en cronograma de préstamos, `masUnMes` (suscripción),
