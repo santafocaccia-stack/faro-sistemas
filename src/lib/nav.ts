@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, History, Package, Users,
   BookOpen, FileText, BarChart3, Truck, ClipboardList,
-  UtensilsCrossed, Scale, CalendarDays, Landmark, MapPin, Receipt, type LucideIcon,
+  UtensilsCrossed, Scale, CalendarDays, Landmark, MapPin, Receipt, Wallet, type LucideIcon,
 } from 'lucide-react';
 import type { PlanId } from './planes';
 import type { Rol } from '@/server/db/schema';
@@ -47,6 +47,7 @@ const BALANZA: NavItem       = { href: '/dashboard/balanza',          label: 'Ba
 const AGENDA: NavItem        = { href: '/dashboard/agenda',           label: 'Agenda',         icon: CalendarDays };
 const PRESTAMOS: NavItem     = { href: '/dashboard/prestamos',        label: 'Préstamos',      icon: Landmark };
 const PEDIDOS_ATMOS: NavItem = { href: '/dashboard/atmosfericos',     label: 'Pedidos del día', icon: MapPin };
+const GASTOS: NavItem        = { href: '/dashboard/gastos',           label: 'Gastos y balance', icon: Wallet };
 
 export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
 
@@ -61,6 +62,7 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
     ],
     secondary: [
       REPORTES,
+      GASTOS,
     ],
   },
 
@@ -76,6 +78,7 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
       PROVEEDORES,
       PEDIDOS,
       REPORTES,
+      GASTOS,
     ],
   },
 
@@ -92,6 +95,7 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
       PEDIDOS,
       COCINA,
       REPORTES,
+      GASTOS,
     ],
   },
 
@@ -108,6 +112,7 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
       PEDIDOS,
       BALANZA,
       REPORTES,
+      GASTOS,
     ],
   },
 
@@ -117,7 +122,9 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
       PRESTAMOS,
       CLIENTES,
     ],
-    secondary: [],
+    secondary: [
+      GASTOS,
+    ],
   },
 
   atmosfericos: {
@@ -127,6 +134,7 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
     ],
     secondary: [
       REPORTES,
+      GASTOS,
     ],
   },
 };

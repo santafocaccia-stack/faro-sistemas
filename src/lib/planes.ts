@@ -107,17 +107,18 @@ export type Capacidad =
   | 'cuentaCorriente'
   | 'compras' // proveedores + pedidos
   | 'reportes'
+  | 'gastos' // registro de egresos + balance mensual con análisis IA
   | 'cocina' // pantalla de cocina (KDS)
   | 'balanza' // integración con balanza digital
   | 'atmosfericos'; // gestión de pedidos de servicio a domicilio (pozos, etc.)
 
 export const CAPACIDADES_POR_PLAN: Record<PlanId, readonly Capacidad[]> = {
-  servicios:    ['presupuestos', 'agenda', 'clientes', 'cuentaCorriente', 'reportes'],
-  market:       ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes'],
-  food:         ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'cocina'],
-  balanza:      ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'balanza'],
-  prestamista:  ['prestamos', 'clientes'],
-  atmosfericos: ['atmosfericos', 'clientes', 'reportes'],
+  servicios:    ['presupuestos', 'agenda', 'clientes', 'cuentaCorriente', 'reportes', 'gastos'],
+  market:       ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'gastos'],
+  food:         ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'cocina', 'gastos'],
+  balanza:      ['pos', 'productos', 'clientes', 'cuentaCorriente', 'compras', 'reportes', 'balanza', 'gastos'],
+  prestamista:  ['prestamos', 'clientes', 'gastos'],
+  atmosfericos: ['atmosfericos', 'clientes', 'reportes', 'gastos'],
 };
 
 /** ¿El plan tiene habilitada esta capacidad? (chequea solo por plan, sin overrides de DB) */

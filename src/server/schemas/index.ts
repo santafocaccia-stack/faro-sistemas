@@ -153,6 +153,20 @@ export const clienteInputSchema = z.object({
   notas: z.string().trim().max(500).nullable().optional(),
 });
 
+// ── Gastos ───────────────────────────────────────────────────────────────────
+
+export const gastoInputSchema = z.object({
+  fecha: z.string().min(1, 'La fecha es requerida'), // YYYY-MM-DD
+  categoria: z.string().trim().min(1, 'Elegí o escribí una categoría').max(60),
+  monto: z.string().refine((s) => s !== '' && !isNaN(Number(s)) && Number(s) > 0, 'El monto debe ser mayor a 0'),
+  descripcion: z.string().trim().max(300).nullable().optional(),
+  metodoPago: z
+    .enum(['efectivo', 'transferencia', 'tarjeta_debito', 'tarjeta_credito', 'mercado_pago', 'cheque', 'otro'])
+    .nullable()
+    .optional(),
+});
+export type GastoInput = z.infer<typeof gastoInputSchema>;
+
 // ── Helpers de error ─────────────────────────────────────────────────────────
 
 /**
