@@ -6,6 +6,7 @@ import { ventas, ventasLineas, pagos, productos, presupuestos, pagosPrestamo } f
 import { byTenant } from '@/server/db/tenant-context';
 import { requireAdmin } from '@/server/auth/session';
 import { planTiene, type PlanId } from '@/lib/planes';
+import { hoyArgentina } from '@/lib/fechas';
 
 export type Periodo = 'hoy' | 'semana' | 'mes' | 'tres_meses';
 
@@ -15,10 +16,7 @@ export type Granularidad = 'dia' | 'semana' | 'mes' | 'trimestre' | 'anio';
 
 const BUCKETS: Record<Granularidad, number> = { dia: 14, semana: 8, mes: 12, trimestre: 8, anio: 5 };
 
-function arHoy(): Date {
-  const ar = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }));
-  return new Date(ar.getFullYear(), ar.getMonth(), ar.getDate());
-}
+const arHoy = hoyArgentina; // calendario de Buenos Aires (helper compartido)
 function inicioBucket(d: Date, g: Granularidad): Date {
   const y = d.getFullYear(), m = d.getMonth();
   switch (g) {

@@ -6,6 +6,7 @@
  * Montos redondeados a 2 decimales. Todo en pesos.
  */
 import type { FrecuenciaPago, SistemaAmortizacion } from '@/server/db/schema';
+import { sumarMeses } from '@/lib/fechas';
 
 export const PERIODOS_POR_ANIO: Record<FrecuenciaPago, number> = {
   diaria: 365,
@@ -23,6 +24,7 @@ export function tasaPorPeriodo(tasaNominalAnualPct: number, frecuencia: Frecuenc
 
 /** Avanza una fecha N períodos según la frecuencia. */
 export function sumarPeriodos(base: Date, frecuencia: FrecuenciaPago, n: number): Date {
+  if (frecuencia === 'mensual') return sumarMeses(base, n); // clampea fin de mes
   const d = new Date(base);
   switch (frecuencia) {
     case 'diaria':
@@ -33,9 +35,6 @@ export function sumarPeriodos(base: Date, frecuencia: FrecuenciaPago, n: number)
       break;
     case 'quincenal':
       d.setDate(d.getDate() + n * 15);
-      break;
-    case 'mensual':
-      d.setMonth(d.getMonth() + n);
       break;
   }
   return d;
@@ -79,7 +78,7 @@ export function generarCronograma(p: ParamsCronograma): CuotaCalculada[] {
 
   for (let k = 1; k <= n; k++) {
     const vencimiento = sumarPeriodos(p.fechaPrimerVencimiento, p.frecuencia, k - 1);
-    let interes = saldo * i;
+    const interes = saldo * i;
     let capital: number;
     let montoCuota: number;
 

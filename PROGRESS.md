@@ -5,7 +5,15 @@
 > Actualizado: 2026-06-21.
 
 ## Dónde quedamos
-- Rama `master`. Build/typecheck/lint verdes.
+- Rama `master`. Build/typecheck/lint/tests verdes (51 tests).
+- **Auditoría de fechas y pagos (2026-06-23) — fixes aplicados**: helper compartido
+  `src/lib/fechas.ts` (`sumarMeses` clampea fin de mes + `hoyArgentina`). Mata el
+  overflow de `setMonth` en cronograma de préstamos, `masUnMes` (suscripción),
+  webhook MP y recurrencia de agenda. Mora ahora usa `hoyArgentina()` (ART, no UTC).
+  Webhook MP encadena desde `subscriptionEnd` (unificado con transferencia).
+  `session.ts` bloquea suscripción `activo`/`moroso` vencida (3 días de gracia).
+  Tests: `src/lib/__tests__/{fechas,prestamos}.test.ts`. Falta: validación de UI con
+  cuenta `demo-prestamista@gesto.app` (sembrar préstamo backdated) — usar `/browse`.
 - Últimas features cerradas: **#57 firma webhook MP** (fail-closed en prod) y
   **cobro por transferencia + panel super-admin** (`/admin/suscripciones`).
 - **Pendiente de aplicar**: migración `0008_pagos_suscripcion.sql` en Supabase

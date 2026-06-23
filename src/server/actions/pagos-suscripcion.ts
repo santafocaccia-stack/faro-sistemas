@@ -10,6 +10,7 @@ import { PLANES, type PlanId } from '@/lib/planes';
 import { getDolarMep } from '@/lib/dolar';
 import { getAppUrl } from '@/lib/app-url';
 import { montoArsPlan } from '@/lib/transferencia';
+import { sumarMeses } from '@/lib/fechas';
 import { enviarEmail } from '@/lib/email/enviar';
 import {
   buildAvisoTransferenciaAdminHtml,
@@ -19,11 +20,9 @@ import {
 
 type Result = { ok: boolean; error?: string };
 
-/** Suma un mes calendario a una fecha (mismo criterio que el webhook MP). */
+/** Suma un mes calendario (clampeando fin de mes; mismo criterio que el webhook MP). */
 function masUnMes(base: Date): Date {
-  const d = new Date(base);
-  d.setMonth(d.getMonth() + 1);
-  return d;
+  return sumarMeses(base, 1);
 }
 
 /** Comprobante legible a partir del uuid del pago. */

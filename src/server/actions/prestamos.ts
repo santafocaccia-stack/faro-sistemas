@@ -15,6 +15,7 @@ import {
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
 import { generarCronograma, calcularMora, imputarPago } from '@/lib/prestamos';
+import { hoyArgentina } from '@/lib/fechas';
 import { revalidatePath } from 'next/cache';
 
 const n = (s: string | null | undefined) => Number(s ?? 0);
@@ -146,7 +147,7 @@ export async function obtenerPrestamo(id: string) {
     .where(and(byTenant(session.tenantId, cuotas), eq(cuotas.prestamoId, id)))
     .orderBy(asc(cuotas.numero));
 
-  const hoy = new Date();
+  const hoy = hoyArgentina();
   const tasaPunit = n(p.tasaPunitoriaAnual);
   const lineas = filas.map((c) => {
     const venc = new Date(c.vencimiento + 'T00:00:00');
@@ -194,7 +195,7 @@ export async function registrarPagoPrestamo(input: {
       .where(and(byTenant(session.tenantId, cuotas), eq(cuotas.prestamoId, p.id), sql`${cuotas.estado} <> 'pagada'`))
       .orderBy(asc(cuotas.numero));
 
-    const hoy = new Date();
+    const hoy = hoyArgentina();
     const tasaPunit = n(p.tasaPunitoriaAnual);
     let restante = monto;
     let totMora = 0, totInteres = 0, totCapital = 0;

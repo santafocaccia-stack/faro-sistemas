@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { tenants } from '@/server/db/schema';
 import type { PlanId } from '@/lib/planes';
+import { sumarMeses } from '@/lib/fechas';
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!;
 const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET;
@@ -94,8 +95,17 @@ export async function POST(req: NextRequest) {
   if (!tenantId || !planId) return NextResponse.json({ ok: false }, { status: 400 });
 
   if (preapproval.status === 'authorized') {
-    const subscriptionEnd = new Date();
-    subscriptionEnd.setMonth(subscriptionEnd.getMonth() + 1);
+    // Encadenar desde el vencimiento vigente (no perder días si paga antes de
+    // vencer) — mismo criterio que el cobro por transferencia.
+    const [tenant] = await db
+      .select({ subscriptionEnd: tenants.subscriptionEnd })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+    const ahora = new Date();
+    const base =
+      tenant?.subscriptionEnd && tenant.subscriptionEnd > ahora ? tenant.subscriptionEnd : ahora;
+    const subscriptionEnd = sumarMeses(base, 1);
 
     await db
       .update(tenants)

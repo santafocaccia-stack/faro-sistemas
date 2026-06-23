@@ -18,11 +18,15 @@ export type Session = {
   planFeatures: Partial<Record<Capacidad, boolean>> | null;
   status: 'trial' | 'activo' | 'moroso' | 'suspendido' | 'cancelado';
   trialEnd: Date | null;
+  subscriptionEnd: Date | null;
 };
 
 type RequireSessionOpts = {
   allowExpired?: boolean;
 };
+
+/** Días de tolerancia tras el vencimiento de la suscripción antes de cortar el acceso. */
+const DIAS_GRACIA_SUSCRIPCION = 3;
 
 /**
  * Obtiene la sesión del usuario autenticado.
@@ -51,8 +55,9 @@ const getSessionData = cache(async (): Promise<Session | null> => {
       rol:          usersTenants.rol,
       permisos:     usersTenants.permisos,
       tenantNombre: tenants.nombre,
-      status:       tenants.status,
-      trialEnd:     tenants.trialEnd,
+      status:          tenants.status,
+      trialEnd:        tenants.trialEnd,
+      subscriptionEnd: tenants.subscriptionEnd,
       plan:         tenants.plan,
       planFeatures: tenants.planFeatures,
     })
@@ -72,8 +77,9 @@ const getSessionData = cache(async (): Promise<Session | null> => {
     permisos:     row.permisos as Permiso[] | null,
     plan:         row.plan as PlanId,
     planFeatures: row.planFeatures as Partial<Record<Capacidad, boolean>> | null,
-    status:       row.status,
-    trialEnd:     row.trialEnd,
+    status:          row.status,
+    trialEnd:        row.trialEnd,
+    subscriptionEnd: row.subscriptionEnd,
   };
 });
 
@@ -85,8 +91,17 @@ export async function requireSession(opts?: RequireSessionOpts): Promise<Session
   if (!opts?.allowExpired) {
     const now = new Date();
     const trialExpired = session.status === 'trial' && session.trialEnd && session.trialEnd < now;
+    // Suscripción paga vencida (con días de gracia): aplica a 'activo' y 'moroso'.
+    // Si subscriptionEnd es null (ej. demos sin vencimiento) no se bloquea.
+    const limiteSuscripcion = session.subscriptionEnd
+      ? new Date(session.subscriptionEnd.getTime() + DIAS_GRACIA_SUSCRIPCION * 86_400_000)
+      : null;
+    const suscripcionVencida =
+      (session.status === 'activo' || session.status === 'moroso') &&
+      limiteSuscripcion != null &&
+      limiteSuscripcion < now;
     const blocked = session.status === 'suspendido' || session.status === 'cancelado';
-    if (trialExpired || blocked) redirect('/planes');
+    if (trialExpired || suscripcionVencida || blocked) redirect('/planes');
   }
 
   return session;

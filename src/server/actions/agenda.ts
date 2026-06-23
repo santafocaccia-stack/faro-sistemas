@@ -13,6 +13,7 @@ import {
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
+import { sumarMeses } from '@/lib/fechas';
 import { revalidatePath } from 'next/cache';
 
 // ─── Turnos ──────────────────────────────────────────────────────────────────
@@ -124,16 +125,18 @@ export async function eliminarTurno(id: string) {
 // ─── Vencimientos ────────────────────────────────────────────────────────────
 
 function avanzarFecha(fecha: Date, periodicidad: Periodicidad): Date {
-  const d = new Date(fecha);
   switch (periodicidad) {
-    case 'mensual': d.setMonth(d.getMonth() + 1); break;
-    case 'bimestral': d.setMonth(d.getMonth() + 2); break;
-    case 'trimestral': d.setMonth(d.getMonth() + 3); break;
-    case 'semestral': d.setMonth(d.getMonth() + 6); break;
-    case 'anual': d.setFullYear(d.getFullYear() + 1); break;
-    case 'unico': break;
+    case 'mensual': return sumarMeses(fecha, 1);
+    case 'bimestral': return sumarMeses(fecha, 2);
+    case 'trimestral': return sumarMeses(fecha, 3);
+    case 'semestral': return sumarMeses(fecha, 6);
+    case 'anual': {
+      const d = new Date(fecha);
+      d.setFullYear(d.getFullYear() + 1);
+      return d;
+    }
+    case 'unico': return new Date(fecha);
   }
-  return d;
 }
 
 export async function listarVencimientos() {
