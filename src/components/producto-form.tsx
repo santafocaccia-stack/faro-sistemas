@@ -52,6 +52,13 @@ export function ProductoForm({
   const [sugerenciaDescartada, setSugerenciaDescartada] = useState(false);
   const [isPendingSugerencia, startSugerencia] = useTransition();
 
+  // Los numéricos vienen de Postgres como numeric(12,3)/(12,2) → strings con
+  // ceros de relleno ("6.000", "100.00"). Al cargarlos al form los limpiamos
+  // para mostrar unidades comunes ("6", "100") en vez de "6,000"/"100,00".
+  // (vacío se mantiene vacío para no inyectar un "0" molesto en alta nueva.)
+  const limpiarNum = (v?: string | null) =>
+    v == null || v === '' ? '' : String(Number(v));
+
   const [form, setForm] = useState<Omit<ProductoInput, 'vinculos'>>({
     codigo: producto?.codigo ?? '',
     codigoPlu: producto?.codigoPlu ?? '',
@@ -64,11 +71,11 @@ export function ProductoForm({
     tipoUnidad: producto?.tipoUnidad ?? 'por_unidad',
     // Campos numéricos arrancan vacíos en producto nuevo — sin el "0"
     // molesto que hay que borrar. Se convierten a '0' al guardar.
-    stockActual: producto?.stockActual ?? '',
-    stockMinimo: producto?.stockMinimo ?? '',
-    costoPromedio: producto?.costoPromedio ?? '',
-    precioMayorista: producto?.precioMayorista ?? '',
-    precioMinorista: producto?.precioMinorista ?? '',
+    stockActual: limpiarNum(producto?.stockActual),
+    stockMinimo: limpiarNum(producto?.stockMinimo),
+    costoPromedio: limpiarNum(producto?.costoPromedio),
+    precioMayorista: limpiarNum(producto?.precioMayorista),
+    precioMinorista: limpiarNum(producto?.precioMinorista),
     activo: producto?.activo ?? true,
   });
 
