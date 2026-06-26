@@ -2,12 +2,89 @@
 
 import { eq, and, asc, desc, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
 import {
-  pedidosProveedores, pedidosLineas, proveedores, productos,
+  pedidosProveedores, pedidosLineas, proveedores, productos, productoProveedores,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireAdmin } from '@/server/auth/session';
+
+/**
+ * Crea (o reutiliza) un pedido en borrador para un proveedor y lo pre-carga con
+ * los productos vinculados a ese proveedor (cantidad 0, para que el usuario las
+ * ajuste). Los pedidos normalmente se acumulan solos al vender; esto permite
+ * armar uno a mano. Devuelve el id del pedido.
+ */
+export async function crearPedidoManual(proveedorId: string): Promise<string> {
+  const session = await requireAdmin();
+  const { tenantId } = session;
+
+  // Verificar que el proveedor sea del tenant (byTenant = defensa principal).
+  const [prov] = await db
+    .select({ id: proveedores.id })
+    .from(proveedores)
+    .where(and(byTenant(tenantId, proveedores), eq(proveedores.id, proveedorId)))
+    .limit(1);
+  if (!prov) throw new Error('Proveedor no encontrado');
+
+  // Reutilizar el borrador abierto del proveedor para no duplicar.
+  const [existente] = await db
+    .select({ id: pedidosProveedores.id })
+    .from(pedidosProveedores)
+    .where(and(
+      byTenant(tenantId, pedidosProveedores),
+      eq(pedidosProveedores.proveedorId, proveedorId),
+      eq(pedidosProveedores.estado, 'borrador'),
+    ))
+    .limit(1);
+
+  let pedidoId = existente?.id;
+  if (!pedidoId) {
+    const [nuevo] = await db
+      .insert(pedidosProveedores)
+      .values({ tenantId, proveedorId })
+      .returning({ id: pedidosProveedores.id });
+    pedidoId = nuevo!.id;
+  }
+
+  // Pre-cargar los productos vinculados al proveedor que no estén ya en el pedido.
+  const vinculados = await db
+    .select({ productoId: productoProveedores.productoId })
+    .from(productoProveedores)
+    .innerJoin(productos, eq(productoProveedores.productoId, productos.id))
+    .where(and(
+      byTenant(tenantId, productoProveedores),
+      eq(productoProveedores.proveedorId, proveedorId),
+      eq(productos.activo, true),
+    ));
+
+  const yaEnPedido = new Set(
+    (await db
+      .select({ productoId: pedidosLineas.productoId })
+      .from(pedidosLineas)
+      .where(and(byTenant(tenantId, pedidosLineas), eq(pedidosLineas.pedidoId, pedidoId))))
+      .map((r) => r.productoId),
+  );
+
+  const nuevas = vinculados.filter((v) => !yaEnPedido.has(v.productoId));
+  if (nuevas.length > 0) {
+    await db.insert(pedidosLineas).values(
+      nuevas.map((v) => ({ tenantId, pedidoId: pedidoId!, productoId: v.productoId, cantidadPedida: '0' })),
+    );
+  }
+
+  revalidatePath('/dashboard/pedidos');
+  return pedidoId;
+}
+
+/** Action para usar en un <form>: crea el pedido y redirige a su detalle. */
+export async function nuevoPedido(formData: FormData) {
+  const proveedorId = String(formData.get('proveedorId') ?? '');
+  if (!proveedorId) return;
+  const id = await crearPedidoManual(proveedorId);
+  redirect(`/dashboard/pedidos/${id}`);
+}
 
 export async function listarPedidos() {
   const session = await requireAdmin();
