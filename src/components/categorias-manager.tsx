@@ -18,9 +18,13 @@ type Props = {
   plan?: string;
 };
 
+// Variantes ocultas por ahora: el bloque "Grupos de variantes" no se muestra,
+// pero los datos y acciones siguen existiendo (sin perder nada en la DB).
+const MOSTRAR_VARIANTES = false;
+
 export function CategoriasManager({ categorias, grupos, plan }: Props) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className={cn('grid grid-cols-1 gap-6', MOSTRAR_VARIANTES && 'lg:grid-cols-2')}>
       <Section
         titulo="Categorías"
         descripcion="Sirven para agrupar productos en el catálogo (ej: Carnes, Lácteos, Bebidas)."
@@ -33,17 +37,19 @@ export function CategoriasManager({ categorias, grupos, plan }: Props) {
         emptyMsg="Aún no creaste ninguna categoría. Sirven para organizar tu catálogo."
       />
 
-      <Section
-        titulo="Grupos de variantes"
-        descripcion="Para productos con variantes (ej: Talles, Colores, Sabores)."
-        icono={Layers}
-        items={grupos.map((g) => ({ id: g.id, nombre: g.nombre }))}
-        onCrear={async (n) => { await crearGrupoVariante(n); }}
-        onEditar={async (id, n) => { await actualizarGrupoVariante(id, n); }}
-        onEliminar={async (id) => { await eliminarGrupoVariante(id); }}
-        placeholder="Ej: Talle"
-        emptyMsg="Sin grupos creados. Útil si vendés ropa, calzado, etc."
-      />
+      {MOSTRAR_VARIANTES && (
+        <Section
+          titulo="Grupos de variantes"
+          descripcion="Para productos con variantes (ej: Talles, Colores, Sabores)."
+          icono={Layers}
+          items={grupos.map((g) => ({ id: g.id, nombre: g.nombre }))}
+          onCrear={async (n) => { await crearGrupoVariante(n); }}
+          onEditar={async (id, n) => { await actualizarGrupoVariante(id, n); }}
+          onEliminar={async (id) => { await eliminarGrupoVariante(id); }}
+          placeholder="Ej: Talle"
+          emptyMsg="Sin grupos creados. Útil si vendés ropa, calzado, etc."
+        />
+      )}
     </div>
   );
 }

@@ -42,6 +42,10 @@ export function ProductoForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!producto;
+  // Variantes ocultas por ahora: la UI de grupos de variantes (selector +
+  // sugerencias) está desactivada en todos lados, pero los datos siguen
+  // intactos en la DB y se siguen guardando (grupoVarianteId del producto).
+  const MOSTRAR_VARIANTES = false;
   const [gruposLocales, setGruposLocales] = useState(gruposVariantes);
   const [codigoFocused, setCodigoFocused] = useState(false);
   const codigoRef = useRef<HTMLInputElement>(null);
@@ -99,7 +103,7 @@ export function ProductoForm({
     const normalizado = normalizarNombre(nombre);
     update('nombre', normalizado);
     // Solo corre en modo creación — en edición ya hay producto y no tiene sentido sugerir
-    if (isEdit || sugerenciaDescartada || !normalizado) return;
+    if (!MOSTRAR_VARIANTES || isEdit || sugerenciaDescartada || !normalizado) return;
 
     startSugerencia(async () => {
       // excluirId no aplica en creación (no hay producto aún)
@@ -303,8 +307,8 @@ export function ProductoForm({
           )}
         </div>
 
-        {/* Sugerencia de variantes */}
-        {sugerencia && (
+        {/* Sugerencia de variantes (oculta por ahora) */}
+        {MOSTRAR_VARIANTES && sugerencia && (
           <div className="flex items-start gap-3 px-3.5 py-3 rounded-lg border border-amber-500/25 bg-amber-500/8 text-[13px]">
             <Lightbulb className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" strokeWidth={1.75} />
             <div className="flex-1 min-w-0">
@@ -364,22 +368,26 @@ export function ProductoForm({
             </Select>
           </Field>
 
-          <Field label="Grupo de variantes" htmlFor="grupoVarianteId" hint="opcional">
-            <Select
-              value={form.grupoVarianteId ?? ''}
-              onValueChange={(v) => update('grupoVarianteId', v === '__none' ? '' : v)}
-            >
-              <SelectTrigger id="grupoVarianteId" className={inputCls}>
-                <SelectValue placeholder="Sin grupo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">Sin grupo</SelectItem>
-                {gruposLocales.map((g) => (
-                  <SelectItem key={g.id} value={g.id}>{g.nombre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+          {/* Grupo de variantes oculto por ahora — el valor se conserva en el
+              form (grupoVarianteId) para no perder agrupaciones ya guardadas. */}
+          {MOSTRAR_VARIANTES && (
+            <Field label="Grupo de variantes" htmlFor="grupoVarianteId" hint="opcional">
+              <Select
+                value={form.grupoVarianteId ?? ''}
+                onValueChange={(v) => update('grupoVarianteId', v === '__none' ? '' : v)}
+              >
+                <SelectTrigger id="grupoVarianteId" className={inputCls}>
+                  <SelectValue placeholder="Sin grupo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sin grupo</SelectItem>
+                  {gruposLocales.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>{g.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
         </div>
 
         <Field label="Descripción" htmlFor="descripcion">

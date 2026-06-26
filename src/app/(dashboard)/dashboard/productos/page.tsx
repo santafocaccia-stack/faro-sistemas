@@ -39,7 +39,7 @@ export default async function ProductosPage() {
             )}
             <Link
               href="/dashboard/productos/categorias"
-              title="Categorías y variantes"
+              title="Categorías"
               className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-9 rounded-lg border border-border bg-card text-[13px] font-medium text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
             >
               <Tags className="h-4 w-4" strokeWidth={1.75} />

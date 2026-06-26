@@ -23,9 +23,9 @@ export default async function CategoriasPage() {
       </Link>
 
       <div>
-        <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Categorías y variantes</h1>
+        <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Categorías</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Organizá tu catálogo agrupando productos por categoría o variantes.
+          Organizá tu catálogo agrupando productos por categoría.
         </p>
       </div>
 

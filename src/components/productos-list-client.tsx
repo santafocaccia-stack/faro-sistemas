@@ -19,6 +19,10 @@ type Props = {
 
 type Filtro = 'todos' | 'activos' | 'inactivos' | 'stock_bajo';
 
+// Variantes ocultas por ahora: el filtro por grupo de variantes no se muestra,
+// pero los datos siguen intactos en la DB.
+const MOSTRAR_VARIANTES = false;
+
 export function ProductosListClient({ productos, categorias, gruposVariantes = [] }: Props) {
   const router = useRouter();
   const [busqueda, setBusqueda] = useState('');
@@ -41,8 +45,11 @@ export function ProductosListClient({ productos, categorias, gruposVariantes = [
     return categorias.filter((c) => usadas.has(c.id));
   }, [categorias, productos]);
 
-  /** Grupos de variantes con al menos 2 productos (si tiene 1 solo no tiene sentido filtrar) */
+  /** Grupos de variantes con al menos 2 productos (si tiene 1 solo no tiene sentido filtrar).
+   *  Variantes ocultas por ahora: devolvemos siempre [] para no mostrar el filtro,
+   *  aunque los datos siguen intactos en la DB. */
   const gruposConProductos = useMemo(() => {
+    if (!MOSTRAR_VARIANTES) return [];
     const conteo = new Map<string, number>();
     productos.forEach((p) => {
       if (p.grupoVarianteId) conteo.set(p.grupoVarianteId, (conteo.get(p.grupoVarianteId) ?? 0) + 1);
