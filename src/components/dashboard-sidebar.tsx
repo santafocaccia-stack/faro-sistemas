@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Settings, LogOut, Search, Command, UsersRound,
-  ShoppingCart, ChevronDown, MoreHorizontal, ArrowRight,
+  ShoppingCart, ArrowRight,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { navParaRol, puedeGestionar, POS_HREF, type NavItem } from '@/lib/nav';
@@ -29,19 +29,6 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
   const esGestor = puedeGestionar(rol);
   const tienePOS = planTiene(plan, 'pos'); // servicios y prestamista no venden en mostrador
 
-  /* "Más" dropdown */
-  const [masOpen, setMasOpen] = useState(false);
-  const masRef = useRef<HTMLDivElement>(null);
-
-  /* Cierra el menú al hacer click afuera */
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (masRef.current && !masRef.current.contains(e.target as Node)) setMasOpen(false);
-    }
-    if (masOpen) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [masOpen]);
-
   /* Precarga las rutas principales en background al montar el sidebar */
   useEffect(() => {
     const rutas = [
@@ -51,9 +38,6 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
     ];
     rutas.forEach((href) => router.prefetch(href));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* Cierra al cambiar de ruta */
-  useEffect(() => { setMasOpen(false); }, [pathname]);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -68,7 +52,6 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
   }
 
   const posActive = isActive(POS_HREF, true);
-  const masActive = navPlan.secondary.some((i) => isActive(i.href));
 
   return (
     <aside className="hidden md:flex w-60 shrink-0 bg-sidebar border-r border-sidebar-border flex-col relative">
@@ -143,49 +126,14 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
           />
         ))}
 
-        {/* ── Más... (collapsible) ─────────────────────── */}
-        {navPlan.secondary.length > 0 && (
-          <div ref={masRef} className="relative pt-1">
-            <button
-              onClick={() => setMasOpen((v) => !v)}
-              className={cn(
-                'relative w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-all duration-150',
-                masActive || masOpen
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:bg-white/[0.03] hover:text-foreground',
-              )}
-            >
-              <MoreHorizontal
-                className={cn(
-                  'h-4 w-4 shrink-0 transition-colors',
-                  masActive ? 'text-primary' : 'text-muted-foreground/80',
-                )}
-                strokeWidth={masActive ? 2 : 1.75}
-              />
-              <span className={cn(masActive && 'font-medium')}>Más</span>
-              <ChevronDown
-                className={cn(
-                  'h-3.5 w-3.5 ml-auto text-muted-foreground/60 transition-transform duration-150',
-                  masOpen && 'rotate-180',
-                )}
-              />
-            </button>
-
-            {/* Items secundarios — popover/collapsible */}
-            {masOpen && (
-              <div className="mt-1 ml-2 pl-2.5 border-l border-sidebar-border space-y-0.5 animate-fade-up">
-                {navPlan.secondary.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    item={item}
-                    active={isActive(item.href, item.exactMatch)}
-                    compact
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {/* ── Items secundarios — listados directos (sin "Más") ── */}
+        {navPlan.secondary.map((item) => (
+          <NavLink
+            key={item.href}
+            item={item}
+            active={isActive(item.href, item.exactMatch)}
+          />
+        ))}
 
         {/* ── Sistema (al fondo del nav) — solo owner/admin ──── */}
         {esGestor && (
@@ -193,11 +141,19 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
           <p className="px-2.5 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/40 select-none">
             Sistema
           </p>
-          {[
+          {(() => {
+          const sistemaItems = [
             { href: '/dashboard/config/equipo', label: 'Equipo',         Icon: UsersRound },
             { href: '/dashboard/config',        label: 'Configuración',  Icon: Settings },
-          ].map(({ href, label, Icon }) => {
-            const active = pathname.startsWith(href);
+          ];
+          // El item activo es el de href MÁS específico que matchea el pathname.
+          // Así /dashboard/config/equipo marca solo "Equipo" (no también "Configuración").
+          const activeHref = sistemaItems
+            .map((i) => i.href)
+            .filter((h) => pathname === h || pathname.startsWith(h + '/'))
+            .sort((a, b) => b.length - a.length)[0];
+          return sistemaItems.map(({ href, label, Icon }) => {
+            const active = href === activeHref;
             return (
               <Link
                 key={href}
@@ -217,7 +173,8 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
                 {label}
               </Link>
             );
-          })}
+          });
+          })()}
         </div>
         )}
       </nav>

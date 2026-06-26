@@ -12,7 +12,7 @@ import { usePosCart, selectTotal, selectCantidadItems, type LineaCart } from '@/
 import { parseEtiquetaBalanza } from '@/lib/balanza';
 import { crearVenta, type LineaVenta } from '@/server/actions/ventas';
 import { formatARS, cn } from '@/lib/utils';
-import { beep, beepError, vibrar, sonidoHabilitado, setSonidoHabilitado } from '@/lib/feedback';
+import { beep, beepAgregar, beepError, vibrar, sonidoHabilitado, setSonidoHabilitado } from '@/lib/feedback';
 import { PosScanner } from '@/components/pos/pos-scanner';
 import { PosModalCobrar } from '@/components/pos/pos-modal-cobrar';
 import { PosModalLineaSuelta } from '@/components/pos/pos-modal-linea-suelta';
@@ -206,7 +206,7 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
 
     const agregar = () => {
       agregarProducto({ productoId: p.id, nombre: p.nombre, precio, cantidad: 1 });
-      beep();
+      beepAgregar();
       vibrar(40);
     };
 
@@ -226,7 +226,7 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
   function agregarPorPeso(p: Producto, kg: number) {
     const precio = Number(esMayorista ? p.precioMayorista : p.precioMinorista);
     agregarProducto({ productoId: p.id, nombre: p.nombre, precio, cantidad: kg });
-    beep();
+    beepAgregar();
     vibrar(40);
     toast.success(`${p.nombre} · ${kg.toFixed(3).replace('.', ',')} kg`, { duration: 1800 });
   }
@@ -600,10 +600,10 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
                               <p className="text-[13px] font-medium truncate">{p.nombre}</p>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 {p.codigo && (
-                                  <span className="text-[10px] text-muted-foreground/60 font-mono">{p.codigo}</span>
+                                  <span className="text-[13px] text-foreground/80 font-mono tabular-nums tracking-tight">{p.codigo}</span>
                                 )}
                                 {p.codigoPlu && (
-                                  <span className="text-[10px] text-primary/70 font-mono">PLU {p.codigoPlu}</span>
+                                  <span className="text-[12px] text-primary font-mono tabular-nums">PLU {p.codigoPlu}</span>
                                 )}
                                 {catNombre && (
                                   <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary/80 leading-none">
@@ -631,15 +631,13 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
                           + Agregar como línea suelta
                         </button>
                       </div>
-                    ) : (
+                    ) : categoriaFiltroPos ? (
                       <div className="p-4 text-center">
                         <p className="text-xs text-muted-foreground">
-                          {categoriaFiltroPos
-                            ? 'No hay productos en esta categoría'
-                            : 'Escribí para buscar o elegí una categoría'}
+                          No hay productos en esta categoría
                         </p>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </motion.div>
               )}
@@ -673,8 +671,8 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
                     key={item.id}
                     item={item}
                     esUltimo={item.id === ultimaLineaId}
-                    onMas={() => cambiarCantidad(item.id, item.cantidad + 1)}
-                    onMenos={() => cambiarCantidad(item.id, item.cantidad - 1)}
+                    onMas={() => { cambiarCantidad(item.id, item.cantidad + 1); beepAgregar(); vibrar(40); }}
+                    onMenos={() => { cambiarCantidad(item.id, item.cantidad - 1); beepAgregar(); vibrar(40); }}
                     onQuitar={() => quitar(item.id)}
                   />
                 ))}
