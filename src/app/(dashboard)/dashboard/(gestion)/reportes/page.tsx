@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
-import { obtenerReporte, obtenerSerieReporte, type Granularidad } from '@/server/actions/reportes';
+import { obtenerReporteDesde, obtenerSerieReporte, type Granularidad } from '@/server/actions/reportes';
 import { dashboardPrestamos } from '@/server/actions/prestamos';
 import { resumenServicios } from '@/server/actions/presupuestos';
 import { requireSession } from '@/server/auth/session';
@@ -34,7 +34,9 @@ export default async function ReportesPage({ searchParams }: Props) {
   const esServicios = planTiene(plan, 'presupuestos') && !esPos;
 
   const serie = await obtenerSerieReporte(gran);
-  const rep = esPos ? await obtenerReporte('mes') : null;
+  // Las tarjetas siguen la MISMA ventana que el gráfico (no un 'mes' fijo).
+  const rep = esPos ? await obtenerReporteDesde(serie.desdeActualIso) : null;
+  const ventana = serie.ventanaLabel;
   const cartera = esPrestamos ? await dashboardPrestamos() : null;
   const rs = esServicios ? await resumenServicios() : null;
 
@@ -46,12 +48,12 @@ export default async function ReportesPage({ searchParams }: Props) {
   // KPIs por plan
   const kpis: { label: string; valor: string; sub?: string }[] = esPos && rep
     ? [
-        // Todas las tarjetas miran la misma ventana (últimos 30 días) para no
-        // mezclarse con el período del gráfico (que sigue el tab de granularidad).
-        { label: serie.metricaLabel, valor: formatARS(rep.resumen.total), sub: 'últimos 30 días' },
-        { label: 'Ticket promedio', valor: formatARS(rep.resumen.ticketPromedio), sub: 'últimos 30 días' },
-        { label: 'Minorista', valor: formatARS(rep.minorista.total), sub: `${rep.minorista.cantidad} ventas · 30 días` },
-        { label: 'Mayorista', valor: formatARS(rep.mayorista.total), sub: `${rep.mayorista.cantidad} ventas · 30 días` },
+        // Todas las tarjetas miran la MISMA ventana que el gráfico (sigue el tab
+        // de granularidad), para que cambiar el período actualice todo, no solo el gráfico.
+        { label: serie.metricaLabel, valor: formatARS(rep.resumen.total), sub: ventana },
+        { label: 'Ticket promedio', valor: formatARS(rep.resumen.ticketPromedio), sub: ventana },
+        { label: 'Minorista', valor: formatARS(rep.minorista.total), sub: `${rep.minorista.cantidad} ventas` },
+        { label: 'Mayorista', valor: formatARS(rep.mayorista.total), sub: `${rep.mayorista.cantidad} ventas` },
       ]
     : esPrestamos && cartera
     ? [
@@ -123,7 +125,7 @@ export default async function ReportesPage({ searchParams }: Props) {
           <div className="panel overflow-hidden">
             <div className="px-4 py-3 border-b border-border/60">
               <h3 className="text-sm font-semibold tracking-tight">Top productos</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Más vendidos (últimos 30 días)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Más vendidos ({ventana})</p>
             </div>
             <TopProductos items={rep.topProductos} />
           </div>
@@ -134,7 +136,7 @@ export default async function ReportesPage({ searchParams }: Props) {
           <div className="panel overflow-hidden">
             <div className="px-4 py-3 border-b border-border/60">
               <h3 className="text-sm font-semibold tracking-tight">Métodos de pago</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Cobros recibidos (últimos 30 días)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Cobros recibidos ({ventana})</p>
             </div>
             <div className="divide-y divide-border/40">
               {rep.porMetodo.map((m) => {
