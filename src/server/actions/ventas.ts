@@ -311,8 +311,23 @@ async function acumularPedidosProveedores(
 
 const PAGE_SIZE = 30;
 
-export async function listarVentas(canal: CanalVenta, page = 0) {
+export type FiltrosHistorial = {
+  desde?: string;      // 'YYYY-MM-DD' (fecha argentina, inclusive)
+  hasta?: string;      // 'YYYY-MM-DD' (fecha argentina, inclusive)
+  clienteId?: string;
+  estado?: 'pendiente' | 'parcial' | 'pagada' | 'anulada';
+};
+
+export async function listarVentas(canal: CanalVenta, page = 0, filtros?: FiltrosHistorial) {
   const session = await requireSession();
+  const tz = 'America/Argentina/Buenos_Aires';
+
+  const conds = [byTenant(session.tenantId, ventas), eq(ventas.canal, canal)];
+  if (filtros?.desde)     conds.push(sql`(${ventas.fecha} AT TIME ZONE ${tz})::date >= ${filtros.desde}::date`);
+  if (filtros?.hasta)     conds.push(sql`(${ventas.fecha} AT TIME ZONE ${tz})::date <= ${filtros.hasta}::date`);
+  if (filtros?.clienteId) conds.push(eq(ventas.clienteId, filtros.clienteId));
+  if (filtros?.estado)    conds.push(eq(ventas.estado, filtros.estado));
+
   const rows = await db
     .select({
       venta: ventas,
@@ -320,7 +335,7 @@ export async function listarVentas(canal: CanalVenta, page = 0) {
     })
     .from(ventas)
     .leftJoin(clientes, eq(ventas.clienteId, clientes.id))
-    .where(and(byTenant(session.tenantId, ventas), eq(ventas.canal, canal)))
+    .where(and(...conds))
     .orderBy(sql`${ventas.fecha} desc`)
     .limit(PAGE_SIZE + 1)
     .offset(page * PAGE_SIZE);
