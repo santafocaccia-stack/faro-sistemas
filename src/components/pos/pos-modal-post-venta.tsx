@@ -44,6 +44,8 @@ export type VentaCompletada = {
   };
   /** true mientras el server action todavía no respondió */
   procesando?: boolean;
+  /** Saldo de cuenta corriente del cliente tras la venta (solo si fue a CC; null/undefined si fue al contado) */
+  saldoCuentaCorriente?: number | null;
 };
 
 type Props = {
@@ -394,6 +396,23 @@ function TicketImprimible({ venta }: { venta: VentaCompletada }) {
         <div style={{ textAlign: 'center', fontSize: 9, marginTop: 4 }}>
           {venta.metodoPago.replace('_', ' ').toUpperCase()}
         </div>
+      )}
+
+      {/* Resumen de cuenta corriente — solo en ventas fiadas.
+          Convención: saldo positivo = el cliente debe. */}
+      {venta.saldoCuentaCorriente != null && (
+        <>
+          <div style={{ borderTop: '1px dashed #000', margin: '6px 0 4px' }} />
+          <div style={{ textAlign: 'center', fontSize: 9, fontWeight: 'bold', marginBottom: 2 }}>
+            RESUMEN CUENTA CORRIENTE
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+            <span>{venta.saldoCuentaCorriente >= 0 ? 'Saldo adeudado' : 'Saldo a favor'}</span>
+            <span style={{ fontWeight: 'bold' }}>
+              {formatARS(Math.abs(venta.saldoCuentaCorriente))}
+            </span>
+          </div>
+        </>
       )}
 
       <div style={{ textAlign: 'center', fontSize: 9, marginTop: 8 }}>

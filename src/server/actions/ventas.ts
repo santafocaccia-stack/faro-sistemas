@@ -47,13 +47,13 @@ async function siguienteNumero(tenantId: string, canal: CanalVenta, tx: any): Pr
 export async function crearVenta(
   input: NuevaVentaInput,
   idempotencyKey?: string,
-): Promise<{ id: string; numero: number; total: string }> {
+): Promise<{ id: string; numero: number; total: string; saldoCuentaCorriente?: number | null }> {
   const session = await requireSession();
 
   // Idempotencia: retornar resultado cacheado si el key ya fue procesado
   if (idempotencyKey) {
     const cached = await checkIdempotency(session.tenantId, idempotencyKey, 'crearVenta');
-    if (cached) return cached as { id: string; numero: number; total: string };
+    if (cached) return cached as { id: string; numero: number; total: string; saldoCuentaCorriente?: number | null };
   }
 
   const parsed = nuevaVentaSchema.safeParse(input);
@@ -66,6 +66,9 @@ export async function crearVenta(
   );
 
   let ventaCreada: { id: string; numero: number } | null = null;
+  // Saldo de cuenta corriente del cliente DESPUÉS de esta venta (solo si fue
+  // a cuenta corriente) — para mostrar el resumen en el ticket.
+  let saldoCC: number | null = null;
 
   await db.transaction(async (tx) => {
     const numero = await siguienteNumero(session.tenantId, input.canal, tx);
@@ -156,6 +159,8 @@ export async function crearVenta(
       await tx.update(clientes)
         .set({ saldoActual: saldoPosterior.toFixed(2) })
         .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, input.clienteId)));
+
+      saldoCC = saldoPosterior;
     }
   });
 
@@ -166,6 +171,8 @@ export async function crearVenta(
     id: vc.id,
     numero: vc.numero,
     total: total.toFixed(2),
+    // Saldo de cuenta corriente tras la venta (null si fue al contado).
+    saldoCuentaCorriente: saldoCC as number | null,
   };
   after(() =>
     Promise.all([

@@ -420,9 +420,15 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
         beep({ frecuencia: 1320, duracion: 0.1 });
         setTimeout(() => beep({ frecuencia: 1760, duracion: 0.12 }), 100);
 
-        // Completar con número e id reales
+        // Completar con número e id reales + saldo de cuenta corriente (si aplica)
         setVentaCompletada((prev) =>
-          prev ? { ...prev, id: result.id, numero: result.numero, procesando: false } : null,
+          prev ? {
+            ...prev,
+            id: result.id,
+            numero: result.numero,
+            procesando: false,
+            saldoCuentaCorriente: result.saldoCuentaCorriente,
+          } : null,
         );
       } catch (err) {
         beepError();
