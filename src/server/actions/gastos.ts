@@ -3,19 +3,17 @@
 import { and, sql, desc, eq, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/server/db';
-import {
-  gastos,
-  ventas,
-  presupuestos,
-  pagosPrestamo,
-  pedidosAtmosfericos,
-} from '@/server/db/schema';
+import { gastos, tenants } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireAdmin } from '@/server/auth/session';
 import { gastoInputSchema, formatZodError } from '@/server/schemas';
-import { planTiene, type PlanId } from '@/lib/planes';
-import { construirBalance, rangoMes, type BalanceMensual } from '@/lib/balance';
-import { generarAnalisisMensual } from '@/lib/ia/analisis-mensual';
+import { rangoMes, type BalanceMensual } from '@/lib/balance';
+import {
+  computarBalanceMensual,
+  generarYGuardarBalance,
+  obtenerBalanceGuardado,
+  type BalanceGuardado,
+} from '@/server/balance/balance-service';
 
 const TZ = 'America/Argentina/Buenos_Aires';
 
@@ -25,85 +23,6 @@ type Result = { ok: boolean; error?: string };
 function mesActualAr(): string {
   const ar = new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
   return `${ar.getFullYear()}-${String(ar.getMonth() + 1).padStart(2, '0')}`;
-}
-
-/**
- * Ingresos del plan dentro del rango [inicio, fin) (fechas YYYY-MM-DD, ART).
- * La fuente depende del plan (igual criterio que los reportes):
- *  - POS → ventas no anuladas · servicios → presupuestos cobrados
- *  - prestamista → cobranzas (pagos de préstamo) · atmosféricos → monto cobrado
- */
-async function ingresosDelRango(
-  tenantId: string,
-  plan: PlanId,
-  inicio: string,
-  fin: string,
-): Promise<number> {
-  const num = (r?: { s: string }) => Number(r?.s ?? 0);
-
-  if (planTiene(plan, 'pos')) {
-    const [r] = await db
-      .select({ s: sql<string>`coalesce(sum(${ventas.total}), 0)::text` })
-      .from(ventas)
-      .where(and(
-        byTenant(tenantId, ventas),
-        sql`${ventas.estado} != 'anulada'`,
-        sql`(${ventas.fecha} AT TIME ZONE ${TZ})::date >= ${inicio}::date`,
-        sql`(${ventas.fecha} AT TIME ZONE ${TZ})::date < ${fin}::date`,
-      ));
-    return num(r);
-  }
-  if (planTiene(plan, 'presupuestos')) {
-    const [r] = await db
-      .select({ s: sql<string>`coalesce(sum(${presupuestos.total}), 0)::text` })
-      .from(presupuestos)
-      .where(and(
-        byTenant(tenantId, presupuestos),
-        eq(presupuestos.estado, 'cobrado'),
-        sql`${presupuestos.cobradoAt} is not null`,
-        sql`(${presupuestos.cobradoAt} AT TIME ZONE ${TZ})::date >= ${inicio}::date`,
-        sql`(${presupuestos.cobradoAt} AT TIME ZONE ${TZ})::date < ${fin}::date`,
-      ));
-    return num(r);
-  }
-  if (planTiene(plan, 'prestamos')) {
-    const [r] = await db
-      .select({ s: sql<string>`coalesce(sum(${pagosPrestamo.montoTotal}), 0)::text` })
-      .from(pagosPrestamo)
-      .where(and(
-        byTenant(tenantId, pagosPrestamo),
-        sql`${pagosPrestamo.anuladoAt} is null`,
-        sql`(${pagosPrestamo.fecha} AT TIME ZONE ${TZ})::date >= ${inicio}::date`,
-        sql`(${pagosPrestamo.fecha} AT TIME ZONE ${TZ})::date < ${fin}::date`,
-      ));
-    return num(r);
-  }
-  if (planTiene(plan, 'atmosfericos')) {
-    const [r] = await db
-      .select({ s: sql<string>`coalesce(sum(${pedidosAtmosfericos.montoCobrado}), 0)::text` })
-      .from(pedidosAtmosfericos)
-      .where(and(
-        byTenant(tenantId, pedidosAtmosfericos),
-        sql`${pedidosAtmosfericos.montoCobrado} is not null`,
-        sql`${pedidosAtmosfericos.fechaProgramada} >= ${inicio}::date`,
-        sql`${pedidosAtmosfericos.fechaProgramada} < ${fin}::date`,
-      ));
-    return num(r);
-  }
-  return 0;
-}
-
-/** Suma de gastos (no anulados) en el rango [inicio, fin). */
-async function gastosFilasDelRango(tenantId: string, inicio: string, fin: string) {
-  return db
-    .select({ categoria: gastos.categoria, monto: gastos.monto })
-    .from(gastos)
-    .where(and(
-      byTenant(tenantId, gastos),
-      isNull(gastos.deletedAt),
-      sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date >= ${inicio}::date`,
-      sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date < ${fin}::date`,
-    ));
 }
 
 // ── Registrar / listar / anular gastos ───────────────────────────────────────
@@ -174,21 +93,7 @@ export async function anularGasto(id: string): Promise<Result> {
 /** Balance del mes 'YYYY-MM' (default: mes actual ART). */
 export async function obtenerBalanceMensual(mes?: string): Promise<BalanceMensual> {
   const session = await requireAdmin();
-  const m = mes ?? mesActualAr();
-  const { inicio, fin, mesPrev } = rangoMes(m);
-  const prev = rangoMes(mesPrev);
-
-  const [ingresos, ingresosPrev, gastosFilasRaw, gastosFilasPrevRaw] = await Promise.all([
-    ingresosDelRango(session.tenantId, session.plan, inicio, fin),
-    ingresosDelRango(session.tenantId, session.plan, prev.inicio, prev.fin),
-    gastosFilasDelRango(session.tenantId, inicio, fin),
-    gastosFilasDelRango(session.tenantId, prev.inicio, prev.fin),
-  ]);
-
-  const gastosFilas = gastosFilasRaw.map((g) => ({ categoria: g.categoria, monto: Number(g.monto) }));
-  const gastosPrev = gastosFilasPrevRaw.reduce((a, g) => a + Number(g.monto), 0);
-
-  return construirBalance({ mes: m, ingresos, gastosFilas, ingresosPrev, gastosPrev });
+  return computarBalanceMensual(session.tenantId, session.plan, mes ?? mesActualAr());
 }
 
 // ── Análisis con IA ──────────────────────────────────────────────────────────
@@ -197,18 +102,59 @@ export type AnalisisResult =
   | { ok: true; analisis: string; generadoPorIA: boolean }
   | { ok: false; error: string };
 
-/** Genera el análisis del mes (narrativa). Cae a un resumen sin IA si no hay API key. */
+/**
+ * Genera el análisis del mes (narrativa) y lo guarda (upsert). Cae a un resumen
+ * sin IA si no hay API key. Origen 'manual' (lo pidió el usuario a mano).
+ */
 export async function analizarMes(mes?: string): Promise<AnalisisResult> {
   try {
     const session = await requireAdmin();
-    const balance = await obtenerBalanceMensual(mes);
-    const { texto, generadoPorIA } = await generarAnalisisMensual({
-      balance,
-      plan: session.plan,
-      negocio: session.tenantNombre,
-    });
-    return { ok: true, analisis: texto, generadoPorIA };
+    const m = mes ?? mesActualAr();
+    const { analisis, generadoPorIa } = await generarYGuardarBalance(
+      { id: session.tenantId, plan: session.plan, nombre: session.tenantNombre },
+      m,
+      'manual',
+    );
+    return { ok: true, analisis, generadoPorIA: generadoPorIa };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'No se pudo generar el análisis' };
+  }
+}
+
+/** Análisis ya guardado para el mes (si existe). Lo usa la página para precargarlo. */
+export async function obtenerAnalisisMes(mes?: string): Promise<BalanceGuardado | null> {
+  const session = await requireAdmin();
+  return obtenerBalanceGuardado(session.tenantId, mes ?? mesActualAr());
+}
+
+// ── Configuración del balance automático ─────────────────────────────────────
+
+export type ConfigBalanceAuto = { activo: boolean; dia: number | null };
+
+export async function obtenerConfigBalanceAuto(): Promise<ConfigBalanceAuto> {
+  const session = await requireAdmin();
+  const [t] = await db
+    .select({ activo: tenants.balanceAutoActivo, dia: tenants.balanceAutoDia })
+    .from(tenants)
+    .where(eq(tenants.id, session.tenantId))
+    .limit(1);
+  return { activo: t?.activo ?? true, dia: t?.dia ?? null };
+}
+
+export async function guardarConfigBalanceAuto(cfg: ConfigBalanceAuto): Promise<Result> {
+  try {
+    const session = await requireAdmin();
+    // dia: null = último día hábil; si viene número se acota a 1-28 (días que
+    // existen en todos los meses, para que la programación sea estable).
+    const dia =
+      cfg.dia == null ? null : Math.min(Math.max(Math.trunc(cfg.dia), 1), 28);
+    await db
+      .update(tenants)
+      .set({ balanceAutoActivo: cfg.activo, balanceAutoDia: dia })
+      .where(eq(tenants.id, session.tenantId));
+    revalidatePath('/dashboard/gastos');
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'No se pudo guardar la configuración' };
   }
 }

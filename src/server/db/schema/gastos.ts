@@ -4,10 +4,14 @@ import {
   text,
   numeric,
   timestamp,
+  boolean,
+  jsonb,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
 import { metodoPagoEnum } from './cuenta-corriente';
+import type { BalanceMensual } from '@/lib/balance';
 
 /**
  * Gastos del negocio (egresos). Tenant-scoped, soft-delete.
@@ -46,3 +50,40 @@ export const gastos = pgTable(
 
 export type Gasto = typeof gastos.$inferSelect;
 export type NuevoGasto = typeof gastos.$inferInsert;
+
+/**
+ * Balance mensual cerrado: snapshot de las cifras del mes + análisis (IA o
+ * fallback) ya generado. Se persiste para no recalcular en cada visita y para
+ * que la generación automática (cron, último día hábil) quede disponible al
+ * dueño sin tener que apretar "Generar". Un único balance por (tenant, mes):
+ * regenerar hace upsert.
+ */
+export const balancesMensuales = pgTable(
+  'balances_mensuales',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+
+    mes: text('mes').notNull(), // 'YYYY-MM' (calendario ART)
+    analisis: text('analisis').notNull(),
+    generadoPorIa: boolean('generado_por_ia').notNull().default(false),
+    // Snapshot de las cifras al momento de cerrar el mes (para mostrar el
+    // balance tal cual se analizó, sin depender de datos que cambien después).
+    datos: jsonb('datos').$type<BalanceMensual>(),
+    origen: text('origen').notNull().default('automatico'), // 'automatico' | 'manual'
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex('uniq_balance_tenant_mes').on(t.tenantId, t.mes),
+  ],
+);
+
+export type BalanceMensualGuardado = typeof balancesMensuales.$inferSelect;
+export type NuevoBalanceMensualGuardado = typeof balancesMensuales.$inferInsert;
