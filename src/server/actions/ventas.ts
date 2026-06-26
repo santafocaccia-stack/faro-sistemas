@@ -344,6 +344,25 @@ export async function listarVentas(canal: CanalVenta, page = 0, filtros?: Filtro
   return { rows: rows.slice(0, PAGE_SIZE), hayMas, page };
 }
 
+/** Últimas compras de un cliente (ambos canales) — para la ficha del cliente. */
+export async function comprasRecientesCliente(clienteId: string, limite = 8) {
+  const session = await requireSession();
+  return db
+    .select({
+      id:       ventas.id,
+      numero:   ventas.numero,
+      canal:    ventas.canal,
+      fecha:    ventas.fecha,
+      total:    ventas.total,
+      estado:   ventas.estado,
+      tipoPago: ventas.tipoPago,
+    })
+    .from(ventas)
+    .where(and(byTenant(session.tenantId, ventas), eq(ventas.clienteId, clienteId)))
+    .orderBy(sql`${ventas.fecha} desc`)
+    .limit(limite);
+}
+
 export async function anularVenta(id: string) {
   const session = await requireSession();
   const parsedId = z.string().uuid('ID inválido').safeParse(id);
