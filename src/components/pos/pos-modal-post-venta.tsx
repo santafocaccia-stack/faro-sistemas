@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Printer, Share2, Download, X, Loader2, Clock } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
@@ -150,8 +151,13 @@ export function PostVentaModal({ venta, onCerrar, onSeguirVendiendo }: Props) {
 
   return (
     <>
-      {/* ── Versión print-only del ticket ── */}
-      <TicketImprimible venta={venta} />
+      {/* ── Versión print-only del ticket ──
+          Se renderiza vía portal a document.body para que NO quede dentro del
+          contenedor raíz del POS (que es `.screen-only` y por ende `display:none`
+          al imprimir). Sin el portal, el ticket print-only queda oculto bajo un
+          ancestro display:none y la hoja sale en blanco. */}
+      {typeof document !== 'undefined' &&
+        createPortal(<TicketImprimible venta={venta} />, document.body)}
 
       {/* ── Modal visible en pantalla ── */}
       <AnimatePresence>
