@@ -218,6 +218,25 @@ export function GastosClient({
                 <datalist id="categorias-gasto">
                   {categorias.map((c) => <option key={c} value={c} />)}
                 </datalist>
+                {/* Chips visibles para elegir de un toque (el datalist solo aparece al tipear) */}
+                {categorias.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {categorias.map((c) => (
+                      <button
+                        type="button"
+                        key={c}
+                        onClick={() => setFCategoria(c)}
+                        className={`px-2.5 h-7 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${
+                          fCategoria === c
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted/60 text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </Field>
               <Field label="Monto ($) *">
                 <Input className={inputCls} type="number" value={fMonto} onChange={(e) => setFMonto(e.target.value)} placeholder="0" />
