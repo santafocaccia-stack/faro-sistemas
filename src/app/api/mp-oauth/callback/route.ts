@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get('state');
 
   if (error || !code) {
-    return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=error`);
+    console.error('[mp-oauth] sin code o con error de MP:', { error, hasCode: !!code });
+    return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=error&reason=no_code`);
   }
 
   // Verificación anti-CSRF: el state debe coincidir con la cookie sembrada en
@@ -27,7 +28,8 @@ export async function GET(req: NextRequest) {
   const expectedState = cookieStore.get('mp_oauth_state')?.value;
   cookieStore.delete('mp_oauth_state');
   if (!state || !expectedState || state !== expectedState) {
-    return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=error`);
+    console.error('[mp-oauth] state mismatch:', { hasState: !!state, hasCookie: !!expectedState });
+    return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=error&reason=state`);
   }
 
   // Obtener el tenant del usuario autenticado
@@ -57,7 +59,10 @@ export async function GET(req: NextRequest) {
   });
 
   if (!tokenRes.ok) {
-    return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=error`);
+    // Capturar el detalle del error de MP para diagnóstico (no se expone al cliente).
+    const detalle = await tokenRes.text().catch(() => '');
+    console.error('[mp-oauth] intercambio de token falló:', tokenRes.status, detalle);
+    return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=error&reason=token_${tokenRes.status}`);
   }
 
   const token = await tokenRes.json();
