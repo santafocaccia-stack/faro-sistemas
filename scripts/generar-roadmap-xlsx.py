@@ -11,7 +11,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.formatting.rule import FormulaRule
 
 OUT = r"C:\Users\Tomi\Documents\Software\faro-sistemas\roadmap-gesto.xlsx"
-HOY = "2026-06-22"
+HOY = "2026-06-25"
 
 # ---- Paleta "Brasas" ----
 NARANJA   = "C2410C"  # acento
@@ -167,6 +167,32 @@ TAREAS = [
     ("Marketing / Conversión", "Precio en ARS más visible (manteniendo USD como principal)", "Media", "Hecho", "El ARS se agrandó (16px, seminegrita); el USD sigue siendo el número grande. Se mantiene el cobro al MEP en USD"),
     ("Marketing / Conversión", "Sello 'datos encriptados' + destacar '14 días sin tarjeta' como badge", "Media", "Hecho", "Sellos bajo los planes: datos encriptados (SSL), 14 días sin tarjeta, cancelás cuando quieras"),
     ("Marketing / Conversión", "Testimonios / casos de éxito", "Media", "Pendiente", "Dejar el espacio diseñado y llenarlo con los primeros clientes reales (no inventar)"),
+
+    # ── QA por planes (jun-2026) — feedback del dueño probando cada versión ──
+    ("QA por planes (jun-2026)", "MP: conectar cuenta del negocio (OAuth) — arreglado, conecta en prod", "Alta", "Hecho", "Faltaban MP_APP_ID/MP_CLIENT_SECRET en Vercel + redirect_uri canónico. Se fijó NEXT_PUBLIC_APP_URL=faro-sistemas (eliminado el fallback -gold) y mp-url usa getAppUrl(). Callback con diagnóstico ?reason=. Cuenta de prueba conectó OK (ID 642364293)"),
+    ("QA por planes (jun-2026)", "Cobro REAL por Mercado Pago (QR dinámico / link / Point) con la cuenta conectada", "Alta", "Pendiente", "HOY 'Mercado Pago' en el POS solo MARCA la venta como pagada (registro manual). getMPNegocioToken existe pero NO se usa. Falta: crear QR/orden por API de MP + webhook de confirmación que marque la venta cobrada"),
+    ("QA por planes (jun-2026)", "Nav: 'Equipo' ya no marca también 'Configuración'", "Media", "Hecho", "match por href más específico. En staging, falta merge a prod"),
+    ("QA por planes (jun-2026)", "Nav PC: sacar el desplegable 'Más', listar todos los items directos", "Media", "Hecho", "staging"),
+    ("QA por planes (jun-2026)", "POS: el hint 'escribí para buscar o elegí categoría' desaparece al enfocar el buscador", "Baja", "Hecho", "staging"),
+    ("QA por planes (jun-2026)", "POS: cambiar cantidad en el carrito suena igual que agregar producto", "Baja", "Hecho", "staging"),
+    ("QA por planes (jun-2026)", "POS: sonido de agregar más contundente (~1.4x, beepAgregar)", "Baja", "Hecho", "staging"),
+    ("QA por planes (jun-2026)", "POS: código de barras del buscador más grande/legible", "Baja", "Hecho", "staging"),
+    ("QA por planes (jun-2026)", "POS: fix ticket en blanco al imprimir (Market)", "Alta", "Hecho", "El ticket print-only vivía dentro de un contenedor .screen-only (display:none al imprimir); ahora va por portal a document.body. PDF ya andaba. staging"),
+    ("QA por planes (jun-2026)", "Productos: stock muestra '6' no '6,000' (limpia ceros de relleno de Postgres)", "Media", "Hecho", "staging"),
+    ("QA por planes (jun-2026)", "Carga rápida: agregar campo de stock inicial (con navegación por Enter)", "Media", "Hecho", "staging"),
+    ("QA por planes (jun-2026)", "Ticket de cuenta corriente con resumen del saldo del cliente", "Media", "Pendiente", ""),
+    ("QA por planes (jun-2026)", "Selector de tamaño de fuente global (accesibilidad, preview en vivo)", "Media", "Pendiente", "Para gente que ve poco. Seleccionable al inicio/onboarding + en config"),
+    ("QA por planes (jun-2026)", "Eliminar grupos de variantes — dejar solo categorías (el buscador ya cubre)", "Media", "Pendiente", "DESTRUCTIVA: migración de DB. Reemplaza la entrada 'Grupos de variantes'. Revisar impacto en plan balanza"),
+    ("QA por planes (jun-2026)", "Probar importación CSV (generar un CSV de ejemplo y validar)", "Media", "Pendiente", ""),
+    ("QA por planes (jun-2026)", "Filtros en el historial (por fecha, cliente, etc.)", "Media", "Pendiente", "Hoy solo filtra por período"),
+    ("QA por planes (jun-2026)", "Cliente: al seleccionarlo ver su ficha (datos/historial/saldo), no el form de edición; botón 'Editar' aparte", "Media", "Pendiente", ""),
+    ("QA por planes (jun-2026)", "Reportes: al cambiar el período recalcular TODOS los datos, no solo el gráfico", "Media", "Pendiente", "Verificar; con pocas ventas en demo puede ocultarse"),
+    ("QA por planes (jun-2026)", "CC: aclarar/mejorar UX de 'no permitir saldo negativo'", "Baja", "Pendiente", "El usuario no entiende cómo se maneja hoy"),
+    ("QA por planes (jun-2026)", "Proveedor: revisar selector de bandera de país (no se ve al crear)", "Baja", "Pendiente", "Decidir si va y por qué"),
+    ("QA por planes (jun-2026)", "Botón 'generar pedido' desde Proveedor y desde Pedidos", "Media", "Pendiente", "Hoy no hay forma de armar el pedido a proveedor"),
+    ("QA por planes (jun-2026)", "Categorías de gastos faltan en plan Market (revisar todos los planes)", "Media", "Pendiente", ""),
+    ("QA por planes (jun-2026)", "Balance mensual IA automático (cron fin de mes / fecha configurable), sin botón manual", "Media", "Pendiente", "Opción: último día hábil del mes o fecha elegida"),
+    ("QA por planes (jun-2026)", "Permisos granulares por usuario (capacidades sobre el rol empleado)", "Alta", "Pendiente", "users_tenants.permisos ya existe pero sin uso. Modelo elegido: toggles por capacidad (POS, Productos, Clientes, Reportes, Gastos, etc.)"),
 ]
 
 # ================= Construcción del libro =================
