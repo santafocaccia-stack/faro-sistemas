@@ -17,9 +17,19 @@ import { PosScanner } from '@/components/pos/pos-scanner';
 import { PosModalCobrar } from '@/components/pos/pos-modal-cobrar';
 import { PosModalLineaSuelta } from '@/components/pos/pos-modal-linea-suelta';
 import { PostVentaModal, type VentaCompletada } from '@/components/pos/pos-modal-post-venta';
+import { PosModalCobroMP } from '@/components/pos/pos-modal-cobro-mp';
+import { vincularVentaACobro } from '@/server/actions/cobros-mp';
 import { PosModalSinStock, type ConfirmacionSinStock } from '@/components/pos/pos-modal-sin-stock';
 import { PosModalPeso } from '@/components/pos/pos-modal-peso';
 import type { Producto, Cliente, Categoria } from '@/server/db/schema';
+
+/** Datos que el modal de cobro entrega al confirmar. */
+type CobrarPayload = {
+  tipoPago: 'contado' | 'cuenta_corriente';
+  metodoPago?: string;
+  descuento?: string;
+  notas?: string;
+};
 
 type Props = {
   productos: Producto[];
@@ -27,6 +37,8 @@ type Props = {
   categorias: Categoria[];
   consumidorFinalId: string | null;
   plan?: string;
+  /** El negocio tiene Mercado Pago conectado → habilita el cobro con QR. */
+  mpHabilitado?: boolean;
   negocio: {
     nombre: string;
     cuit: string | null;
@@ -55,7 +67,7 @@ type Props = {
  *  - flex ratios (58/42) en vez de h-Xvh: el layout se autoajusta a la
  *    altura real del contenedor sin depender del viewport.
  */
-export function PosContainer({ productos, clientes, categorias, consumidorFinalId, plan, negocio }: Props) {
+export function PosContainer({ productos, clientes, categorias, consumidorFinalId, plan, mpHabilitado, negocio }: Props) {
   // ── Store del carrito ────────────────────────────────────────
   const items = usePosCart((s) => s.items);
   const canal = usePosCart((s) => s.canal);
@@ -82,6 +94,14 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
   const [modalCobrar, setModalCobrar] = useState(false);
   const [modalLineaSuelta, setModalLineaSuelta] = useState(false);
   const [ventaCompletada, setVentaCompletada] = useState<VentaCompletada | null>(null);
+  // Cobro con Mercado Pago en curso: se muestra el QR y, al aprobarse, se
+  // registra la venta guardada acá (no se registró todavía).
+  const [cobroMP, setCobroMP] = useState<{
+    monto: number;
+    payload: CobrarPayload;
+    lineas: LineaVenta[];
+    ticketBase: VentaCompletada;
+  } | null>(null);
   const [confirmSinStock, setConfirmSinStock] = useState<ConfirmacionSinStock | null>(null);
   const [sonido, setSonido] = useState(true);
   // Key del scanner — cambia después de cada venta para forzar un
@@ -286,7 +306,7 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
 
     function onKey(e: KeyboardEvent) {
       if (modoEscaneo) return;
-      if (modalCobrar || modalLineaSuelta) return;
+      if (modalCobrar || modalLineaSuelta || cobroMP) return;
       const target = e.target as HTMLElement;
       const enInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
       const enBusqueda = target.id === 'pos-busqueda';
@@ -313,7 +333,7 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
       if (bufferTimer) clearTimeout(bufferTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productosActivos, esMayorista, modoEscaneo, modalCobrar, modalLineaSuelta, items, confirmSinStock]);
+  }, [productosActivos, esMayorista, modoEscaneo, modalCobrar, modalLineaSuelta, cobroMP, items, confirmSinStock]);
 
   // ── Atajos de teclado del POS ────────────────────────────────
   // F2 → abrir COBRAR · Escape → cerrar modal/limpiar búsqueda
@@ -328,13 +348,14 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
         if (modalCobrar)       { setModalCobrar(false);       return; }
         if (modalLineaSuelta)  { setModalLineaSuelta(false);  return; }
         if (confirmSinStock)   { setConfirmSinStock(null);    return; }
+        if (cobroMP)           return; // el cobro MP lo maneja su propio botón
         if (ventaCompletada)   return; // post-venta lo maneja su propio botón
         if (busqueda)          { setBusqueda('');             return; }
         return;
       }
 
       // No activar F2/Supr si hay un modal abierto
-      if (modalCobrar || modalLineaSuelta || confirmSinStock || ventaCompletada) return;
+      if (modalCobrar || modalLineaSuelta || confirmSinStock || ventaCompletada || cobroMP) return;
 
       // F2 → abrir cobrar (funciona incluso dentro de inputs)
       if (e.key === 'F2') {
@@ -354,20 +375,13 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
     window.addEventListener('keydown', onShortcut);
     return () => window.removeEventListener('keydown', onShortcut);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalCobrar, modalLineaSuelta, confirmSinStock, ventaCompletada, busqueda, items, ultimaLineaId, isPending]);
+  }, [modalCobrar, modalLineaSuelta, confirmSinStock, ventaCompletada, cobroMP, busqueda, items, ultimaLineaId, isPending]);
 
   // ── Cobrar ────────────────────────────────────────────────────
-  async function handleCobrar(payload: {
-    tipoPago: 'contado' | 'cuenta_corriente';
-    metodoPago?: string;
-    descuento?: string;
-    notas?: string;
-  }) {
+  async function handleCobrar(payload: CobrarPayload) {
     if (enviandoRef.current) return;
     if (items.length === 0) { toast.error('El carrito está vacío'); return; }
     if (!clienteId) { toast.error('Falta seleccionar cliente'); return; }
-
-    enviandoRef.current = true;
 
     const lineas: LineaVenta[] = items.map((it) => ({
       productoId: it.productoId,
@@ -400,14 +414,39 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
       negocio,
       procesando: true,
     };
+
+    // Cobro con Mercado Pago: primero mostramos el QR. La venta se registra
+    // recién cuando MP aprueba (ver handleCobroMPAprobado). Si se cancela o
+    // rechaza, no se crea ninguna venta y se vuelve al carrito.
+    if (payload.tipoPago === 'contado' && payload.metodoPago === 'mercado_pago' && mpHabilitado) {
+      setModalCobrar(false);
+      setCobroMP({ monto: totalSnapshot, payload, lineas, ticketBase });
+      return;
+    }
+
     setModalCobrar(false);
+    ejecutarVenta(payload, lineas, ticketBase);
+  }
+
+  /**
+   * Registra la venta en el servidor y muestra el modal post-venta. Se llama
+   * directo para los pagos comunes, o tras la aprobación de MP (con cobroId).
+   */
+  function ejecutarVenta(
+    payload: CobrarPayload,
+    lineas: LineaVenta[],
+    ticketBase: VentaCompletada,
+    cobroId?: string,
+  ) {
+    if (enviandoRef.current) return;
+    enviandoRef.current = true;
     setVentaCompletada(ticketBase);
 
     startTransition(async () => {
       try {
         const result = await crearVenta({
           canal,
-          clienteId,
+          clienteId: clienteId!,
           tipoPago: payload.tipoPago,
           metodoPago: payload.tipoPago === 'contado'
             ? (payload.metodoPago as 'efectivo' | 'transferencia' | 'tarjeta_debito' | 'tarjeta_credito' | 'mercado_pago')
@@ -416,6 +455,9 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
           descuento: payload.descuento,
           notas: payload.notas,
         });
+
+        // Vincular el cobro MP a la venta (trazabilidad). Best-effort.
+        if (cobroId) { try { await vincularVentaACobro(cobroId, result.id); } catch { /* noop */ } }
 
         beep({ frecuencia: 1320, duracion: 0.1 });
         setTimeout(() => beep({ frecuencia: 1760, duracion: 0.12 }), 100);
@@ -440,6 +482,19 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
         enviandoRef.current = false;
       }
     });
+  }
+
+  /** MP aprobó el pago: registramos la venta asociada. */
+  function handleCobroMPAprobado(cobroId: string) {
+    const datos = cobroMP;
+    setCobroMP(null);
+    if (datos) ejecutarVenta(datos.payload, datos.lineas, datos.ticketBase, cobroId);
+  }
+
+  /** El cajero canceló el cobro MP o se rechazó: volver al modal de cobro. */
+  function handleCobroMPCancelar() {
+    setCobroMP(null);
+    setModalCobrar(true);
   }
 
   /** Cerrar modal post-venta y limpiar carrito para próxima venta */
@@ -778,6 +833,15 @@ export function PosContainer({ productos, clientes, categorias, consumidorFinalI
           beep();
           searchRef.current?.focus();
         }}
+      />
+
+      {/* Cobro con Mercado Pago — QR + espera de pago */}
+      <PosModalCobroMP
+        open={!!cobroMP}
+        monto={cobroMP?.monto ?? 0}
+        canal={canal}
+        onAprobado={handleCobroMPAprobado}
+        onCancelar={handleCobroMPCancelar}
       />
 
       {/* Modal post-venta — ticket + imprimir + compartir */}

@@ -21,6 +21,7 @@ export default async function VentasPage() {
       categorias={categorias}
       consumidorFinalId={consumidorFinal?.id ?? null}
       plan={tenant?.plan ?? undefined}
+      mpHabilitado={!!tenant?.mpNegocioAccessToken}
       negocio={{
         nombre: tenant?.nombre ?? 'Mi negocio',
         cuit: tenant?.cuit ?? null,

@@ -18,3 +18,4 @@ export * from './idempotency';
 export * from './pedidos-atmosfericos';
 export * from './pagos-suscripcion';
 export * from './gastos';
+export * from './cobros-mp';
