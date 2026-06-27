@@ -40,6 +40,16 @@ export function beep(opts?: { frecuencia?: number; duracion?: number; volumen?: 
   }
 }
 
+/**
+ * Sonido de "agregar al carrito" — beep corto y contundente.
+ * Más rápido que el beep base (~1.4x: 0.08s → 0.057s) para que se sienta
+ * inmediato al sumar un producto o cambiar la cantidad en el carrito.
+ * Usar el MISMO sonido en ambas acciones (agregar producto y +/- cantidad).
+ */
+export function beepAgregar() {
+  beep({ frecuencia: 880, duracion: 0.057, volumen: 0.2 });
+}
+
 /** Vibración háptica corta — solo Android/algunos browsers */
 export function vibrar(ms = 40) {
   if (typeof navigator === 'undefined' || !('vibrate' in navigator)) return;

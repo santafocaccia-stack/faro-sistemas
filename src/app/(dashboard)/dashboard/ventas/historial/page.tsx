@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
-import { listarVentas } from '@/server/actions/ventas';
+import { ChevronLeft, ChevronRight, ShoppingCart, Filter, X } from 'lucide-react';
+import { listarVentas, type FiltrosHistorial } from '@/server/actions/ventas';
+import { listarClientes } from '@/server/actions/clientes';
 import { formatARS } from '@/lib/utils';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -15,17 +16,44 @@ const estadoBadge: Record<string, { label: string; className: string }> = {
 
 type Canal = 'minorista' | 'mayorista';
 
-type Props = { searchParams: Promise<{ canal?: string; page?: string }> };
+const ESTADOS = ['pendiente', 'parcial', 'pagada', 'anulada'] as const;
+
+type Props = {
+  searchParams: Promise<{
+    canal?: string; page?: string;
+    desde?: string; hasta?: string; cliente?: string; estado?: string;
+  }>;
+};
 
 export default async function HistorialPage({ searchParams }: Props) {
-  const { canal: canalParam, page: pageParam } = await searchParams;
-  const canal: Canal = canalParam === 'mayorista' ? 'mayorista' : 'minorista';
-  const page = Math.max(0, parseInt(pageParam ?? '0', 10) || 0);
+  const sp = await searchParams;
+  const canal: Canal = sp.canal === 'mayorista' ? 'mayorista' : 'minorista';
+  const page = Math.max(0, parseInt(sp.page ?? '0', 10) || 0);
 
-  const { rows, hayMas } = await listarVentas(canal, page);
+  const estado = (ESTADOS as readonly string[]).includes(sp.estado ?? '')
+    ? (sp.estado as FiltrosHistorial['estado']) : undefined;
+  const filtros: FiltrosHistorial = {
+    desde: sp.desde || undefined,
+    hasta: sp.hasta || undefined,
+    clienteId: sp.cliente || undefined,
+    estado,
+  };
+  const hayFiltros = Boolean(filtros.desde || filtros.hasta || filtros.clienteId || filtros.estado);
 
-  const buildHref = (p: number) =>
-    `/dashboard/ventas/historial?canal=${canal}&page=${p}`;
+  const [{ rows, hayMas }, clientes] = await Promise.all([
+    listarVentas(canal, page, filtros),
+    listarClientes(),
+  ]);
+
+  // Preserva canal + filtros en la paginación.
+  const buildHref = (p: number) => {
+    const q = new URLSearchParams({ canal, page: String(p) });
+    if (filtros.desde)     q.set('desde', filtros.desde);
+    if (filtros.hasta)     q.set('hasta', filtros.hasta);
+    if (filtros.clienteId) q.set('cliente', filtros.clienteId);
+    if (filtros.estado)    q.set('estado', filtros.estado);
+    return `/dashboard/ventas/historial?${q.toString()}`;
+  };
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl mx-auto space-y-8 animate-fade-up">
@@ -64,7 +92,55 @@ export default async function HistorialPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {rows.length === 0 && page === 0 ? (
+      {/* Filtros — form GET nativo (sin JS): fecha desde/hasta, cliente, estado */}
+      <form method="get" action="/dashboard/ventas/historial" className="panel p-3 sm:p-4 flex flex-wrap items-end gap-3">
+        <input type="hidden" name="canal" value={canal} />
+        <div className="space-y-1">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 block">Desde</label>
+          <input type="date" name="desde" defaultValue={filtros.desde ?? ''} className="h-9 bg-background border border-border rounded-md px-2.5 text-sm" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 block">Hasta</label>
+          <input type="date" name="hasta" defaultValue={filtros.hasta ?? ''} className="h-9 bg-background border border-border rounded-md px-2.5 text-sm" />
+        </div>
+        <div className="space-y-1 min-w-[160px]">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 block">Cliente</label>
+          <select name="cliente" defaultValue={filtros.clienteId ?? ''} className="h-9 bg-background border border-border rounded-md px-2.5 text-sm w-full">
+            <option value="">Todos</option>
+            {clientes.map((c) => (
+              <option key={c.id} value={c.id}>{c.razonSocial}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 block">Estado</label>
+          <select name="estado" defaultValue={filtros.estado ?? ''} className="h-9 bg-background border border-border rounded-md px-2.5 text-sm capitalize">
+            <option value="">Todos</option>
+            {ESTADOS.map((e) => (
+              <option key={e} value={e}>{e}</option>
+            ))}
+          </select>
+        </div>
+        <button type="submit" className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-primary text-primary-foreground text-[13px] font-medium hover:brightness-110 transition-all glow-primary">
+          <Filter className="h-3.5 w-3.5" /> Filtrar
+        </button>
+        {hayFiltros && (
+          <Link href={`/dashboard/ventas/historial?canal=${canal}`} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-3.5 w-3.5" /> Limpiar
+          </Link>
+        )}
+      </form>
+
+      {rows.length === 0 ? (
+        hayFiltros ? (
+        <div className="rounded-xl border border-border bg-card p-10 text-center">
+          <p className="text-sm font-medium mb-1">Sin resultados con esos filtros</p>
+          <p className="text-xs text-muted-foreground mb-5">Probá ampliar el rango de fechas o cambiar el cliente/estado.</p>
+          <Link href={`/dashboard/ventas/historial?canal=${canal}`} className="inline-flex items-center gap-2 px-3.5 h-9 rounded-lg border border-border text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-3.5 w-3.5" /> Limpiar filtros
+          </Link>
+        </div>
+        ) : (
         <div className="rounded-xl border border-border bg-card p-14 text-center">
           <div className="h-14 w-14 rounded-2xl bg-primary/8 border border-primary/15 mx-auto mb-4 flex items-center justify-center">
             <ShoppingCart className="h-5 w-5 text-primary" strokeWidth={1.75} />
@@ -81,6 +157,7 @@ export default async function HistorialPage({ searchParams }: Props) {
             Ir al punto de venta
           </Link>
         </div>
+        )
       ) : (
         <>
           <div className="panel overflow-hidden">

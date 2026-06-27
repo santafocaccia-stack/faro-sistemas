@@ -9,6 +9,7 @@ import {
   timestamp,
   boolean,
   numeric,
+  integer,
   jsonb,
   pgEnum,
 } from 'drizzle-orm/pg-core';
@@ -50,6 +51,13 @@ export const tenants = pgTable('tenants', {
   habilitaMinorista: boolean('habilita_minorista').notNull().default(true),
   preciosVivos: boolean('precios_vivos').notNull().default(false), // actualización masiva de precios con redondeo
   margenObjetivo: numeric('margen_objetivo', { precision: 5, scale: 2 }).notNull().default('50'), // recargo % objetivo sobre el costo
+
+  // Balance mensual automático: el análisis con IA se genera y guarda solo.
+  // `balanceAutoDia` = día del mes en que se corre (null = último día hábil,
+  // editable por el negocio). Si el día es temprano (<=15) cierra el mes
+  // anterior; si es tardío o "último hábil", cierra el mes corriente.
+  balanceAutoActivo: boolean('balance_auto_activo').notNull().default(true),
+  balanceAutoDia: integer('balance_auto_dia'), // null = último día hábil
 
   // Datos de contacto (para boletas y remitos)
   direccion: text('direccion'),                      // "Av. Corrientes 1234, CABA"

@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Package } from 'lucide-react';
+import { ArrowLeft, Package, ClipboardList } from 'lucide-react';
 import { ProveedorForm } from '@/components/proveedor-form';
 import { obtenerProveedor } from '@/server/actions/proveedores';
+import { nuevoPedido } from '@/server/actions/pedidos';
 import { formatARS } from '@/lib/utils';
 
 type Props = { params: Promise<{ id: string }> };
@@ -23,10 +24,21 @@ export default async function ProveedorPage({ params }: Props) {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold tracking-tight">{proveedor.nombre}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Editar proveedor</p>
         </div>
+
+        {/* Generar pedido a este proveedor (crea/abre el borrador y va al detalle) */}
+        <form action={nuevoPedido}>
+          <input type="hidden" name="proveedorId" value={proveedor.id} />
+          <button
+            type="submit"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-primary text-primary-foreground text-[13px] font-medium hover:brightness-110 transition-all glow-primary"
+          >
+            <ClipboardList className="h-3.5 w-3.5" /> Generar pedido
+          </button>
+        </form>
       </div>
 
       <ProveedorForm proveedor={proveedor} />

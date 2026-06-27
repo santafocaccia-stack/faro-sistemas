@@ -25,8 +25,12 @@ export default async function EditarProductoPage({
     listarVinculosProducto(id),
   ]);
 
+  // Variantes ocultas por ahora: no se muestran agrupaciones de variantes,
+  // aunque los datos siguen en la DB. (Ver producto-form.tsx.)
+  const MOSTRAR_VARIANTES = false;
+
   // Otras variantes del mismo grupo (solo si tiene grupo asignado)
-  const otrasVariantes = producto?.grupoVarianteId
+  const otrasVariantes = MOSTRAR_VARIANTES && producto?.grupoVarianteId
     ? await listarProductosDeGrupo(producto.grupoVarianteId, id)
     : [];
 
@@ -90,8 +94,8 @@ export default async function EditarProductoPage({
         plan={session.plan}
       />
 
-      {/* Otras variantes del mismo grupo */}
-      {otrasVariantes.length > 0 && grupoActual && (
+      {/* Otras variantes del mismo grupo (oculto por ahora) */}
+      {MOSTRAR_VARIANTES && otrasVariantes.length > 0 && grupoActual && (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="px-5 py-4 border-b border-border/60 flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">

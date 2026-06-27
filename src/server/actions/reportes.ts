@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { ventas, ventasLineas, pagos, productos, presupuestos, pagosPrestamo } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
@@ -15,6 +15,15 @@ export type Periodo = 'hoy' | 'semana' | 'mes' | 'tres_meses';
 export type Granularidad = 'dia' | 'semana' | 'mes' | 'trimestre' | 'anio';
 
 const BUCKETS: Record<Granularidad, number> = { dia: 14, semana: 8, mes: 12, trimestre: 8, anio: 5 };
+
+/** Etiqueta de la ventana de tiempo del período actual (coincide con BUCKETS). */
+const VENTANA_LABEL: Record<Granularidad, string> = {
+  dia: 'últimos 14 días',
+  semana: 'últimas 8 semanas',
+  mes: 'últimos 12 meses',
+  trimestre: 'últimos 8 trimestres',
+  anio: 'últimos 5 años',
+};
 
 const arHoy = hoyArgentina; // calendario de Buenos Aires (helper compartido)
 function inicioBucket(d: Date, g: Granularidad): Date {
@@ -115,7 +124,12 @@ export async function obtenerSerieReporte(granularidad: Granularidad = 'dia') {
   const metricaLabel = planTiene(plan as PlanId, 'prestamos') ? 'Cobranzas'
     : planTiene(plan as PlanId, 'pos') ? 'Ventas' : 'Cobrado';
 
-  return { serie, comparacion, totalActual, totalPrevio, metricaLabel };
+  // Inicio de la ventana "actual" (mismo rango que cubre la línea llena del
+  // gráfico) — para que las tarjetas KPI usen exactamente la misma ventana.
+  const inicioActual = actualStarts[0]!;
+  const desdeActualIso = `${inicioActual.getFullYear()}-${String(inicioActual.getMonth() + 1).padStart(2, '0')}-${String(inicioActual.getDate()).padStart(2, '0')}`;
+
+  return { serie, comparacion, totalActual, totalPrevio, metricaLabel, desdeActualIso, ventanaLabel: VENTANA_LABEL[g] };
 }
 
 function inicioDesde(periodo: Periodo) {
@@ -135,8 +149,7 @@ function inicioDesde(periodo: Periodo) {
  * Antes estaba cacheado con unstable_cache (TTL 5 min) sin invalidación efectiva,
  * lo que dejaba las tarjetas desactualizadas frente al gráfico.
  */
-async function fetchReporteData(tenantId: string, periodo: Periodo) {
-    const desde = inicioDesde(periodo);
+async function fetchReporteData(tenantId: string, desde: SQL) {
     const filtroBase = and(
       byTenant(tenantId, ventas),
       sql`${ventas.fecha} >= ${desde}`,
@@ -201,13 +214,10 @@ async function fetchReporteData(tenantId: string, periodo: Periodo) {
     return { resumen, porCanal, porMetodo, porDia, topProductos };
 }
 
-export async function obtenerReporte(periodo: Periodo = 'mes') {
-  const session = await requireAdmin();
-  const { tenantId } = session;
-
-  // fetchReporteData está cacheada por (tenantId, periodo) — 5 min TTL
+/** Reporte para una ventana que arranca en `desde` (SQL date). */
+async function armarReporte(tenantId: string, desde: SQL) {
   const { resumen, porCanal, porMetodo, porDia, topProductos } =
-    await fetchReporteData(tenantId, periodo);
+    await fetchReporteData(tenantId, desde);
 
   const min = porCanal.find((r) => r.canal === 'minorista');
   const may = porCanal.find((r) => r.canal === 'mayorista');
@@ -228,4 +238,17 @@ export async function obtenerReporte(periodo: Periodo = 'mes') {
       totalMonto:    Number(r.totalMonto),
     })),
   };
+}
+
+/** Reporte por período predefinido (hoy / semana / mes / tres_meses). */
+export async function obtenerReporte(periodo: Periodo = 'mes') {
+  const { tenantId } = await requireAdmin();
+  return armarReporte(tenantId, inicioDesde(periodo));
+}
+
+/** Reporte desde una fecha concreta (YYYY-MM-DD) — usado para que las tarjetas
+ *  sigan exactamente la ventana del gráfico (obtenerSerieReporte.desdeActualIso). */
+export async function obtenerReporteDesde(desdeIso: string) {
+  const { tenantId } = await requireAdmin();
+  return armarReporte(tenantId, sql`${desdeIso}::date`);
 }

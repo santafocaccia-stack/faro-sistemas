@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { obtenerTenant } from '@/server/actions/config';
 import { ConfigForm } from '@/components/config-form';
+import { FontScaleSelector } from '@/components/font-scale-selector';
 
 type Props = { searchParams: Promise<{ mp?: string }> };
 
@@ -17,6 +18,10 @@ export default async function ConfigPage({ searchParams }: Props) {
         </p>
       </div>
       <ConfigForm tenant={tenant} mpStatus={mp} />
+
+      <div className="mt-6">
+        <FontScaleSelector />
+      </div>
     </div>
   );
 }

@@ -47,13 +47,13 @@ async function siguienteNumero(tenantId: string, canal: CanalVenta, tx: any): Pr
 export async function crearVenta(
   input: NuevaVentaInput,
   idempotencyKey?: string,
-): Promise<{ id: string; numero: number; total: string }> {
+): Promise<{ id: string; numero: number; total: string; saldoCuentaCorriente?: number | null }> {
   const session = await requireSession();
 
   // Idempotencia: retornar resultado cacheado si el key ya fue procesado
   if (idempotencyKey) {
     const cached = await checkIdempotency(session.tenantId, idempotencyKey, 'crearVenta');
-    if (cached) return cached as { id: string; numero: number; total: string };
+    if (cached) return cached as { id: string; numero: number; total: string; saldoCuentaCorriente?: number | null };
   }
 
   const parsed = nuevaVentaSchema.safeParse(input);
@@ -66,6 +66,9 @@ export async function crearVenta(
   );
 
   let ventaCreada: { id: string; numero: number } | null = null;
+  // Saldo de cuenta corriente del cliente DESPUÉS de esta venta (solo si fue
+  // a cuenta corriente) — para mostrar el resumen en el ticket.
+  let saldoCC: number | null = null;
 
   await db.transaction(async (tx) => {
     const numero = await siguienteNumero(session.tenantId, input.canal, tx);
@@ -156,6 +159,8 @@ export async function crearVenta(
       await tx.update(clientes)
         .set({ saldoActual: saldoPosterior.toFixed(2) })
         .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, input.clienteId)));
+
+      saldoCC = saldoPosterior;
     }
   });
 
@@ -166,6 +171,8 @@ export async function crearVenta(
     id: vc.id,
     numero: vc.numero,
     total: total.toFixed(2),
+    // Saldo de cuenta corriente tras la venta (null si fue al contado).
+    saldoCuentaCorriente: saldoCC as number | null,
   };
   after(() =>
     Promise.all([
@@ -304,8 +311,23 @@ async function acumularPedidosProveedores(
 
 const PAGE_SIZE = 30;
 
-export async function listarVentas(canal: CanalVenta, page = 0) {
+export type FiltrosHistorial = {
+  desde?: string;      // 'YYYY-MM-DD' (fecha argentina, inclusive)
+  hasta?: string;      // 'YYYY-MM-DD' (fecha argentina, inclusive)
+  clienteId?: string;
+  estado?: 'pendiente' | 'parcial' | 'pagada' | 'anulada';
+};
+
+export async function listarVentas(canal: CanalVenta, page = 0, filtros?: FiltrosHistorial) {
   const session = await requireSession();
+  const tz = 'America/Argentina/Buenos_Aires';
+
+  const conds = [byTenant(session.tenantId, ventas), eq(ventas.canal, canal)];
+  if (filtros?.desde)     conds.push(sql`(${ventas.fecha} AT TIME ZONE ${tz})::date >= ${filtros.desde}::date`);
+  if (filtros?.hasta)     conds.push(sql`(${ventas.fecha} AT TIME ZONE ${tz})::date <= ${filtros.hasta}::date`);
+  if (filtros?.clienteId) conds.push(eq(ventas.clienteId, filtros.clienteId));
+  if (filtros?.estado)    conds.push(eq(ventas.estado, filtros.estado));
+
   const rows = await db
     .select({
       venta: ventas,
@@ -313,13 +335,32 @@ export async function listarVentas(canal: CanalVenta, page = 0) {
     })
     .from(ventas)
     .leftJoin(clientes, eq(ventas.clienteId, clientes.id))
-    .where(and(byTenant(session.tenantId, ventas), eq(ventas.canal, canal)))
+    .where(and(...conds))
     .orderBy(sql`${ventas.fecha} desc`)
     .limit(PAGE_SIZE + 1)
     .offset(page * PAGE_SIZE);
 
   const hayMas = rows.length > PAGE_SIZE;
   return { rows: rows.slice(0, PAGE_SIZE), hayMas, page };
+}
+
+/** Últimas compras de un cliente (ambos canales) — para la ficha del cliente. */
+export async function comprasRecientesCliente(clienteId: string, limite = 8) {
+  const session = await requireSession();
+  return db
+    .select({
+      id:       ventas.id,
+      numero:   ventas.numero,
+      canal:    ventas.canal,
+      fecha:    ventas.fecha,
+      total:    ventas.total,
+      estado:   ventas.estado,
+      tipoPago: ventas.tipoPago,
+    })
+    .from(ventas)
+    .where(and(byTenant(session.tenantId, ventas), eq(ventas.clienteId, clienteId)))
+    .orderBy(sql`${ventas.fecha} desc`)
+    .limit(limite);
 }
 
 export async function anularVenta(id: string) {

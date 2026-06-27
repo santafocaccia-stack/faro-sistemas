@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Plus, Trash2, Sparkles, TrendingUp, TrendingDown, Wallet, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Sparkles, TrendingUp, TrendingDown, Wallet, Loader2, CalendarClock } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,12 @@ import {
   crearGasto,
   anularGasto,
   analizarMes,
+  obtenerAnalisisMes,
+  guardarConfigBalanceAuto,
+  type ConfigBalanceAuto,
 } from '@/server/actions/gastos';
+import type { BalanceGuardado } from '@/server/balance/balance-service';
+import { etiquetaProgramacion } from '@/lib/balance-auto';
 import type { BalanceMensual } from '@/lib/balance';
 
 type GastoRow = {
@@ -44,11 +49,15 @@ function deltaTxt(p: number | null): { txt: string; up: boolean } {
 export function GastosClient({
   mesInicial,
   balanceInicial,
+  analisisInicial,
+  configAuto,
   gastosIniciales,
   categorias,
 }: {
   mesInicial: string;
   balanceInicial: BalanceMensual;
+  analisisInicial: BalanceGuardado | null;
+  configAuto: ConfigBalanceAuto;
   gastosIniciales: GastoRow[];
   categorias: string[];
 }) {
@@ -57,9 +66,18 @@ export function GastosClient({
   const [gastos, setGastos] = useState<GastoRow[]>(gastosIniciales);
   const [pending, start] = useTransition();
 
-  const [analisis, setAnalisis] = useState<string | null>(null);
-  const [analisisIA, setAnalisisIA] = useState(false);
+  // Análisis: arranca con el guardado (si lo hay) — generación automática o
+  // una corrida manual previa. `meta` describe cómo/cuándo se generó.
+  const [analisis, setAnalisis] = useState<string | null>(analisisInicial?.analisis ?? null);
+  const [analisisIA, setAnalisisIA] = useState(analisisInicial?.generadoPorIa ?? false);
+  const [analisisMeta, setAnalisisMeta] = useState<{ origen: string; fecha: string } | null>(
+    analisisInicial ? { origen: analisisInicial.origen, fecha: analisisInicial.fecha } : null,
+  );
   const [analizando, setAnalizando] = useState(false);
+
+  // Configuración del balance automático.
+  const [cfg, setCfg] = useState<ConfigBalanceAuto>(configAuto);
+  const [cfgGuardando, setCfgGuardando] = useState(false);
 
   // Form
   const [showForm, setShowForm] = useState(false);
@@ -72,10 +90,16 @@ export function GastosClient({
 
   const recargar = (m: string) =>
     start(async () => {
-      const [b, gs] = await Promise.all([obtenerBalanceMensual(m), listarGastos(m)]);
+      const [b, gs, an] = await Promise.all([
+        obtenerBalanceMensual(m),
+        listarGastos(m),
+        obtenerAnalisisMes(m), // el análisis es por mes: traemos el guardado si hay
+      ]);
       setBalance(b);
       setGastos(gs.map((g) => ({ ...g, fecha: new Date(g.fecha).toISOString() })));
-      setAnalisis(null); // el análisis es por mes
+      setAnalisis(an?.analisis ?? null);
+      setAnalisisIA(an?.generadoPorIa ?? false);
+      setAnalisisMeta(an ? { origen: an.origen, fecha: an.fecha } : null);
     });
 
   const cambiarMes = (m: string) => {
@@ -111,8 +135,22 @@ export function GastosClient({
       setAnalizando(true);
       const r = await analizarMes(mes);
       setAnalizando(false);
-      if (r.ok) { setAnalisis(r.analisis); setAnalisisIA(r.generadoPorIA); }
-      else setAnalisis(`No se pudo generar: ${r.error}`);
+      if (r.ok) {
+        setAnalisis(r.analisis);
+        setAnalisisIA(r.generadoPorIA);
+        setAnalisisMeta({ origen: 'manual', fecha: new Date().toISOString() });
+      } else {
+        setAnalisis(`No se pudo generar: ${r.error}`);
+        setAnalisisMeta(null);
+      }
+    });
+
+  const guardarCfg = (next: ConfigBalanceAuto) =>
+    start(async () => {
+      setCfg(next); // optimista
+      setCfgGuardando(true);
+      await guardarConfigBalanceAuto(next);
+      setCfgGuardando(false);
     });
 
   const dIng = deltaTxt(balance.comparacion.ingresosDeltaPct);
@@ -180,11 +218,21 @@ export function GastosClient({
         {!analisis && !analizando && (
           <p className="text-sm text-muted-foreground">
             Generá un análisis del balance: qué pasó este mes, los puntos clave y recomendaciones.
+            {cfg.activo && ` Se genera solo ${etiquetaProgramacion(cfg.dia)}.`}
           </p>
         )}
         {analizando && <p className="text-sm text-muted-foreground">Analizando el mes…</p>}
         {analisis && (
           <div className="mt-2">
+            {analisisMeta && (
+              <p className="text-[11px] text-muted-foreground/80 mb-2">
+                {analisisMeta.origen === 'automatico' ? 'Generado automáticamente' : 'Generado manualmente'}
+                {' · '}
+                {new Date(analisisMeta.fecha).toLocaleDateString('es-AR', {
+                  day: '2-digit', month: '2-digit', year: 'numeric',
+                })}
+              </p>
+            )}
             <Markdown text={analisis} />
             {!analisisIA && (
               <p className="text-[11px] text-muted-foreground/70 mt-3">
@@ -193,6 +241,54 @@ export function GastosClient({
             )}
           </div>
         )}
+
+        {/* Programación del balance automático */}
+        <div className="mt-4 pt-4 border-t border-primary/15">
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={cfg.activo}
+              onChange={(e) => guardarCfg({ ...cfg, activo: e.target.checked })}
+              className="mt-0.5 h-4 w-4 accent-primary"
+            />
+            <span className="text-[13px]">
+              <span className="font-medium flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5 text-primary" /> Generar el análisis automáticamente
+              </span>
+              <span className="text-muted-foreground text-[12px]">
+                Cada mes se genera y guarda solo, sin que tengas que apretar nada.
+              </span>
+            </span>
+          </label>
+
+          {cfg.activo && (
+            <div className="flex items-center flex-wrap gap-2 mt-3 pl-[26px]">
+              <span className="text-[12px] text-muted-foreground">¿Qué día?</span>
+              <select
+                value={cfg.dia == null ? 'habil' : 'fijo'}
+                onChange={(e) =>
+                  guardarCfg({ ...cfg, dia: e.target.value === 'habil' ? null : (cfg.dia ?? 1) })
+                }
+                className={`${selCls} max-w-[200px]`}
+              >
+                <option value="habil">Último día hábil del mes</option>
+                <option value="fijo">Un día fijo del mes</option>
+              </select>
+              {cfg.dia != null && (
+                <select
+                  value={cfg.dia}
+                  onChange={(e) => guardarCfg({ ...cfg, dia: Number(e.target.value) })}
+                  className={`${selCls} max-w-[90px]`}
+                >
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              )}
+              {cfgGuardando && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Gastos del mes */}
@@ -218,6 +314,25 @@ export function GastosClient({
                 <datalist id="categorias-gasto">
                   {categorias.map((c) => <option key={c} value={c} />)}
                 </datalist>
+                {/* Chips visibles para elegir de un toque (el datalist solo aparece al tipear) */}
+                {categorias.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {categorias.map((c) => (
+                      <button
+                        type="button"
+                        key={c}
+                        onClick={() => setFCategoria(c)}
+                        className={`px-2.5 h-7 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${
+                          fCategoria === c
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted/60 text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </Field>
               <Field label="Monto ($) *">
                 <Input className={inputCls} type="number" value={fMonto} onChange={(e) => setFMonto(e.target.value)} placeholder="0" />

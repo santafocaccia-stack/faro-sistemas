@@ -1,6 +1,11 @@
 import { Wallet } from 'lucide-react';
 import { requireAdmin } from '@/server/auth/session';
-import { obtenerBalanceMensual, listarGastos } from '@/server/actions/gastos';
+import {
+  obtenerBalanceMensual,
+  listarGastos,
+  obtenerAnalisisMes,
+  obtenerConfigBalanceAuto,
+} from '@/server/actions/gastos';
 import { categoriasGasto } from '@/lib/gastos';
 import { PageHeader } from '@/components/ui/page-header';
 import { GastosClient } from './gastos-client';
@@ -9,7 +14,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function GastosPage() {
   const session = await requireAdmin();
-  const [balance, gastos] = await Promise.all([obtenerBalanceMensual(), listarGastos(monthOf())]);
+  const [balance, gastos, analisis, configAuto] = await Promise.all([
+    obtenerBalanceMensual(),
+    listarGastos(monthOf()),
+    obtenerAnalisisMes(),
+    obtenerConfigBalanceAuto(),
+  ]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-5xl mx-auto space-y-6 animate-fade-up">
@@ -21,6 +31,8 @@ export default async function GastosPage() {
       <GastosClient
         mesInicial={balance.mes}
         balanceInicial={balance}
+        analisisInicial={analisis}
+        configAuto={configAuto}
         gastosIniciales={gastos.map((g) => ({
           id: g.id,
           fecha: g.fecha.toISOString(),

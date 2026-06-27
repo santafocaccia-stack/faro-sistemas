@@ -14,6 +14,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="es"
       className={`${GeistSans.variable} ${GeistMono.variable} dark h-full antialiased`}
     >
+      <head>
+        {/* Escala de fuente accesible — aplica el zoom guardado ANTES del primer
+            paint para evitar parpadeo. Se usa `zoom` (no font-size) porque gran
+            parte de la UI usa tamaños en px que no escalan con rem. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('gesto:font-scale');var m={normal:'1',grande:'1.1',xl:'1.2',xxl:'1.35'};if(s&&m[s])document.documentElement.style.zoom=m[s];}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full bg-background text-foreground font-sans">
         {children}
       </body>

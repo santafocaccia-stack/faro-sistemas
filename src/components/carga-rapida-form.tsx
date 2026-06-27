@@ -20,6 +20,7 @@ const EMPTY_FORM = {
   nombre: '',
   precioMinorista: '',
   precioMayorista: '',
+  stockInicial: '',
   categoriaId: '',
 };
 
@@ -35,6 +36,7 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
   const nombreRef = useRef<HTMLInputElement>(null);
   const precioMinRef = useRef<HTMLInputElement>(null);
   const precioMayRef = useRef<HTMLInputElement>(null);
+  const stockRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus en código al montar
   useEffect(() => {
@@ -91,6 +93,13 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
   function handlePrecioMayKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
+      stockRef.current?.focus();
+    }
+  }
+
+  function handleStockKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
       handleGuardar();
     }
   }
@@ -110,7 +119,7 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
         categoriaId: form.categoriaId || null,
         grupoVarianteId: null,
         tipoUnidad: 'por_unidad',
-        stockActual: '0',
+        stockActual: form.stockInicial.trim() || '0',
         stockMinimo: null,
         costoPromedio: '0',
         precioMayorista: form.precioMayorista.trim() || '0',
@@ -277,6 +286,27 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
           </div>
         </div>
 
+        {/* Stock inicial */}
+        <div className="space-y-1.5">
+          <label htmlFor="cr-stock" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+            Stock inicial <span className="normal-case text-muted-foreground/40">(opcional)</span>
+          </label>
+          <Input
+            ref={stockRef}
+            id="cr-stock"
+            type="number"
+            inputMode="numeric"
+            step="1"
+            min="0"
+            value={form.stockInicial}
+            onChange={(e) => update('stockInicial', e.target.value)}
+            onFocus={(e) => e.target.select()}
+            onKeyDown={handleStockKeyDown}
+            placeholder="0"
+            className="h-10 bg-background/40 border-border/60 text-sm font-mono tabular-nums"
+          />
+        </div>
+
         {/* Categoría */}
         {categorias.length > 0 && (
           <div className="space-y-1.5">
@@ -321,7 +351,7 @@ export function CargaRapidaForm({ categorias, plan }: Props) {
 
       {/* Hint teclado */}
       <p className="text-[11px] text-muted-foreground/40 text-center">
-        Enter avanza entre campos · Enter en Mayorista guarda
+        Enter avanza entre campos · Enter en Stock guarda
       </p>
 
       {/* Scanner modal */}

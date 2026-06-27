@@ -14,6 +14,7 @@ import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { tenants, users, usersTenants, ventas, ventasLineas, productos } from '@/server/db/schema';
 import { buildReporteSemanalHtml } from '@/lib/email/reporte-semanal';
+import { procesarBalancesMensuales } from '@/server/balance/balance-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -39,9 +40,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Balance mensual automático: corre todos los días y solo actúa sobre los
+  // tenants cuyo día de generación es hoy (ART). Va ANTES del chequeo de Resend
+  // porque no depende del email — guarda el análisis para que el dueño lo vea
+  // en la app. Aislado en try/catch para no tumbar el reporte diario si falla.
+  let balancesGenerados = 0;
+  try {
+    const r = await procesarBalancesMensuales(tz(new Date()));
+    balancesGenerados = r.generados;
+  } catch (err) {
+    console.error('[cron/reporte-diario] error generando balances mensuales:', err);
+  }
+
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
-    return NextResponse.json({ ok: true, enviados: 0, motivo: 'RESEND_API_KEY no configurado' });
+    return NextResponse.json({ ok: true, enviados: 0, balancesGenerados, motivo: 'RESEND_API_KEY no configurado' });
   }
   const resend = new Resend(resendKey);
 
@@ -142,5 +155,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, dia: label, enviados });
+  return NextResponse.json({ ok: true, dia: label, enviados, balancesGenerados });
 }
