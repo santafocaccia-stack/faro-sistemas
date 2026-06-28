@@ -127,6 +127,19 @@ export async function requireRol(rolesPermitidos: Rol[]): Promise<Session> {
 }
 
 /**
+ * Guard del área de gestión: deja entrar a cualquiera con al menos un permiso
+ * de gestión (no solo owner/admin). Cada página luego valida su permiso puntual
+ * con requirePermiso. Sin ningún permiso de gestión → a su pantalla principal.
+ */
+export async function requireAlgunPermisoGestion(): Promise<Session> {
+  const { tieneAlgunPermisoGestion } = await import('@/lib/permisos');
+  const { homeDe } = await import('@/lib/nav');
+  const session = await requireSession();
+  if (!tieneAlgunPermisoGestion(session)) redirect(homeDe(session));
+  return session;
+}
+
+/**
  * Guard para páginas de gestión (owner + admin).
  * El rol 'empleado' es redirigido al POS — su única pantalla permitida.
  * Usar al inicio de cada page.tsx de gestión.
@@ -142,9 +155,11 @@ export async function requireAdmin(): Promise<Session> {
  */
 export async function requirePermiso(permiso: import('@/lib/permisos').Permiso): Promise<Session> {
   const { tienePermiso } = await import('@/lib/permisos');
+  const { homeDe } = await import('@/lib/nav');
   const session = await requireSession();
   if (!tienePermiso(session, permiso)) {
-    redirect(EMPLEADO_HOME[session.plan] ?? '/dashboard');
+    // A la primera pantalla que el usuario sí puede abrir (evita loops).
+    redirect(homeDe(session));
   }
   return session;
 }

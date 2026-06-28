@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Scale, Barcode, ScanLine, ShoppingCart, Package, ArrowRight } from 'lucide-react';
 import { requireCapacidad } from '@/server/auth/plan-guard';
+import { requirePermiso } from '@/server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,7 @@ const PASOS = [
 
 export default async function BalanzaPage() {
   await requireCapacidad('balanza');
+  await requirePermiso('gestionar_productos');
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">

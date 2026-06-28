@@ -9,7 +9,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { navParaRol, puedeGestionar, POS_HREF } from '@/lib/nav';
+import { navParaSession, POS_HREF } from '@/lib/nav';
+import { tienePermiso, type Permiso } from '@/lib/permisos';
 import { planTiene, type PlanId } from '@/lib/planes';
 import { usePosCart, selectCantidadItems } from '@/lib/stores/pos-cart';
 import type { Rol } from '@/server/db/schema';
@@ -21,27 +22,25 @@ function isActive(href: string, pathname: string, exactMatch?: boolean) {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-export function MobileBottomNav({ email, plan, rol }: { email: string; plan: PlanId; rol: Rol }) {
+export function MobileBottomNav({ email, plan, rol, permisos }: { email: string; plan: PlanId; rol: Rol; permisos: Permiso[] | null }) {
   const pathname = usePathname();
   const router   = useRouter();
   const [masOpen, setMasOpen] = useState(false);
   const cantidadItems = usePosCart(selectCantidadItems);
 
-  const navPlan  = navParaRol(plan, rol);
-  const tienePOS = planTiene(plan, 'pos');
-  const esGestor = puedeGestionar(rol);
+  const sujeto   = { rol, plan, permisos };
+  const navPlan  = navParaSession(sujeto);
+  const tienePOS = planTiene(plan, 'pos') && tienePermiso(sujeto, 'usar_pos');
 
   /* Ítems del plan (sin los marcados "pronto") */
   const primary   = navPlan.primary.filter((i) => !i.pronto) as Tab[];
   const secondary = navPlan.secondary.filter((i) => !i.pronto) as Tab[];
 
-  /* Config — solo gestores, siempre al final del drawer "Más" */
-  const configItems: Tab[] = esGestor
-    ? [
-        { href: '/dashboard/config/equipo', label: 'Equipo',        icon: UsersRound },
-        { href: '/dashboard/config',        label: 'Configuración', icon: Settings },
-      ]
-    : [];
+  /* Config — gateado por permiso, al final del drawer "Más" */
+  const configItems: Tab[] = [
+    { href: '/dashboard/config/equipo', label: 'Equipo',        icon: UsersRound, permiso: 'gestionar_equipo' as Permiso },
+    { href: '/dashboard/config',        label: 'Configuración', icon: Settings,   permiso: 'gestionar_config' as Permiso },
+  ].filter((i) => tienePermiso(sujeto, i.permiso)).map(({ href, label, icon }) => ({ href, label, icon }));
 
   /* Distribución de la barra:
      - Con POS: 2 tabs a la izquierda + FAB Vender al centro + 1 a la derecha. El resto va a "Más".

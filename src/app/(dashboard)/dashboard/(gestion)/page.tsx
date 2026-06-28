@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { obtenerKpisDashboard, obtenerProgresoOnboarding } from '@/server/actions/dashboard';
-import { requireSession } from '@/server/auth/session';
+import { requirePermiso } from '@/server/auth/session';
 import { planTiene } from '@/lib/planes';
 import { OnboardingWizard } from '@/components/onboarding-wizard';
 import { DashboardClient } from './dashboard-client';
@@ -34,7 +34,8 @@ function getNombre(email: string): string {
 ───────────────────────────────────────────────────────────── */
 // Componente interno con los datos — se suspende mientras carga
 async function DashboardContent() {
-  const session = await requireSession();
+  // Inicio muestra KPIs → requiere ver_reportes (sin él, va a su pantalla principal).
+  const session = await requirePermiso('ver_reportes');
 
   // Hora local Argentina (UTC-3, sin ajuste DST necesario para saludo)
   const ahoraAR = new Date(

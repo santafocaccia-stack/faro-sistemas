@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation';
 import { obtenerTenant } from '@/server/actions/config';
+import { requirePermiso } from '@/server/auth/session';
 import { ConfigForm } from '@/components/config-form';
 import { FontScaleSelector } from '@/components/font-scale-selector';
 
 type Props = { searchParams: Promise<{ mp?: string }> };
 
 export default async function ConfigPage({ searchParams }: Props) {
+  await requirePermiso('gestionar_config');
   const [tenant, { mp }] = await Promise.all([obtenerTenant(), searchParams]);
   if (!tenant) notFound();
 

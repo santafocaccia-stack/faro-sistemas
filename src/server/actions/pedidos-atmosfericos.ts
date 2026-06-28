@@ -7,7 +7,7 @@ import {
   type EstadoPedidoAtmos,
 } from '@/server/db/schema';
 import { byTenant, byTenantAnd } from '@/server/db/tenant-context';
-import { requireSession, requireAdmin } from '@/server/auth/session';
+import { requireSession, requirePermiso } from '@/server/auth/session';
 import { revalidatePath } from 'next/cache';
 
 const RUTA = '/dashboard/atmosfericos';
@@ -82,7 +82,7 @@ export type PedidoDelDia = Awaited<ReturnType<typeof listarPedidosDelDia>>[numbe
 
 /** Crear un nuevo pedido */
 export async function crearPedido(input: PedidoAtmosInput) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_atmosfericos');
 
   // Calcular el próximo orden (al final de la lista del día)
   const existentes = await db
@@ -143,7 +143,7 @@ export async function crearPedido(input: PedidoAtmosInput) {
 
 /** Reordenar los pedidos del día — recibe array de ids en el nuevo orden */
 export async function reordenarPedidos(ids: string[], fecha: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_atmosfericos');
 
   // Actualizar el orden de cada pedido en una transacción
   await db.transaction(async (tx) => {
@@ -212,7 +212,7 @@ export async function marcarEnCamino(id: string) {
 
 /** Cancelar un pedido */
 export async function cancelarPedido(id: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_atmosfericos');
   await db
     .update(pedidosAtmosfericos)
     .set({ estado: 'cancelado', activo: false })
@@ -273,7 +273,7 @@ export async function guardarClienteDesdePedido(
   pedidoId: string,
   nombreCliente: string,
 ) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_atmosfericos');
 
   const [pedido] = await db
     .select()

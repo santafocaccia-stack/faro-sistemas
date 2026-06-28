@@ -3,7 +3,12 @@
 import { eq, and } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { users, usersTenants, type Rol } from '@/server/db/schema';
-import { requireRol } from '@/server/auth/session';
+import { requirePermiso } from '@/server/auth/session';
+import {
+  permisosEfectivos,
+  TODOS_LOS_PERMISOS,
+  type Permiso,
+} from '@/lib/permisos';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
@@ -15,12 +20,13 @@ export type MiembroEquipo = {
   email: string;
   nombreCompleto: string | null;
   rol: Rol;
+  permisos: Permiso[] | null; // null = usa los permisos por defecto del rol
   creadoEn: Date;
 };
 
 /* ── Listar miembros del tenant ── */
 export async function listarEquipo(): Promise<MiembroEquipo[]> {
-  const session = await requireRol(['owner', 'admin']);
+  const session = await requirePermiso('gestionar_equipo');
 
   const rows = await db
     .select({
@@ -28,6 +34,7 @@ export async function listarEquipo(): Promise<MiembroEquipo[]> {
       email: users.email,
       nombreCompleto: users.nombreCompleto,
       rol: usersTenants.rol,
+      permisos: usersTenants.permisos,
       creadoEn: usersTenants.createdAt,
     })
     .from(usersTenants)
@@ -57,8 +64,8 @@ async function buscarUsuarioAuthPorEmail(
 }
 
 export async function invitarMiembro(input: InviteInput): Promise<InvitarResult> {
-  // Solo owners y admins pueden invitar
-  const session = await requireRol(['owner', 'admin']);
+  // Requiere el permiso de equipo (owner/admin por defecto)
+  const session = await requirePermiso('gestionar_equipo');
 
   // Solo un owner puede invitar a alguien como owner (evita escalación vía invitación).
   if (input.rol === 'owner' && session.rol !== 'owner') {
@@ -160,7 +167,7 @@ export async function invitarMiembro(input: InviteInput): Promise<InvitarResult>
 
 /* ── Cambiar rol de un miembro ── */
 export async function cambiarRol(userId: string, nuevoRol: Rol) {
-  const session = await requireRol(['owner', 'admin']);
+  const session = await requirePermiso('gestionar_equipo');
 
   // Solo un owner puede otorgar el rol owner (evita que un admin se auto-ascienda).
   if (nuevoRol === 'owner' && session.rol !== 'owner') {
@@ -172,9 +179,10 @@ export async function cambiarRol(userId: string, nuevoRol: Rol) {
     throw new Error('No podés cambiar tu propio rol');
   }
 
+  // Cambiar de rol resetea los permisos al preset del nuevo rol (limpia overrides).
   await db
     .update(usersTenants)
-    .set({ rol: nuevoRol })
+    .set({ rol: nuevoRol, permisos: null })
     .where(
       and(
         eq(usersTenants.tenantId, session.tenantId),
@@ -185,9 +193,54 @@ export async function cambiarRol(userId: string, nuevoRol: Rol) {
   revalidatePath('/dashboard/config/equipo');
 }
 
+/* ── Guardar permisos granulares de un miembro ── */
+export async function guardarPermisos(userId: string, permisos: Permiso[] | null) {
+  const session = await requirePermiso('gestionar_equipo');
+
+  // No podés editar tus propios permisos (evita auto-bloqueo / auto-escalada).
+  if (userId === session.userId) {
+    throw new Error('No podés editar tus propios permisos');
+  }
+
+  // Validar el target dentro del tenant y su rol.
+  const [target] = await db
+    .select({ rol: usersTenants.rol })
+    .from(usersTenants)
+    .where(and(eq(usersTenants.tenantId, session.tenantId), eq(usersTenants.userId, userId)))
+    .limit(1);
+  if (!target) throw new Error('El miembro no pertenece a este equipo');
+
+  // A un dueño no se le editan permisos: siempre tiene acceso total.
+  if (target.rol === 'owner') {
+    throw new Error('No se pueden editar los permisos del dueño');
+  }
+
+  if (permisos !== null) {
+    // Solo permisos válidos.
+    const validos = permisos.filter((p): p is Permiso =>
+      (TODOS_LOS_PERMISOS as readonly string[]).includes(p),
+    );
+    // Anti-escalada: un actor que no es dueño no puede otorgar permisos que él
+    // mismo no tiene.
+    if (session.rol !== 'owner') {
+      const propios = permisosEfectivos(session);
+      const excede = validos.some((p) => !propios.includes(p));
+      if (excede) throw new Error('No podés asignar permisos que vos no tenés');
+    }
+    permisos = Array.from(new Set(validos));
+  }
+
+  await db
+    .update(usersTenants)
+    .set({ permisos })
+    .where(and(eq(usersTenants.tenantId, session.tenantId), eq(usersTenants.userId, userId)));
+
+  revalidatePath('/dashboard/config/equipo');
+}
+
 /* ── Eliminar miembro ── */
 export async function eliminarMiembro(userId: string) {
-  const session = await requireRol(['owner', 'admin']);
+  const session = await requirePermiso('gestionar_equipo');
 
   if (userId === session.userId) {
     throw new Error('No podés eliminarte a vos mismo del equipo');

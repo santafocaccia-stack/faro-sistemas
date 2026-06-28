@@ -8,7 +8,7 @@ import {
   pedidosProveedores, pedidosLineas, proveedores, productos, productoProveedores,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireAdmin } from '@/server/auth/session';
+import { requirePermiso } from '@/server/auth/session';
 
 /**
  * Crea (o reutiliza) un pedido en borrador para un proveedor y lo pre-carga con
@@ -17,7 +17,7 @@ import { requireAdmin } from '@/server/auth/session';
  * armar uno a mano. Devuelve el id del pedido.
  */
 export async function crearPedidoManual(proveedorId: string): Promise<string> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   const { tenantId } = session;
 
   // Verificar que el proveedor sea del tenant (byTenant = defensa principal).
@@ -87,7 +87,7 @@ export async function nuevoPedido(formData: FormData) {
 }
 
 export async function listarPedidos() {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   const rows = await db
     .select({
       pedido: pedidosProveedores,
@@ -102,7 +102,7 @@ export async function listarPedidos() {
 }
 
 export async function obtenerPedido(id: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
 
   const [row] = await db
     .select({
@@ -131,7 +131,7 @@ export async function obtenerPedido(id: string) {
 }
 
 export async function actualizarLineaPedido(lineaId: string, cantidad: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   await db
     .update(pedidosLineas)
     .set({ cantidadPedida: cantidad })
@@ -140,7 +140,7 @@ export async function actualizarLineaPedido(lineaId: string, cantidad: string) {
 }
 
 export async function eliminarLineaPedido(lineaId: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   await db
     .delete(pedidosLineas)
     .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.id, lineaId)));
@@ -148,7 +148,7 @@ export async function eliminarLineaPedido(lineaId: string) {
 }
 
 export async function confirmarPedido(id: string, notas?: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   await db
     .update(pedidosProveedores)
     .set({
@@ -165,7 +165,7 @@ export async function recibirPedido(
   id: string,
   lineas: { lineaId: string; cantidadRecibida: string }[],
 ) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
 
   await db.transaction(async (tx) => {
     // Marcar el pedido como recibido

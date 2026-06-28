@@ -4,7 +4,7 @@ import { and, eq, sql, type SQL } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { ventas, ventasLineas, pagos, productos, presupuestos, pagosPrestamo } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireAdmin } from '@/server/auth/session';
+import { requirePermiso } from '@/server/auth/session';
 import { planTiene, type PlanId } from '@/lib/planes';
 import { hoyArgentina } from '@/lib/fechas';
 
@@ -61,7 +61,7 @@ function etiquetaBucket(d: Date, g: Granularidad): string {
 
 /** Devuelve serie del período actual + período anterior (misma cantidad de buckets). */
 export async function obtenerSerieReporte(granularidad: Granularidad = 'dia') {
-  const session = await requireAdmin();
+  const session = await requirePermiso('ver_reportes');
   const { tenantId, plan } = session;
   const g = granularidad;
   const N = BUCKETS[g];
@@ -242,13 +242,13 @@ async function armarReporte(tenantId: string, desde: SQL) {
 
 /** Reporte por período predefinido (hoy / semana / mes / tres_meses). */
 export async function obtenerReporte(periodo: Periodo = 'mes') {
-  const { tenantId } = await requireAdmin();
+  const { tenantId } = await requirePermiso('ver_reportes');
   return armarReporte(tenantId, inicioDesde(periodo));
 }
 
 /** Reporte desde una fecha concreta (YYYY-MM-DD) — usado para que las tarjetas
  *  sigan exactamente la ventana del gráfico (obtenerSerieReporte.desdeActualIso). */
 export async function obtenerReporteDesde(desdeIso: string) {
-  const { tenantId } = await requireAdmin();
+  const { tenantId } = await requirePermiso('ver_reportes');
   return armarReporte(tenantId, sql`${desdeIso}::date`);
 }

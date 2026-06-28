@@ -8,7 +8,7 @@ import {
   type PresupuestoEstado, type MetodoPago,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireAdmin } from '@/server/auth/session';
+import { requirePermiso } from '@/server/auth/session';
 
 export type LineaPresupuesto = {
   productoId?: string | null;
@@ -45,7 +45,7 @@ export type BoletaInput = {
  * (ej: "Recorte de cerco", "Losa radiante").
  */
 export async function listarDescripcionesUsadas(): Promise<string[]> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const rows = await db
     .select({ descripcion: presupuestosLineas.descripcion })
     .from(presupuestosLineas)
@@ -64,7 +64,7 @@ export async function listarDescripcionesUsadas(): Promise<string[]> {
 // ── Listar ────────────────────────────────────────────────────────────────────
 
 export async function listarPresupuestos() {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
   const rows = await db
@@ -93,7 +93,7 @@ export async function listarPresupuestos() {
 // ── Listar boletas (comprobantes de cobro) ─────────────────────────────────────
 
 export async function listarBoletas() {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
   const rows = await db
@@ -121,7 +121,7 @@ export async function listarBoletas() {
 // ── Obtener uno ───────────────────────────────────────────────────────────────
 
 export async function obtenerPresupuesto(id: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
   const [pres] = await db
@@ -160,7 +160,7 @@ export async function obtenerPresupuesto(id: string) {
 // ── Crear ─────────────────────────────────────────────────────────────────────
 
 export async function crearPresupuesto(input: PresupuestoInput) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
   // Calcular subtotal y total
@@ -217,7 +217,7 @@ export async function crearPresupuesto(input: PresupuestoInput) {
 // ── Crear boleta (comprobante de cobro no fiscal) ──────────────────────────────
 
 export async function crearBoleta(input: BoletaInput) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
   const subtotal = input.lineas.reduce((acc, l) => acc + Number(l.subtotal), 0);
@@ -278,7 +278,7 @@ export async function crearBoleta(input: BoletaInput) {
 // ── Editar ────────────────────────────────────────────────────────────────────
 
 export async function editarPresupuesto(id: string, input: PresupuestoInput) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
   const subtotal  = input.lineas.reduce((acc, l) => acc + Number(l.subtotal), 0);
@@ -334,7 +334,7 @@ export async function editarPresupuesto(id: string, input: PresupuestoInput) {
 // ── Cambiar estado ────────────────────────────────────────────────────────────
 
 export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEstado) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const result = await db
     .update(presupuestos)
     .set({ estado })
@@ -355,7 +355,7 @@ export async function marcarCobrado(
   id: string,
   metodo: MetodoPago,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const result = await db
     .update(presupuestos)
     .set({ estado: 'cobrado', cobradoAt: new Date(), metodoCobro: metodo })
@@ -372,7 +372,7 @@ export async function marcarCobrado(
 export async function revertirCobro(
   id: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const result = await db
     .update(presupuestos)
     .set({ estado: 'aprobado', cobradoAt: null, metodoCobro: null })
@@ -390,7 +390,7 @@ export async function revertirCobro(
  * cobrado del mes, pendientes de cobro (aprobados), presupuestos abiertos.
  */
 export async function resumenServicios() {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const inicioMes = new Date();
   inicioMes.setDate(1);
   inicioMes.setHours(0, 0, 0, 0);
@@ -439,7 +439,7 @@ export async function resumenServicios() {
 // ── Eliminar ──────────────────────────────────────────────────────────────────
 
 export async function eliminarPresupuesto(id: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const result = await db
     .delete(presupuestos)
     .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
@@ -460,7 +460,7 @@ export async function guardarComoPlantilla(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!nombrePlantilla.trim()) return { ok: false, error: 'El nombre de la plantilla es requerido' };
 
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const result = await db
     .update(presupuestos)
     .set({ esPlantilla: true, nombrePlantilla: nombrePlantilla.trim() })
@@ -477,7 +477,7 @@ export async function guardarComoPlantilla(
  * Lista todas las plantillas del tenant.
  */
 export async function listarPlantillas() {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const rows = await db
     .select({
       id:              presupuestos.id,
@@ -499,7 +499,7 @@ export async function listarPlantillas() {
 export async function usarPlantilla(
   plantillaId: string,
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
   const datos = await obtenerPresupuesto(plantillaId);

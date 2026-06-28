@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/server/db';
 import { gastos, tenants } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireAdmin } from '@/server/auth/session';
+import { requirePermiso } from '@/server/auth/session';
 import { gastoInputSchema, formatZodError } from '@/server/schemas';
 import { rangoMes, type BalanceMensual } from '@/lib/balance';
 import {
@@ -29,7 +29,7 @@ function mesActualAr(): string {
 
 export async function crearGasto(input: unknown): Promise<Result> {
   try {
-    const session = await requireAdmin();
+    const session = await requirePermiso('ver_reportes');
     const parsed = gastoInputSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: formatZodError(parsed.error) };
     const d = parsed.data;
@@ -53,7 +53,7 @@ export async function crearGasto(input: unknown): Promise<Result> {
 }
 
 export async function listarGastos(mes: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('ver_reportes');
   const { inicio, fin } = rangoMes(mes);
   return db
     .select({
@@ -76,7 +76,7 @@ export async function listarGastos(mes: string) {
 
 export async function anularGasto(id: string): Promise<Result> {
   try {
-    const session = await requireAdmin();
+    const session = await requirePermiso('ver_reportes');
     await db
       .update(gastos)
       .set({ deletedAt: new Date() })
@@ -92,7 +92,7 @@ export async function anularGasto(id: string): Promise<Result> {
 
 /** Balance del mes 'YYYY-MM' (default: mes actual ART). */
 export async function obtenerBalanceMensual(mes?: string): Promise<BalanceMensual> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('ver_reportes');
   return computarBalanceMensual(session.tenantId, session.plan, mes ?? mesActualAr());
 }
 
@@ -108,7 +108,7 @@ export type AnalisisResult =
  */
 export async function analizarMes(mes?: string): Promise<AnalisisResult> {
   try {
-    const session = await requireAdmin();
+    const session = await requirePermiso('ver_reportes');
     const m = mes ?? mesActualAr();
     const { analisis, generadoPorIa } = await generarYGuardarBalance(
       { id: session.tenantId, plan: session.plan, nombre: session.tenantNombre },
@@ -123,7 +123,7 @@ export async function analizarMes(mes?: string): Promise<AnalisisResult> {
 
 /** Análisis ya guardado para el mes (si existe). Lo usa la página para precargarlo. */
 export async function obtenerAnalisisMes(mes?: string): Promise<BalanceGuardado | null> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('ver_reportes');
   return obtenerBalanceGuardado(session.tenantId, mes ?? mesActualAr());
 }
 
@@ -132,7 +132,7 @@ export async function obtenerAnalisisMes(mes?: string): Promise<BalanceGuardado 
 export type ConfigBalanceAuto = { activo: boolean; dia: number | null };
 
 export async function obtenerConfigBalanceAuto(): Promise<ConfigBalanceAuto> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('ver_reportes');
   const [t] = await db
     .select({ activo: tenants.balanceAutoActivo, dia: tenants.balanceAutoDia })
     .from(tenants)
@@ -143,7 +143,7 @@ export async function obtenerConfigBalanceAuto(): Promise<ConfigBalanceAuto> {
 
 export async function guardarConfigBalanceAuto(cfg: ConfigBalanceAuto): Promise<Result> {
   try {
-    const session = await requireAdmin();
+    const session = await requirePermiso('ver_reportes');
     // dia: null = último día hábil; si viene número se acota a 1-28 (días que
     // existen en todos los meses, para que la programación sea estable).
     const dia =

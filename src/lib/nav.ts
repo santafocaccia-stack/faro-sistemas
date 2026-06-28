@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { PlanId } from './planes';
 import type { Rol } from '@/server/db/schema';
+import { tienePermiso, permisoDeRuta, type Permiso } from './permisos';
 
 export type NavItem = {
   href: string;
@@ -217,3 +218,47 @@ export function navParaRol(plan: PlanId, rol: Rol): NavPlan {
 export function puedeGestionar(rol: Rol): boolean {
   return rol === 'owner' || rol === 'admin';
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Navegación filtrada por PERMISOS (granular por usuario).
+
+   Reemplaza a navParaRol: cada ítem del plan se muestra solo si el
+   usuario tiene el permiso que protege esa ruta. Así un empleado con
+   override (ej. + ver_reportes) ve Reportes, y un admin al que le
+   quitaron CC no ve Cuenta corriente. Sin override, los defaults del
+   rol reproducen el comportamiento previo.
+───────────────────────────────────────────────────────────── */
+type SujetoNav = { rol: Rol; plan: PlanId; permisos?: Permiso[] | null };
+
+function puedeVerItem(s: SujetoNav, item: NavItem): boolean {
+  const permiso = permisoDeRuta(item.href);
+  // Sin permiso mapeado → visible (no debería pasar para ítems del nav).
+  return permiso ? tienePermiso(s, permiso) : true;
+}
+
+export function navParaSession(s: SujetoNav): NavPlan {
+  const base = NAV_POR_PLAN[s.plan];
+  return {
+    primary: base.primary.filter((i) => puedeVerItem(s, i)),
+    secondary: base.secondary.filter((i) => puedeVerItem(s, i)),
+  };
+}
+
+/**
+ * Primera pantalla que el usuario puede abrir (para redirigir sin loops).
+ * Prioriza el POS si lo tiene, luego el primer ítem visible del nav, y como
+ * último recurso una pantalla de "sin acceso".
+ */
+export function homeDe(s: SujetoNav): string {
+  if (tienePermiso(s, 'usar_pos') && POS_VISIBLE_EN_PLAN[s.plan]) return POS_HREF;
+  const nav = navParaSession(s);
+  const primero = nav.primary[0] ?? nav.secondary[0];
+  if (primero) return primero.href;
+  return '/dashboard/sin-acceso';
+}
+
+/** Planes cuyo flujo principal es el POS de ventas. */
+const POS_VISIBLE_EN_PLAN: Record<PlanId, boolean> = {
+  market: true, food: true, balanza: true,
+  servicios: false, prestamista: false, atmosfericos: false,
+};

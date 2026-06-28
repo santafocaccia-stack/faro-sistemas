@@ -7,7 +7,7 @@ import {
   proveedores, productoProveedores, productos,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireSession, requireAdmin } from '@/server/auth/session';
+import { requireSession, requirePermiso } from '@/server/auth/session';
 
 export type ProveedorInput = {
   nombre: string;
@@ -28,7 +28,7 @@ export async function listarProveedores() {
 }
 
 export async function obtenerProveedor(id: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   const [prov] = await db
     .select()
     .from(proveedores)
@@ -51,7 +51,7 @@ export async function obtenerProveedor(id: string) {
 }
 
 export async function crearProveedor(input: ProveedorInput) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   const [row] = await db
     .insert(proveedores)
     .values({
@@ -69,7 +69,7 @@ export async function crearProveedor(input: ProveedorInput) {
 }
 
 export async function actualizarProveedor(id: string, input: ProveedorInput) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   await db
     .update(proveedores)
     .set({
@@ -86,7 +86,7 @@ export async function actualizarProveedor(id: string, input: ProveedorInput) {
 }
 
 export async function desactivarProveedor(id: string) {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_proveedores');
   await db
     .update(proveedores)
     .set({ activo: false })

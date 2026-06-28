@@ -33,6 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           email={session.email}
           plan={session.plan}
           rol={session.rol}
+          permisos={session.permisos}
           tenantNombre={session.tenantNombre}
         >
           {children}

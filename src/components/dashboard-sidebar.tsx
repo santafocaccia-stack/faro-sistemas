@@ -9,7 +9,8 @@ import {
   ShoppingCart, ArrowRight,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { navParaRol, puedeGestionar, POS_HREF, type NavItem } from '@/lib/nav';
+import { navParaSession, POS_HREF, type NavItem } from '@/lib/nav';
+import { tienePermiso, type Permiso } from '@/lib/permisos';
 import { PLANES, planTiene, type PlanId } from '@/lib/planes';
 import type { Rol } from '@/server/db/schema';
 
@@ -17,17 +18,20 @@ type Props = {
   email: string;
   plan: PlanId;
   rol: Rol;
+  permisos: Permiso[] | null;
   tenantNombre: string;
   onOpenCommand: () => void;
 };
 
-export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand }: Props) {
+export function DashboardSidebar({ email, plan, rol, permisos, tenantNombre, onOpenCommand }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
-  const navPlan  = navParaRol(plan, rol);
+  const sujeto   = { rol, plan, permisos };
+  const navPlan  = navParaSession(sujeto);
   const planInfo = PLANES[plan];
-  const esGestor = puedeGestionar(rol);
-  const tienePOS = planTiene(plan, 'pos'); // servicios y prestamista no venden en mostrador
+  // "Sistema" (Config/Equipo) se muestra si tiene alguno de esos dos permisos.
+  const esGestor = tienePermiso(sujeto, 'gestionar_config') || tienePermiso(sujeto, 'gestionar_equipo');
+  const tienePOS = planTiene(plan, 'pos') && tienePermiso(sujeto, 'usar_pos');
 
   /* Precarga las rutas principales en background al montar el sidebar */
   useEffect(() => {
@@ -143,9 +147,9 @@ export function DashboardSidebar({ email, plan, rol, tenantNombre, onOpenCommand
           </p>
           {(() => {
           const sistemaItems = [
-            { href: '/dashboard/config/equipo', label: 'Equipo',         Icon: UsersRound },
-            { href: '/dashboard/config',        label: 'Configuración',  Icon: Settings },
-          ];
+            { href: '/dashboard/config/equipo', label: 'Equipo',         Icon: UsersRound, permiso: 'gestionar_equipo' as Permiso },
+            { href: '/dashboard/config',        label: 'Configuración',  Icon: Settings,   permiso: 'gestionar_config' as Permiso },
+          ].filter((i) => tienePermiso(sujeto, i.permiso));
           // El item activo es el de href MÁS específico que matchea el pathname.
           // Así /dashboard/config/equipo marca solo "Equipo" (no también "Configuración").
           const activeHref = sistemaItems

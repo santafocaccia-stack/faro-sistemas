@@ -3,7 +3,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { tenants } from '@/server/db/schema';
-import { requireSession, requireAdmin } from '@/server/auth/session';
+import { requireSession, requirePermiso } from '@/server/auth/session';
 import { margenObjetivoSchema, formatZodError } from '@/server/schemas';
 import { revalidatePath } from 'next/cache';
 
@@ -31,7 +31,7 @@ export type ConfigInput = {
 
 export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolean; error?: string }> {
   try {
-    const session = await requireAdmin();
+    const session = await requirePermiso('gestionar_config');
     if (!input.nombre.trim()) return { ok: false, error: 'El nombre del negocio es obligatorio' };
 
     // Validar margen objetivo solo si viene con valor (numeric(5,2): 0..999.99, sin NaN).

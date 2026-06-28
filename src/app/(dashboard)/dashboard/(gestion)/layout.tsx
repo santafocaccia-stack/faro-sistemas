@@ -9,13 +9,15 @@
  * El route group (gestion) no cambia las URLs: /dashboard, /dashboard/productos,
  * etc. siguen funcionando igual.
  */
-import { requireAdmin } from '@/server/auth/session';
+import { requireAlgunPermisoGestion } from '@/server/auth/session';
 
 export default async function GestionLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireAdmin();
+  // Deja entrar a quien tenga al menos un permiso de gestión; cada página
+  // valida su permiso puntual con requirePermiso (ver permisos granulares).
+  await requireAlgunPermisoGestion();
   return <>{children}</>;
 }

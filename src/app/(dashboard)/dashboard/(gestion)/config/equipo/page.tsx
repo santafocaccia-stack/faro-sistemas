@@ -1,11 +1,12 @@
 import { listarEquipo } from '@/server/actions/equipo';
-import { requireSession } from '@/server/auth/session';
+import { requirePermiso } from '@/server/auth/session';
 import { descripcionAdmin, descripcionEmpleado } from '@/lib/nav';
+import { permisosRelevantes } from '@/lib/permisos';
 import { EquipoForm } from '@/components/equipo-form';
 
 export default async function EquipoPage() {
   const [session, equipo] = await Promise.all([
-    requireSession(),
+    requirePermiso('gestionar_equipo'),
     listarEquipo(),
   ]);
 
@@ -53,6 +54,7 @@ export default async function EquipoPage() {
         equipo={equipo}
         miRol={session.rol}
         miUserId={session.userId}
+        permisosDisponibles={permisosRelevantes(session.plan)}
       />
 
       {/* Nota al pie */}

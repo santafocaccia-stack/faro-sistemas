@@ -5,7 +5,7 @@ import { eq, and, ilike, desc, sql, asc } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { productos, productoProveedores, proveedores, categorias, tenants, type TipoUnidad } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireSession, requireAdmin } from '@/server/auth/session';
+import { requireSession, requirePermiso } from '@/server/auth/session';
 import {
   productoInputSchema,
   ajustarStockSchema,
@@ -54,7 +54,7 @@ export async function aplicarPreciosMasivo(input: {
   pct: number;
   redondeo: number; // 0 (sin redondeo), 10, 50, 100
 }): Promise<{ ok: true; actualizados: number } | { ok: false; error: string }> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_productos');
   const parsed = aplicarPreciosMasivoSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: formatZodError(parsed.error) };
   if (!(await preciosVivosActivo(session.tenantId)))
@@ -109,7 +109,7 @@ export type ProductoMargenBajo = {
  * "Estás vendiendo perdiendo margen" — alma de Precios vivos.
  */
 export async function productosMargenBajo(): Promise<ProductoMargenBajo[]> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_productos');
   return calcularMargenBajo(session.tenantId);
 }
 
@@ -145,7 +145,7 @@ async function calcularMargenBajo(tenantId: string): Promise<ProductoMargenBajo[
 
 /** Lleva el precio minorista de los productos con margen bajo al objetivo (con redondeo opcional). */
 export async function ajustarPreciosAlMargen(input: { redondeo: number }): Promise<{ ok: true; ajustados: number } | { ok: false; error: string }> {
-  const session = await requireAdmin();
+  const session = await requirePermiso('gestionar_productos');
   const parsed = ajustarPreciosAlMargenSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: formatZodError(parsed.error) };
   if (!(await preciosVivosActivo(session.tenantId)))
