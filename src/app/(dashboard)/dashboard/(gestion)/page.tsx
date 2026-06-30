@@ -3,6 +3,7 @@ import { obtenerKpisDashboard, obtenerProgresoOnboarding } from '@/server/action
 import { requirePermiso } from '@/server/auth/session';
 import { planTiene } from '@/lib/planes';
 import { OnboardingWizard } from '@/components/onboarding-wizard';
+import { RichardWelcome } from '@/components/onboarding/richard-welcome';
 import { DashboardClient } from './dashboard-client';
 import { PrestamistaInicio } from './prestamista-inicio';
 import { ServiciosInicio } from './servicios-inicio';
@@ -44,6 +45,7 @@ async function DashboardContent() {
   const horaAR   = ahoraAR.getHours();
   const saludo   = getSaludo(horaAR);
   const nombre   = getNombre(session.email ?? 'usuario');
+  const primerNombre = nombre.charAt(0).toUpperCase() + nombre.slice(1);
 
   // Fecha larga en español
   const fechaLabel = ahoraAR.toLocaleDateString('es-AR', {
@@ -52,21 +54,37 @@ async function DashboardContent() {
     month:   'long',
   });
 
+  // ── Onboarding de Richard (bienvenida + checklist), igual en todo plan ──
+  const progreso = await obtenerProgresoOnboarding();
+  const guiaRichard = (
+    <>
+      <RichardWelcome
+        negocio={session.tenantNombre}
+        firstName={primerNombre}
+        plan={session.plan}
+        tenantId={session.tenantId}
+        yaCompletado={progreso.completado}
+      />
+      {!progreso.completado && (
+        <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 max-w-3xl mx-auto">
+          <OnboardingWizard progreso={progreso} plan={session.plan} negocio={session.tenantNombre} />
+        </div>
+      )}
+    </>
+  );
+
   // ── Inicio según plan ──────────────────────────────────────────────
   // Prestamista: cartera de créditos (no tiene ventas ni stock).
   if (planTiene(session.plan, 'prestamos')) {
-    return <PrestamistaInicio saludo={saludo} nombre={nombre} fechaLabel={fechaLabel} />;
+    return <>{guiaRichard}<PrestamistaInicio saludo={saludo} nombre={nombre} fechaLabel={fechaLabel} /></>;
   }
   // Servicios: cobros + agenda + presupuestos (no tiene POS ni stock).
   if (planTiene(session.plan, 'presupuestos') && !planTiene(session.plan, 'pos')) {
-    return <ServiciosInicio saludo={saludo} nombre={nombre} fechaLabel={fechaLabel} />;
+    return <>{guiaRichard}<ServiciosInicio saludo={saludo} nombre={nombre} fechaLabel={fechaLabel} /></>;
   }
 
   // ── Planes con POS (market / food / balanza) ──────────────────────
-  const [kpis, progreso] = await Promise.all([
-    obtenerKpisDashboard(),
-    obtenerProgresoOnboarding(),
-  ]);
+  const kpis = await obtenerKpisDashboard();
 
   // Valores derivados
   const totalHoy      = kpis.ventasHoy.minorista.total + kpis.ventasHoy.mayorista.total;
@@ -75,12 +93,7 @@ async function DashboardContent() {
 
   return (
     <div>
-      {/* Wizard de onboarding — sólo si faltan pasos */}
-      {!progreso.completado && (
-        <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 max-w-3xl mx-auto">
-          <OnboardingWizard progreso={progreso} />
-        </div>
-      )}
+      {guiaRichard}
 
       <DashboardClient
         saludo={saludo}

@@ -2,57 +2,63 @@
 
 import { and, eq, gt, isNotNull, sql } from 'drizzle-orm';
 import { db } from '@/server/db';
-import { ventas, clientes, productos, tenants } from '@/server/db/schema';
+import {
+  ventas, clientes, productos, tenants,
+  presupuestos, prestamos, pedidosAtmosfericos,
+} from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
+import { planTiene } from '@/lib/planes';
+import {
+  onboardingCompletado, type ProgresoOnboarding,
+} from '@/lib/onboarding';
+
+/** ¿Existe al menos una fila? (count > 0, corta en la primera). */
+const existe = (rows: { uno: number }[]) => (rows[0]?.uno ?? 0) > 0;
+const UNO = sql<number>`1`;
 
 /**
- * Verifica qué tan completo está el setup inicial del tenant.
- * Usado por el wizard "Empezando con Gesto" en el dashboard.
+ * Verifica qué tan completo está el setup inicial del tenant, según su rubro.
+ * Usado por el onboarding guiado de Richard (bienvenida + checklist).
+ * Solo consulta las tablas que aplican al plan para no malgastar queries.
  */
-export async function obtenerProgresoOnboarding(): Promise<{
-  tieneProductos: boolean;
-  tieneClientes: boolean;
-  tieneVentas: boolean;
-  datosNegocioCompletos: boolean;
-  completado: boolean;
-}> {
+export async function obtenerProgresoOnboarding(): Promise<ProgresoOnboarding & { completado: boolean }> {
   const session = await requireSession();
-  const { tenantId } = session;
+  const { tenantId, plan } = session;
+  const sinFila = Promise.resolve([] as { uno: number }[]);
 
-  const [productosCount, clientesCount, ventasCount, tenant] = await Promise.all([
-    db.select({ c: sql<number>`count(*)::int` })
-      .from(productos)
-      .where(byTenant(tenantId, productos)),
-    db.select({ c: sql<number>`count(*)::int` })
-      .from(clientes)
-      .where(and(byTenant(tenantId, clientes), eq(clientes.esConsumidorFinal, false))),
-    db.select({ c: sql<number>`count(*)::int` })
-      .from(ventas)
-      .where(byTenant(tenantId, ventas)),
-    db.select({
-        cuit: tenants.cuit,
-        direccion: tenants.direccion,
-        telefono: tenants.telefono,
-      })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId))
-      .limit(1),
-  ]);
+  const [tenant, clientesRows, productosRows, ventasRows, presupuestosRows, prestamosRows, pedidosRows] =
+    await Promise.all([
+      db.select({ cuit: tenants.cuit, direccion: tenants.direccion, telefono: tenants.telefono })
+        .from(tenants).where(eq(tenants.id, tenantId)).limit(1),
+      // Clientes aplican a todos los planes (excluye consumidor final).
+      db.select({ uno: UNO }).from(clientes)
+        .where(and(byTenant(tenantId, clientes), eq(clientes.esConsumidorFinal, false))).limit(1),
+      // Conteos condicionales según capacidad del plan.
+      planTiene(plan, 'productos')
+        ? db.select({ uno: UNO }).from(productos).where(byTenant(tenantId, productos)).limit(1) : sinFila,
+      planTiene(plan, 'pos')
+        ? db.select({ uno: UNO }).from(ventas).where(byTenant(tenantId, ventas)).limit(1) : sinFila,
+      planTiene(plan, 'presupuestos')
+        ? db.select({ uno: UNO }).from(presupuestos).where(byTenant(tenantId, presupuestos)).limit(1) : sinFila,
+      planTiene(plan, 'prestamos')
+        ? db.select({ uno: UNO }).from(prestamos).where(byTenant(tenantId, prestamos)).limit(1) : sinFila,
+      planTiene(plan, 'atmosfericos')
+        ? db.select({ uno: UNO }).from(pedidosAtmosfericos).where(byTenant(tenantId, pedidosAtmosfericos)).limit(1) : sinFila,
+    ]);
 
-  const tieneProductos = (productosCount[0]?.c ?? 0) > 0;
-  const tieneClientes  = (clientesCount[0]?.c ?? 0) > 0;
-  const tieneVentas    = (ventasCount[0]?.c ?? 0) > 0;
   const t = tenant[0];
-  const datosNegocioCompletos = !!(t?.cuit && t?.direccion && t?.telefono);
-
-  return {
-    tieneProductos,
-    tieneClientes,
-    tieneVentas,
-    datosNegocioCompletos,
-    completado: tieneProductos && tieneVentas && datosNegocioCompletos,
+  const progreso: ProgresoOnboarding = {
+    datosNegocio:        !!(t?.cuit && t?.direccion && t?.telefono),
+    clientes:            existe(clientesRows),
+    productos:           existe(productosRows),
+    ventas:              existe(ventasRows),
+    presupuestos:        existe(presupuestosRows),
+    prestamos:           existe(prestamosRows),
+    pedidosAtmosfericos: existe(pedidosRows),
   };
+
+  return { ...progreso, completado: onboardingCompletado(plan, progreso) };
 }
 
 export async function obtenerKpisDashboard() {
