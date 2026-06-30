@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { eq, and, ilike, desc } from 'drizzle-orm';
+import { eq, and, ilike, asc } from 'drizzle-orm';
 import { db } from '@/server/db';
 import { clientes, type TipoCliente, type CondicionIva } from '@/server/db/schema';
 import { byTenant, byTenantAnd } from '@/server/db/tenant-context';
@@ -39,7 +39,7 @@ export async function listarClientes(filtros?: { busqueda?: string; tipo?: TipoC
     .select()
     .from(clientes)
     .where(and(...conditions))
-    .orderBy(desc(clientes.createdAt));
+    .orderBy(asc(clientes.razonSocial));
 }
 
 export async function obtenerCliente(id: string) {

@@ -1,8 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChevronLeft, BookOpen, Pencil, ShoppingCart, ChevronRight, Droplets, MapPin, Phone } from 'lucide-react';
+import {
+  ChevronLeft, BookOpen, Pencil, ShoppingCart, ChevronRight,
+  Droplets, MapPin, Phone, DollarSign, CalendarClock,
+} from 'lucide-react';
 import { obtenerCliente } from '@/server/actions/clientes';
 import { comprasRecientesCliente } from '@/server/actions/ventas';
+import { listarPedidosDeCliente } from '@/server/actions/pedidos-atmosfericos';
 import { requireSession } from '@/server/auth/session';
 import { formatARS } from '@/lib/utils';
 
@@ -26,6 +30,17 @@ const estadoBadge: Record<string, string> = {
   anulada:   'bg-destructive/15 text-destructive border-destructive/20',
 };
 
+const metodoLabel: Record<string, string> = {
+  efectivo:      'Efectivo',
+  transferencia: 'Transferencia',
+  otro:          'Otro',
+};
+
+function formatFechaLarga(fechaStr: string) {
+  const d = new Date(fechaStr + 'T12:00:00');
+  return d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 export default async function FichaClientePage({
   params,
 }: {
@@ -38,13 +53,19 @@ export default async function FichaClientePage({
   if (!cliente) notFound();
 
   const saldo = Number(cliente.saldoActual);
-  const compras = esAtmos ? [] : await comprasRecientesCliente(id);
+  const [compras, pedidos] = await Promise.all([
+    esAtmos ? Promise.resolve([]) : comprasRecientesCliente(id),
+    esAtmos ? listarPedidosDeCliente(id) : Promise.resolve([]),
+  ]);
 
   const direccion = [cliente.direccion, cliente.localidad, cliente.provincia]
     .filter(Boolean)
     .join(', ');
 
-  // Datos para planes NO atmosféricos
+  // Resumen del historial de servicios (atmosféricos)
+  const completados = pedidos.filter((p) => p.estado === 'completado');
+  const totalCobrado = completados.reduce((s, p) => s + Number(p.montoCobrado ?? 0), 0);
+
   const datosMarket: { label: string; valor: string }[] = [
     { label: 'Tipo', valor: tipoLabel[cliente.tipo] ?? cliente.tipo },
     { label: 'Condición IVA', valor: ivaLabel[cliente.condicionIva] ?? cliente.condicionIva },
@@ -58,13 +79,13 @@ export default async function FichaClientePage({
   ];
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-3xl mx-auto space-y-8 animate-fade-up">
+    <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">
 
       <Link
         href="/dashboard/clientes"
-        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors group"
       >
-        <ChevronLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+        <ChevronLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
         Clientes
       </Link>
 
@@ -78,10 +99,10 @@ export default async function FichaClientePage({
               </span>
             </div>
           )}
-          <h1 className="text-[28px] font-semibold tracking-tight leading-tight">{cliente.razonSocial}</h1>
+          <h1 className="text-[26px] font-bold tracking-tight leading-tight text-foreground">{cliente.razonSocial}</h1>
           {esAtmos && direccion && (
             <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />{direccion}
+              <MapPin className="h-4 w-4" />{direccion}
             </p>
           )}
           {!esAtmos && cliente.nombreFantasia && (
@@ -93,7 +114,7 @@ export default async function FichaClientePage({
           {!esAtmos && cliente.habilitaCuentaCorriente && (
             <Link
               href={`/dashboard/cc/${cliente.id}`}
-              className="rounded-xl border border-border bg-card px-4 py-2.5 hover:bg-card/60 transition-colors group flex items-center gap-3"
+              className="rounded-xl border border-border bg-card px-4 py-2.5 hover:bg-accent transition-colors group flex items-center gap-3"
             >
               <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               <div className="text-right">
@@ -106,56 +127,59 @@ export default async function FichaClientePage({
           )}
           <Link
             href={`/dashboard/clientes/${cliente.id}/editar`}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-border bg-card text-[13px] font-medium hover:bg-card/60 transition-colors"
+            className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl border border-border bg-card text-sm font-medium hover:bg-accent transition-colors"
           >
-            <Pencil className="h-3.5 w-3.5" /> Editar
+            <Pencil className="h-4 w-4" /> Editar
           </Link>
         </div>
       </div>
 
-      {/* Vista rápida para atmosféricos */}
+      {/* Atmosféricos: accesos rápidos + resumen */}
       {esAtmos && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {cliente.telefono && (
             <a
               href={`tel:${cliente.telefono}`}
-              className="rounded-xl border border-border bg-card px-4 py-3 flex items-center gap-3 hover:bg-card/60 transition-colors"
+              className="rounded-xl border border-border bg-card px-3 py-3 flex flex-col items-center text-center gap-1 hover:bg-accent transition-colors"
             >
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Teléfono</p>
-                <p className="font-mono text-sm font-medium">{cliente.telefono}</p>
-              </div>
+              <Phone className="h-5 w-5 text-primary" />
+              <p className="font-mono text-xs font-semibold text-foreground">{cliente.telefono}</p>
+              <p className="text-[10px] text-muted-foreground">Llamar</p>
             </a>
           )}
           {cliente.litrosPozoEstimado && (
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 flex items-center gap-3">
-              <Droplets className="h-4 w-4 text-blue-500" />
-              <div>
-                <p className="text-[10px] text-blue-500 uppercase tracking-wide">Capacidad del pozo</p>
-                <p className="text-sm font-bold text-blue-700">{cliente.litrosPozoEstimado} L</p>
-              </div>
+            <div className="rounded-xl border border-blue-600/30 bg-blue-50 px-3 py-3 flex flex-col items-center text-center gap-1">
+              <Droplets className="h-5 w-5 text-blue-600" />
+              <p className="text-sm font-bold text-blue-700">{cliente.litrosPozoEstimado} L</p>
+              <p className="text-[10px] text-blue-700/70">Pozo</p>
+            </div>
+          )}
+          <div className="rounded-xl border border-border bg-card px-3 py-3 flex flex-col items-center text-center gap-1">
+            <CalendarClock className="h-5 w-5 text-muted-foreground" />
+            <p className="text-sm font-bold text-foreground">{completados.length}</p>
+            <p className="text-[10px] text-muted-foreground">servicio{completados.length !== 1 ? 's' : ''}</p>
+          </div>
+          {totalCobrado > 0 && (
+            <div className="rounded-xl border border-green-600/30 bg-green-50 px-3 py-3 flex flex-col items-center text-center gap-1">
+              <DollarSign className="h-5 w-5 text-green-700" />
+              <p className="text-sm font-bold text-green-700">{formatARS(totalCobrado)}</p>
+              <p className="text-[10px] text-green-700/70">total cobrado</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Datos del cliente */}
-      {esAtmos ? (
-        /* Vista simplificada para atmosféricos */
-        <div className="panel p-5 space-y-3">
-          <h2 className="text-sm font-semibold tracking-tight">Datos</h2>
-          {cliente.notas && (
-            <p className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              📝 {cliente.notas}
-            </p>
-          )}
-          {!cliente.litrosPozoEstimado && !cliente.telefono && !cliente.notas && (
-            <p className="text-sm text-muted-foreground">Sin datos adicionales cargados.</p>
-          )}
+      {/* Notas (atmosféricos) */}
+      {esAtmos && cliente.notas && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+          <p className="text-sm text-foreground flex items-start gap-2">
+            <span className="shrink-0">📝</span>{cliente.notas}
+          </p>
         </div>
-      ) : (
-        /* Vista completa para otros planes */
+      )}
+
+      {/* Datos del cliente (otros planes) */}
+      {!esAtmos && (
         <div className="panel p-5">
           <h2 className="text-sm font-semibold tracking-tight mb-3">Datos</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
@@ -172,7 +196,68 @@ export default async function FichaClientePage({
         </div>
       )}
 
-      {/* Historial de compras — solo para planes con ventas */}
+      {/* Historial de servicios (atmosféricos) */}
+      {esAtmos && (
+        <div>
+          <h2 className="text-base font-bold tracking-tight mb-3 text-foreground">Historial de pedidos</h2>
+          {pedidos.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card px-5 py-10 text-center">
+              <Droplets className="h-6 w-6 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Todavía no hay pedidos para este cliente.</p>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2.5">
+              {pedidos.map((p) => {
+                const completado = p.estado === 'completado';
+                const cancelado = p.estado === 'cancelado';
+                return (
+                  <li
+                    key={p.id}
+                    className={`rounded-xl border bg-card px-4 py-3 ${cancelado ? 'opacity-60 border-border' : 'border-border'}`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold text-foreground capitalize">
+                        {formatFechaLarga(p.fechaProgramada as unknown as string)}
+                      </span>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                        completado ? 'bg-green-600 text-white'
+                        : cancelado ? 'bg-muted text-muted-foreground'
+                        : 'bg-amber-400 text-amber-950'
+                      }`}>
+                        {completado ? 'Completado' : cancelado ? 'Cancelado' : p.estado === 'en_camino' ? 'En camino' : 'Pendiente'}
+                      </span>
+                    </div>
+                    {completado && (
+                      <div className="flex items-center gap-4 mt-2 flex-wrap">
+                        {p.montoCobrado && (
+                          <span className="flex items-center gap-1 text-green-700 font-bold text-base">
+                            <DollarSign className="w-4 h-4" />{formatARS(Number(p.montoCobrado))}
+                          </span>
+                        )}
+                        {p.litrosExtraidos && (
+                          <span className="flex items-center gap-1 text-blue-700 font-medium text-sm">
+                            <Droplets className="w-4 h-4" />{p.litrosExtraidos} L sacados
+                          </span>
+                        )}
+                        {p.metodoPago && (
+                          <span className="text-xs text-muted-foreground">
+                            {metodoLabel[p.metodoPago] ?? p.metodoPago}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {p.notas && (
+                      <p className="text-sm text-muted-foreground mt-1.5 italic">{p.notas}</p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* Historial de compras (otros planes) */}
       {!esAtmos && (
         <div className="panel overflow-hidden">
           <div className="px-5 py-3 border-b border-border/60 flex items-center justify-between">

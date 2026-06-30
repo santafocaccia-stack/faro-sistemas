@@ -289,6 +289,37 @@ export async function listarHistorial() {
 
 export type DiaHistorial = Awaited<ReturnType<typeof listarHistorial>>[number];
 
+/** Historial de pedidos de un cliente puntual (para su ficha). */
+export async function listarPedidosDeCliente(clienteId: string) {
+  const session = await requireSession();
+
+  return db
+    .select({
+      id:              pedidosAtmosfericos.id,
+      direccion:       pedidosAtmosfericos.direccion,
+      localidad:       pedidosAtmosfericos.localidad,
+      estado:          pedidosAtmosfericos.estado,
+      fechaProgramada: pedidosAtmosfericos.fechaProgramada,
+      litrosExtraidos: pedidosAtmosfericos.litrosExtraidos,
+      litrosPozo:      pedidosAtmosfericos.litrosPozo,
+      montoCobrado:    pedidosAtmosfericos.montoCobrado,
+      metodoPago:      pedidosAtmosfericos.metodoPago,
+      notas:           pedidosAtmosfericos.notas,
+      completadoAt:    pedidosAtmosfericos.completadoAt,
+    })
+    .from(pedidosAtmosfericos)
+    .where(
+      and(
+        byTenant(session.tenantId, pedidosAtmosfericos),
+        eq(pedidosAtmosfericos.clienteId, clienteId),
+        eq(pedidosAtmosfericos.activo, true),
+      )
+    )
+    .orderBy(desc(pedidosAtmosfericos.fechaProgramada));
+}
+
+export type PedidoDeCliente = Awaited<ReturnType<typeof listarPedidosDeCliente>>[number];
+
 /** Guardar cliente desde un pedido ad-hoc */
 export async function guardarClienteDesdePedido(
   pedidoId: string,
