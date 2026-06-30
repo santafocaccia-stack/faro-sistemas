@@ -17,12 +17,13 @@ import Link from 'next/link';
 import {
   MapPin, GripVertical, CheckCircle2, Truck, XCircle,
   Plus, Phone, Droplets, DollarSign, User, ChevronDown, Navigation, History,
-  ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown, StickyNote,
+  ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown, StickyNote, FileText,
 } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { ModalCompletarPedido } from './modal-completar-pedido';
 import { ModalNuevoPedido } from './modal-nuevo-pedido';
 import { ModalEditarPedido } from './modal-editar-pedido';
+import { ModalBoletaManual } from './modal-boleta-manual';
 
 type ClienteBasico = {
   id: string;
@@ -90,6 +91,7 @@ export function ListaPedidosClient({
   const [modalCompletar, setModalCompletar] = useState<PedidoDelDia | null>(null);
   const [modalEditar, setModalEditar] = useState<PedidoDelDia | null>(null);
   const [modalNuevo, setModalNuevo] = useState(false);
+  const [modalBoleta, setModalBoleta] = useState(false);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -239,6 +241,9 @@ export function ListaPedidosClient({
             </Button>
           </a>
         )}
+        <Button variant="outline" className="h-11 px-4 text-base flex-1 sm:flex-none" onClick={() => setModalBoleta(true)}>
+          <FileText className="w-5 h-5 mr-2" /> Generar boleta
+        </Button>
       </div>
 
       {/* ── Resumen del día ── */}
@@ -419,6 +424,19 @@ export function ListaPedidosClient({
                                 </Button>
                               </a>
 
+                              {/* Boleta PDF — solo cuando el pozo ya se hizo (completado) */}
+                              {completado && (
+                                <a
+                                  href={`/api/pdf/boleta-atmos?pedido=${pedido.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Button className="h-12 px-4 text-base font-semibold glow-primary">
+                                    <FileText className="w-5 h-5 mr-1.5" /> Boleta PDF
+                                  </Button>
+                                </a>
+                              )}
+
                               {pedido.estado === 'pendiente' && (
                                 <>
                                   <Button
@@ -566,6 +584,10 @@ export function ListaPedidosClient({
             router.refresh();
           }}
         />
+      )}
+
+      {modalBoleta && (
+        <ModalBoletaManual onClose={() => setModalBoleta(false)} />
       )}
     </div>
   );
