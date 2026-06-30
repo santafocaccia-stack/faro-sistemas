@@ -211,6 +211,73 @@
   --sidebar-ring:        oklch(0.67 0.13 200 / 0.50);
 }
 
+/* ── PLAN ATMOSFÉRICOS: TEMA CLARO ───────────────────────────
+   Este rubro se trabaja a la intemperie, de día y con sol, mirando
+   el celular bajo luz fuerte. El tema oscuro no se lee. Por eso el
+   plan atmosféricos va en CLARO de alto contraste: redefinimos
+   TODAS las variables a valores light dentro del subárbol del
+   dashboard (data-plan está en el wrapper), sobrescribiendo el
+   `.dark` del <html>. Acento azul (agua) para diferenciarlo.
+   ─────────────────────────────────────────────────────────── */
+[data-plan="atmosfericos"] {
+  --background:          oklch(0.975 0.004 240);  /* casi blanco, leve frío */
+  --foreground:          oklch(0.18  0.02  255);  /* casi negro azulado */
+  --card:                oklch(1     0     0);     /* blanco puro = tarjetas */
+  --card-foreground:     oklch(0.18  0.02  255);
+  --card-raised:         oklch(0.965 0.006 240);
+  --popover:             oklch(1     0     0);
+  --popover-foreground:  oklch(0.18  0.02  255);
+  --primary:             oklch(0.52  0.17  250);  /* azul agua fuerte */
+  --primary-foreground:  oklch(0.99  0.004 240);
+  --secondary:           oklch(0.94  0.01  240);
+  --secondary-foreground:oklch(0.24  0.02  255);
+  --muted:               oklch(0.945 0.008 240);
+  --muted-foreground:    oklch(0.42  0.02  255);  /* >4.5:1 sobre blanco */
+  --accent:              oklch(0.93  0.012 240);
+  --accent-foreground:   oklch(0.24  0.02  255);
+  --destructive:         oklch(0.55  0.22  18);
+  --success:             oklch(0.52  0.15  150);
+  --warning:             oklch(0.62  0.15  70);
+  --border:              oklch(0.18  0.02  255  / 0.16);
+  --input:               oklch(0.18  0.02  255  / 0.18);
+  --ring:                oklch(0.52  0.17  250  / 0.45);
+  --sidebar:             oklch(0.955 0.008 240);
+  --sidebar-foreground:  oklch(0.18  0.02  255);
+  --sidebar-primary:     oklch(0.52  0.17  250);
+  --sidebar-primary-foreground: oklch(0.99 0.004 240);
+  --sidebar-accent:      oklch(0.92  0.012 240);
+  --sidebar-accent-foreground: oklch(0.24 0.02 255);
+  --sidebar-border:      oklch(0.18  0.02 255  / 0.10);
+  --sidebar-ring:        oklch(0.52  0.17 250  / 0.45);
+  --chart-1:             oklch(0.52  0.17 250);
+  --chart-2:             oklch(0.52  0.15 150);
+  --chart-3:             oklch(0.62  0.15 70);
+  --chart-4:             oklch(0.55  0.18 25);
+  --chart-5:             oklch(0.55  0.18 310);
+
+  /* El wrapper pinta su propio fondo claro para tapar el body oscuro. */
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* En claro, el grano y los gradientes ambientales (pensados para fondo
+   negro) ensucian la pantalla: los anulamos para el subárbol atmosférico. */
+[data-plan="atmosfericos"] .glow-primary {
+  box-shadow:
+    0 1px 2px oklch(0.18 0.02 255 / 0.18),
+    0 4px 14px color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+/* Scrollbar oscura sobre claro (la global usa blanco translúcido). */
+[data-plan="atmosfericos"] ::-webkit-scrollbar-thumb {
+  background: oklch(0.18 0.02 255 / 0.18);
+  background-clip: padding-box;
+}
+[data-plan="atmosfericos"] ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.18 0.02 255 / 0.30);
+  background-clip: padding-box;
+}
+
 /* ── BASE ───────────────────────────────────────────────────── */
 * {
   border-color: var(--color-border);

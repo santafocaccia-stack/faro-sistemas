@@ -17,7 +17,7 @@ import Link from 'next/link';
 import {
   MapPin, GripVertical, CheckCircle2, Truck, XCircle,
   Plus, Phone, Droplets, DollarSign, User, ChevronDown, Navigation, History,
-  ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown,
+  ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown, StickyNote,
 } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { ModalCompletarPedido } from './modal-completar-pedido';
@@ -49,11 +49,12 @@ const ESTADO_LABEL: Record<string, string> = {
   cancelado:   'Cancelado',
 };
 
+/* Badges sólidos de alto contraste — legibles a pleno sol. */
 const ESTADO_COLOR: Record<string, string> = {
-  pendiente:  'bg-amber-100 text-amber-800 border border-amber-300',
-  en_camino:  'bg-blue-500 text-white',
-  completado: 'bg-green-500 text-white',
-  cancelado:  'bg-gray-200 text-gray-500',
+  pendiente:  'bg-amber-400 text-amber-950',
+  en_camino:  'bg-blue-600 text-white',
+  completado: 'bg-green-600 text-white',
+  cancelado:  'bg-muted text-muted-foreground',
 };
 
 function addDias(iso: string, n: number): string {
@@ -156,7 +157,6 @@ export function ListaPedidosClient({
   }
 
   async function handleGuardarCliente(id: string, pedido: PedidoDelDia) {
-    // Pre-fill con dirección si no hay nombre
     const sugerencia = pedido.nombreContacto ?? pedido.direccion;
     const nombre = prompt('Nombre para el cliente:', sugerencia);
     if (!nombre) return;
@@ -173,19 +173,19 @@ export function ListaPedidosClient({
   const mapsUrl     = mapsUrlRuta(pendientes);
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-2xl mx-auto">
+    <div className="flex flex-col gap-5 p-4 sm:p-6 max-w-2xl mx-auto">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Pedidos · {etiquetaFecha(fecha, hoyStr)}
           </h1>
           <div className="flex items-center gap-2 mt-2">
             <button
               type="button"
               onClick={() => irAFecha(addDias(fecha, -1))}
-              className="h-10 w-10 flex items-center justify-center rounded-xl border-2 border-gray-300 hover:bg-gray-100 transition-colors"
+              className="h-11 w-11 flex items-center justify-center rounded-xl border border-border bg-card hover:bg-accent transition-colors"
               aria-label="Día anterior"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -194,12 +194,12 @@ export function ListaPedidosClient({
               type="date"
               value={fecha}
               onChange={(e) => e.target.value && irAFecha(e.target.value)}
-              className="h-10 px-3 rounded-xl border-2 border-gray-300 bg-white text-sm font-medium"
+              className="h-11 px-3 rounded-xl border border-border bg-card text-sm font-medium text-foreground"
             />
             <button
               type="button"
               onClick={() => irAFecha(addDias(fecha, 1))}
-              className="h-10 w-10 flex items-center justify-center rounded-xl border-2 border-gray-300 hover:bg-gray-100 transition-colors"
+              className="h-11 w-11 flex items-center justify-center rounded-xl border border-border bg-card hover:bg-accent transition-colors"
               aria-label="Día siguiente"
             >
               <ChevronRight className="w-5 h-5" />
@@ -208,65 +208,69 @@ export function ListaPedidosClient({
               <button
                 type="button"
                 onClick={() => irAFecha(hoyStr)}
-                className="h-10 px-4 rounded-xl border-2 border-gray-300 hover:bg-gray-100 transition-colors text-sm font-semibold"
+                className="h-11 px-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm font-semibold"
               >
                 Hoy
               </button>
             )}
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Link href="/dashboard/atmosfericos/historial">
-            <Button variant="outline" className="h-11 px-4 text-base">
-              <History className="w-5 h-5 mr-2" /> Historial
+        {esGestor && (
+          <Button
+            className="h-12 px-5 text-base font-semibold glow-primary"
+            onClick={() => setModalNuevo(true)}
+          >
+            <Plus className="w-5 h-5 mr-2" /> Agregar pedido
+          </Button>
+        )}
+      </div>
+
+      {/* ── Acciones secundarias ── */}
+      <div className="flex gap-2 flex-wrap">
+        <Link href="/dashboard/atmosfericos/historial" className="flex-1 sm:flex-none">
+          <Button variant="outline" className="h-11 px-4 text-base w-full">
+            <History className="w-5 h-5 mr-2" /> Historial
+          </Button>
+        </Link>
+        {mapsUrl && (
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none">
+            <Button variant="outline" className="h-11 px-4 text-base w-full">
+              <Navigation className="w-5 h-5 mr-2" /> Ver ruta del día
             </Button>
-          </Link>
-          {mapsUrl && (
-            <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="h-11 px-4 text-base">
-                <Navigation className="w-5 h-5 mr-2" /> Ver ruta
-              </Button>
-            </a>
-          )}
-          {esGestor && (
-            <Button className="h-11 px-4 text-base font-semibold" onClick={() => setModalNuevo(true)}>
-              <Plus className="w-5 h-5 mr-2" /> Agregar pedido
-            </Button>
-          )}
-        </div>
+          </a>
+        )}
       </div>
 
       {/* ── Resumen del día ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-        <div className="rounded-xl border-2 border-gray-200 bg-white px-3 py-2.5 text-center">
-          <div className="font-bold text-lg">{pendientes.length}</div>
-          <div className="text-gray-500 text-xs">pendiente{pendientes.length !== 1 ? 's' : ''}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-2xl border border-border bg-card px-3 py-3 text-center">
+          <div className="font-bold text-2xl text-foreground">{pendientes.length}</div>
+          <div className="text-muted-foreground text-xs font-medium mt-0.5">pendiente{pendientes.length !== 1 ? 's' : ''}</div>
         </div>
-        <div className="rounded-xl border-2 border-green-300 bg-green-50 px-3 py-2.5 text-center">
-          <div className="font-bold text-lg text-green-700">{completados.length}</div>
-          <div className="text-green-600 text-xs">completado{completados.length !== 1 ? 's' : ''}</div>
+        <div className="rounded-2xl border border-green-600/30 bg-green-50 px-3 py-3 text-center">
+          <div className="font-bold text-2xl text-green-700">{completados.length}</div>
+          <div className="text-green-700/80 text-xs font-medium mt-0.5">completado{completados.length !== 1 ? 's' : ''}</div>
         </div>
-        <div className="rounded-xl border-2 border-blue-200 bg-blue-50 px-3 py-2.5 text-center">
-          <div className="font-bold text-base text-blue-700">{formatARS(cobradoHoy)}</div>
-          <div className="text-blue-500 text-xs">cobrado</div>
+        <div className="rounded-2xl border border-blue-600/30 bg-blue-50 px-3 py-3 text-center">
+          <div className="font-bold text-lg text-blue-700">{formatARS(cobradoHoy)}</div>
+          <div className="text-blue-700/80 text-xs font-medium mt-0.5">cobrado</div>
         </div>
         {esHoy && (
-          <div className={`rounded-xl border-2 px-3 py-2.5 text-center ${
+          <div className={`rounded-2xl border px-3 py-3 text-center ${
             balanceHoy >= 0
-              ? 'border-emerald-300 bg-emerald-50'
-              : 'border-red-300 bg-red-50'
+              ? 'border-emerald-600/30 bg-emerald-50'
+              : 'border-red-600/30 bg-red-50'
           }`}>
-            <div className={`font-bold text-base flex items-center justify-center gap-1 ${
+            <div className={`font-bold text-lg flex items-center justify-center gap-1 ${
               balanceHoy >= 0 ? 'text-emerald-700' : 'text-red-700'
             }`}>
               {balanceHoy >= 0
                 ? <TrendingUp className="w-4 h-4" />
-                : <TrendingDown className="w-4 h-4" />
-              }
+                : <TrendingDown className="w-4 h-4" />}
               {formatARS(Math.abs(balanceHoy))}
             </div>
-            <div className={`text-xs ${balanceHoy >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-              balance{gastosHoy > 0 ? ` (−${formatARS(gastosHoy)} gastos)` : ''}
+            <div className={`text-xs font-medium mt-0.5 ${balanceHoy >= 0 ? 'text-emerald-700/80' : 'text-red-700/80'}`}>
+              balance{gastosHoy > 0 ? ` · −${formatARS(gastosHoy)} gastos` : ''}
             </div>
           </div>
         )}
@@ -278,203 +282,211 @@ export function ListaPedidosClient({
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-3">
               {pedidos.length === 0 && (
-                <div className="text-center py-16 text-gray-400">
-                  No hay pedidos para este día.{' '}
+                <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-card">
+                  <p className="text-muted-foreground">No hay pedidos para este día.</p>
                   {esGestor && (
-                    <button onClick={() => setModalNuevo(true)} className="underline text-blue-600 font-medium">
-                      Agregá uno
+                    <button onClick={() => setModalNuevo(true)} className="mt-2 underline text-primary font-semibold">
+                      Agregá el primero
                     </button>
                   )}
                 </div>
               )}
 
-              {pedidos.map((pedido, index) => (
-                <Draggable
-                  key={pedido.id}
-                  draggableId={pedido.id}
-                  index={index}
-                  isDragDisabled={!esGestor || pedido.estado === 'completado' || pedido.estado === 'cancelado'}
-                >
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className={`
-                        rounded-2xl border-2 bg-white shadow-sm transition-shadow
-                        ${snapshot.isDragging ? 'shadow-xl ring-2 ring-blue-400' : 'border-gray-200'}
-                        ${pedido.estado === 'cancelado' ? 'opacity-50' : ''}
-                        ${pedido.estado === 'completado' ? 'border-green-200 bg-green-50/30' : ''}
-                      `}
-                    >
-                      {/* ── Card header ── */}
+              {pedidos.map((pedido, index) => {
+                const completado = pedido.estado === 'completado';
+                const cancelado = pedido.estado === 'cancelado';
+                return (
+                  <Draggable
+                    key={pedido.id}
+                    draggableId={pedido.id}
+                    index={index}
+                    isDragDisabled={!esGestor || completado || cancelado}
+                  >
+                    {(provided, snapshot) => (
                       <div
-                        className="flex items-start gap-3 p-4 cursor-pointer"
-                        onClick={() => setExpandido(expandido === pedido.id ? null : pedido.id)}
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={`
+                          rounded-2xl border bg-card shadow-sm transition-shadow
+                          ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary' : 'border-border'}
+                          ${cancelado ? 'opacity-50' : ''}
+                          ${completado ? 'bg-green-50/60 border-green-600/20' : ''}
+                        `}
                       >
-                        {/* Número + drag handle */}
-                        <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                          {esGestor && pedido.estado === 'pendiente' && (
-                            <span {...provided.dragHandleProps} className="cursor-grab text-gray-300 hover:text-gray-500" onClick={(e) => e.stopPropagation()}>
-                              <GripVertical className="w-5 h-5" />
-                            </span>
-                          )}
-                          <span className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-600">
-                            {index + 1}
-                          </span>
-                        </div>
-
-                        {/* Info principal */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 flex-wrap">
-                            <p className="font-bold text-base leading-tight text-gray-900">
-                              {tituloPedido(pedido)}
-                            </p>
-                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${ESTADO_COLOR[pedido.estado]}`}>
-                              {ESTADO_LABEL[pedido.estado]}
+                        {/* ── Card header (tap para expandir) ── */}
+                        <div
+                          className="flex items-start gap-3 p-4 cursor-pointer"
+                          onClick={() => setExpandido(expandido === pedido.id ? null : pedido.id)}
+                        >
+                          {/* Número + drag handle */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {esGestor && pedido.estado === 'pendiente' && (
+                              <span
+                                {...provided.dragHandleProps}
+                                className="cursor-grab text-muted-foreground/50 hover:text-muted-foreground"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <GripVertical className="w-5 h-5" />
+                              </span>
+                            )}
+                            <span className="w-9 h-9 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-base font-bold">
+                              {index + 1}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                            <MapPin className="w-3.5 h-3.5 shrink-0" />
-                            {pedido.direccion}{pedido.localidad ? `, ${pedido.localidad}` : ''}
-                          </p>
 
-                          {/* Info rápida siempre visible */}
-                          {pedido.estado === 'completado' && (
-                            <div className="flex gap-3 mt-1.5 text-sm flex-wrap">
-                              {pedido.litrosExtraidos && (
-                                <span className="flex items-center gap-1 text-blue-600 font-medium">
-                                  <Droplets className="w-3.5 h-3.5" />
-                                  {pedido.litrosExtraidos} L
-                                </span>
-                              )}
-                              {pedido.montoCobrado && (
-                                <span className="flex items-center gap-1 text-green-700 font-bold">
-                                  <DollarSign className="w-3.5 h-3.5" />
-                                  {formatARS(Number(pedido.montoCobrado))}
-                                </span>
-                              )}
+                          {/* Info principal */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-bold text-lg leading-tight text-foreground">
+                                {tituloPedido(pedido)}
+                              </p>
+                              <span className={`text-xs px-2.5 py-1 rounded-full font-bold shrink-0 ${ESTADO_COLOR[pedido.estado]}`}>
+                                {ESTADO_LABEL[pedido.estado]}
+                              </span>
                             </div>
-                          )}
-                          {pedido.estado !== 'completado' && (pedido.litrosPozo ?? pedido.clienteLitrosPozo) && (
-                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                              <Droplets className="w-3 h-3" />
-                              Pozo: {pedido.litrosPozo ?? pedido.clienteLitrosPozo} L
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <MapPin className="w-4 h-4 shrink-0" />
+                              {pedido.direccion}{pedido.localidad ? `, ${pedido.localidad}` : ''}
                             </p>
-                          )}
-                          {/* Notas siempre visibles */}
-                          {pedido.notas && (
-                            <p className="text-sm text-gray-500 mt-1 italic truncate">
-                              📝 {pedido.notas}
-                            </p>
-                          )}
+
+                            {/* Info rápida visible */}
+                            {completado && (
+                              <div className="flex gap-4 mt-2 text-base flex-wrap">
+                                {pedido.litrosExtraidos && (
+                                  <span className="flex items-center gap-1 text-blue-700 font-semibold">
+                                    <Droplets className="w-4 h-4" />
+                                    {pedido.litrosExtraidos} L
+                                  </span>
+                                )}
+                                {pedido.montoCobrado && (
+                                  <span className="flex items-center gap-1 text-green-700 font-bold">
+                                    <DollarSign className="w-4 h-4" />
+                                    {formatARS(Number(pedido.montoCobrado))}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {!completado && (pedido.litrosPozo ?? pedido.clienteLitrosPozo) && (
+                              <p className="text-sm text-blue-700 mt-1.5 flex items-center gap-1 font-medium">
+                                <Droplets className="w-4 h-4" />
+                                Pozo: {pedido.litrosPozo ?? pedido.clienteLitrosPozo} L
+                              </p>
+                            )}
+                            {pedido.notas && (
+                              <p className="text-sm text-foreground/70 mt-1.5 flex items-start gap-1.5">
+                                <StickyNote className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+                                <span className="line-clamp-2">{pedido.notas}</span>
+                              </p>
+                            )}
+                          </div>
+
+                          <ChevronDown className={`w-6 h-6 text-muted-foreground shrink-0 transition-transform ${expandido === pedido.id ? 'rotate-180' : ''}`} />
                         </div>
 
-                        <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 mt-0.5 transition-transform ${expandido === pedido.id ? 'rotate-180' : ''}`} />
-                      </div>
+                        {/* ── Expanded ── */}
+                        {expandido === pedido.id && (
+                          <div className="px-4 pb-4 border-t border-border pt-3 flex flex-col gap-3">
+                            {pedido.referencias && (
+                              <p className="text-sm text-foreground bg-muted rounded-xl px-3 py-2.5 flex items-start gap-2">
+                                <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-muted-foreground" />
+                                {pedido.referencias}
+                              </p>
+                            )}
+                            {pedido.notas && (
+                              <p className="text-sm text-foreground bg-amber-50 border border-amber-300 rounded-xl px-3 py-2.5 flex items-start gap-2">
+                                <StickyNote className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+                                {pedido.notas}
+                              </p>
+                            )}
+                            {pedido.clienteTelefono && (
+                              <a
+                                href={`tel:${pedido.clienteTelefono}`}
+                                className="text-base flex items-center gap-2 text-primary font-semibold"
+                              >
+                                <Phone className="w-5 h-5" /> {pedido.clienteTelefono}
+                              </a>
+                            )}
 
-                      {/* ── Expanded content ── */}
-                      {expandido === pedido.id && (
-                        <div className="px-4 pb-4 border-t border-gray-100 pt-3 flex flex-col gap-3">
-                          {pedido.referencias && (
-                            <p className="text-sm text-gray-600 bg-gray-50 rounded-xl px-3 py-2">
-                              📍 {pedido.referencias}
-                            </p>
-                          )}
-                          {pedido.notas && (
-                            <p className="text-sm text-gray-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                              📝 {pedido.notas}
-                            </p>
-                          )}
-                          {pedido.clienteTelefono && (
-                            <a
-                              href={`tel:${pedido.clienteTelefono}`}
-                              className="text-base flex items-center gap-2 text-blue-600 font-medium"
-                            >
-                              <Phone className="w-5 h-5" /> {pedido.clienteTelefono}
-                            </a>
-                          )}
-
-                          {/* Acciones */}
-                          <div className="flex gap-2 flex-wrap pt-1">
-                            <a
-                              href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad, mapsLink: pedido.mapsLink })}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button variant="outline" className="h-11 px-4 text-base">
-                                <Navigation className="w-4 h-4 mr-1.5" /> Cómo llegar
-                              </Button>
-                            </a>
-
-                            {pedido.estado === 'pendiente' && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  className="h-11 px-4 text-base"
-                                  onClick={() => handleEnCamino(pedido.id)}
-                                  disabled={isPending}
-                                >
-                                  <Truck className="w-4 h-4 mr-1.5" /> En camino
+                            {/* Acciones */}
+                            <div className="flex gap-2 flex-wrap pt-1">
+                              <a
+                                href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad, mapsLink: pedido.mapsLink })}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button variant="outline" className="h-12 px-4 text-base">
+                                  <Navigation className="w-5 h-5 mr-1.5" /> Cómo llegar
                                 </Button>
+                              </a>
+
+                              {pedido.estado === 'pendiente' && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    className="h-12 px-4 text-base"
+                                    onClick={() => handleEnCamino(pedido.id)}
+                                    disabled={isPending}
+                                  >
+                                    <Truck className="w-5 h-5 mr-1.5" /> En camino
+                                  </Button>
+                                  <Button
+                                    className="h-12 px-5 text-base font-bold bg-green-600 hover:bg-green-700 text-white"
+                                    onClick={() => setModalCompletar(pedido)}
+                                    disabled={isPending}
+                                  >
+                                    <CheckCircle2 className="w-5 h-5 mr-1.5" /> Completar
+                                  </Button>
+                                </>
+                              )}
+
+                              {pedido.estado === 'en_camino' && (
                                 <Button
-                                  className="h-11 px-4 text-base font-semibold bg-green-600 hover:bg-green-700 text-white"
+                                  className="h-12 px-5 text-base font-bold bg-green-600 hover:bg-green-700 text-white"
                                   onClick={() => setModalCompletar(pedido)}
                                   disabled={isPending}
                                 >
-                                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Completar
+                                  <CheckCircle2 className="w-5 h-5 mr-1.5" /> Completar
                                 </Button>
-                              </>
-                            )}
+                              )}
 
-                            {pedido.estado === 'en_camino' && (
-                              <Button
-                                className="h-11 px-4 text-base font-semibold bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => setModalCompletar(pedido)}
-                                disabled={isPending}
-                              >
-                                <CheckCircle2 className="w-4 h-4 mr-1.5" /> Completar
-                              </Button>
-                            )}
+                              {esGestor && !cancelado && (
+                                <Button
+                                  variant="outline"
+                                  className="h-12 px-4 text-base"
+                                  onClick={() => setModalEditar(pedido)}
+                                >
+                                  <Pencil className="w-5 h-5 mr-1.5" /> Editar
+                                </Button>
+                              )}
 
-                            {/* Editar */}
-                            {esGestor && pedido.estado !== 'cancelado' && (
-                              <Button
-                                variant="outline"
-                                className="h-11 px-4 text-base"
-                                onClick={() => setModalEditar(pedido)}
-                              >
-                                <Pencil className="w-4 h-4 mr-1.5" /> Editar
-                              </Button>
-                            )}
+                              {!pedido.clienteId && !cancelado && (
+                                <Button
+                                  variant="outline"
+                                  className="h-12 px-4 text-base"
+                                  onClick={() => handleGuardarCliente(pedido.id, pedido)}
+                                >
+                                  <User className="w-5 h-5 mr-1.5" /> Guardar como cliente
+                                </Button>
+                              )}
 
-                            {/* Guardar como cliente */}
-                            {!pedido.clienteId && pedido.estado !== 'cancelado' && (
-                              <Button
-                                variant="outline"
-                                className="h-11 px-4 text-base"
-                                onClick={() => handleGuardarCliente(pedido.id, pedido)}
-                              >
-                                <User className="w-4 h-4 mr-1.5" /> Guardar como cliente
-                              </Button>
-                            )}
-
-                            {esGestor && pedido.estado !== 'completado' && pedido.estado !== 'cancelado' && (
-                              <Button
-                                variant="ghost"
-                                className="h-11 px-4 text-base text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleCancelar(pedido.id)}
-                                disabled={isPending}
-                              >
-                                <XCircle className="w-4 h-4 mr-1.5" /> Cancelar
-                              </Button>
-                            )}
+                              {esGestor && !completado && !cancelado && (
+                                <Button
+                                  variant="ghost"
+                                  className="h-12 px-4 text-base text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleCancelar(pedido.id)}
+                                  disabled={isPending}
+                                >
+                                  <XCircle className="w-5 h-5 mr-1.5" /> Cancelar
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Draggable>
-              ))}
+                        )}
+                      </div>
+                    )}
+                  </Draggable>
+                );
+              })}
               {provided.placeholder}
             </div>
           )}
@@ -483,31 +495,30 @@ export function ListaPedidosClient({
 
       {/* ── Diagnóstico de rutas (colapsado) ── */}
       {pendientes.length > 0 && (
-        <details className="rounded-xl border bg-gray-50 text-xs">
-          <summary className="cursor-pointer px-3 py-2 font-medium text-gray-400 select-none">
+        <details className="rounded-xl border border-border bg-card text-xs">
+          <summary className="cursor-pointer px-3 py-2.5 font-medium text-muted-foreground select-none">
             🔍 Diagnóstico de ruta
           </summary>
           <div className="px-3 pb-3 flex flex-col gap-3">
             {pendientes.map((p, i) => {
               const parada = { direccion: p.direccion, localidad: p.localidad };
               return (
-                <div key={p.id} className="rounded-lg border bg-white p-2.5 flex flex-col gap-1.5">
-                  <div className="font-semibold">#{i + 1} — {tituloPedido(p)}</div>
-                  <div className="font-mono text-[11px] break-all bg-gray-50 rounded px-2 py-1">
+                <div key={p.id} className="rounded-lg border border-border bg-muted p-2.5 flex flex-col gap-1.5">
+                  <div className="font-semibold text-foreground">#{i + 1} — {tituloPedido(p)}</div>
+                  <div className="font-mono text-[11px] break-all bg-card rounded px-2 py-1">
                     "{direccionParaLog(parada)}"
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <a href={mapsUrlBusqueda(parada)} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">Búsqueda</a>
-                    <a href={mapsUrlDestino(parada)} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">Ir a</a>
+                  <div className="flex gap-3 flex-wrap">
+                    <a href={mapsUrlBusqueda(parada)} target="_blank" rel="noopener noreferrer" className="underline text-primary">Búsqueda</a>
+                    <a href={mapsUrlDestino(parada)} target="_blank" rel="noopener noreferrer" className="underline text-primary">Ir a</a>
                   </div>
                 </div>
               );
             })}
             {mapsUrl && (
-              <div className="rounded-lg border bg-white p-2.5 flex flex-col gap-1.5">
-                <div className="font-semibold">Ruta completa ({pendientes.length} paradas)</div>
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">Abrir ruta completa</a>
-              </div>
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="underline text-primary font-medium">
+                Abrir ruta completa ({pendientes.length} paradas)
+              </a>
             )}
           </div>
         </details>

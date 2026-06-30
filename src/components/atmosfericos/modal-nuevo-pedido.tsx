@@ -21,6 +21,10 @@ type Props = {
   onCreate: (input: PedidoAtmosInput) => Promise<void>;
 };
 
+const inputCls =
+  'w-full px-4 py-3 rounded-xl border border-input bg-background text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring';
+const labelCls = 'text-sm font-semibold mb-1.5 block text-foreground';
+
 export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState<ClienteBasico | null>(null);
@@ -74,53 +78,53 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white z-10">
-          <h2 className="font-bold text-lg text-gray-900">Agregar pedido</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4">
+      <div className="bg-popover text-popover-foreground rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto border border-border">
+        <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-popover z-10">
+          <h2 className="font-bold text-lg">Agregar pedido</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
 
-          {/* Búsqueda de cliente existente */}
+          {/* Cliente guardado */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Cliente guardado (opcional)</label>
+            <label className={labelCls}>Cliente guardado <span className="font-normal text-muted-foreground">(opcional)</span></label>
             {clienteSeleccionado ? (
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl border-2 border-blue-500 bg-blue-50">
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl border-2 border-primary bg-primary/5">
                 <div>
-                  <p className="font-semibold text-gray-900">{clienteSeleccionado.nombre}</p>
+                  <p className="font-semibold text-foreground">{clienteSeleccionado.nombre}</p>
                   {clienteSeleccionado.direccion && (
-                    <p className="text-sm text-gray-500">{clienteSeleccionado.direccion}</p>
+                    <p className="text-sm text-muted-foreground">{clienteSeleccionado.direccion}</p>
                   )}
                 </div>
-                <button type="button" onClick={limpiarCliente} className="text-gray-400 hover:text-gray-700">
+                <button type="button" onClick={limpiarCliente} className="text-muted-foreground hover:text-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
             ) : (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="text"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   placeholder="Buscar por nombre o dirección..."
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`${inputCls} pl-10`}
                 />
                 {busqueda && clientesFiltrados.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
                     {clientesFiltrados.slice(0, 8).map((c) => (
                       <button
                         key={c.id}
                         type="button"
                         onClick={() => seleccionarCliente(c)}
-                        className="w-full text-left px-4 py-3 hover:bg-gray-50 text-base border-b last:border-0"
+                        className="w-full text-left px-4 py-3 hover:bg-accent text-base border-b border-border last:border-0"
                       >
-                        <p className="font-medium text-gray-900">{c.nombre}</p>
-                        {c.direccion && <p className="text-sm text-gray-500">{c.direccion}</p>}
+                        <p className="font-medium text-foreground">{c.nombre}</p>
+                        {c.direccion && <p className="text-sm text-muted-foreground">{c.direccion}</p>}
                       </button>
                     ))}
                   </div>
@@ -129,82 +133,82 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
             )}
           </div>
 
-          {/* Nombre de contacto (si no es cliente guardado) */}
+          {/* Nombre de contacto */}
           {!clienteSeleccionado && (
             <div>
-              <label className="text-sm font-semibold mb-1.5 block text-gray-700">
-                Nombre de contacto <span className="font-normal text-gray-400">(opcional)</span>
+              <label className={labelCls}>
+                Nombre de contacto <span className="font-normal text-muted-foreground">(opcional)</span>
               </label>
               <input
                 type="text"
                 value={nombreContacto}
                 onChange={(e) => setNombreContacto(e.target.value)}
                 placeholder="Si no hay, se usa la dirección"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls}
               />
             </div>
           )}
 
           {/* Dirección */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Dirección *</label>
+            <label className={labelCls}>Dirección *</label>
             <input
               type="text"
               value={direccion}
               onChange={(e) => setDireccion(e.target.value)}
               placeholder="Calle y número"
               required
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
           </div>
 
           {/* Localidad */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Localidad</label>
+            <label className={labelCls}>Localidad</label>
             <input
               type="text"
               value={localidad}
               onChange={(e) => setLocalidad(e.target.value)}
               placeholder="Ciudad / barrio"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
           </div>
 
           {/* Referencias */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Referencias</label>
+            <label className={labelCls}>Referencias</label>
             <input
               type="text"
               value={referencias}
               onChange={(e) => setReferencias(e.target.value)}
               placeholder="Casa amarilla, portón verde..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
           </div>
 
           {/* Maps link */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">
-              Link de Google Maps <span className="font-normal text-gray-400">(opcional)</span>
+            <label className={labelCls}>
+              Link de Google Maps <span className="font-normal text-muted-foreground">(opcional)</span>
             </label>
             <input
               type="url"
               value={mapsLink}
               onChange={(e) => setMapsLink(e.target.value)}
               placeholder="Pegá el link de la ubicación exacta"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
           </div>
 
           {/* Notas */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Notas</label>
+            <label className={labelCls}>Notas</label>
             <textarea
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               rows={2}
               placeholder="Detalles adicionales..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className={`${inputCls} resize-none`}
             />
           </div>
 
@@ -212,7 +216,7 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 text-base" disabled={loading}>
               Cancelar
             </Button>
-            <Button type="submit" className="flex-1 h-12 text-base font-semibold" disabled={loading || !direccion}>
+            <Button type="submit" className="flex-1 h-12 text-base font-semibold glow-primary" disabled={loading || !direccion}>
               {loading ? 'Guardando...' : 'Agregar pedido'}
             </Button>
           </div>

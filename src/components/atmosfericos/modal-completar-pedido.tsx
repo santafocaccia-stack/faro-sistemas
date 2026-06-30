@@ -12,6 +12,10 @@ type Props = {
   onCompletar: (input: PedidoAtmosCompletarInput) => Promise<void>;
 };
 
+const inputCls =
+  'w-full px-4 py-3 rounded-xl border border-input bg-background text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring';
+const labelCls = 'text-sm font-semibold mb-1.5 block text-foreground';
+
 export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
   const litrosDefault = pedido.litrosPozo ?? pedido.clienteLitrosPozo ?? '';
   const [litrosPozo, setLitrosPozo] = useState(litrosDefault);
@@ -43,14 +47,14 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4">
+      <div className="bg-popover text-popover-foreground rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto border border-border">
+        <div className="flex items-center justify-between p-5 border-b border-border">
           <div>
-            <h2 className="font-bold text-lg text-gray-900">Completar servicio</h2>
-            <p className="text-base text-gray-500">{titulo}</p>
+            <h2 className="font-bold text-lg">Completar servicio</h2>
+            <p className="text-base text-muted-foreground">{titulo}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -59,11 +63,9 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
 
           {/* Monto cobrado — campo principal */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">
-              Monto cobrado *
-            </label>
+            <label className={labelCls}>Monto cobrado *</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold text-xl">$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-xl">$</span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -72,24 +74,24 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
                 placeholder="0"
                 required
                 autoFocus
-                className="w-full pl-10 pr-4 py-4 rounded-xl border-2 border-gray-300 bg-white text-2xl font-bold focus:outline-none focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-4 rounded-xl border-2 border-input bg-background text-2xl font-bold text-foreground focus:outline-none focus:border-primary"
               />
             </div>
           </div>
 
-          {/* Método de pago */}
+          {/* Método de pago — botones grandes */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Método de pago</label>
+            <label className={labelCls}>Método de pago</label>
             <div className="flex gap-2">
               {(['efectivo', 'transferencia', 'otro'] as const).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setMetodoPago(m)}
-                  className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold capitalize transition-colors ${
+                  className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition-colors ${
                     metodoPago === m
-                      ? 'border-blue-500 bg-blue-500 text-white'
-                      : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background text-foreground hover:bg-accent'
                   }`}
                 >
                   {m === 'efectivo' ? 'Efectivo' : m === 'transferencia' ? 'Transferencia' : 'Otro'}
@@ -98,10 +100,10 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
             </div>
           </div>
 
-          {/* Litros extraídos */}
+          {/* Litros sacados */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 flex items-center gap-1 text-gray-700">
-              <Droplets className="w-4 h-4 text-blue-500" /> Litros sacados
+            <label className={`${labelCls} flex items-center gap-1.5`}>
+              <Droplets className="w-4 h-4 text-blue-600" /> Litros sacados
             </label>
             <input
               type="number"
@@ -109,14 +111,14 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
               value={litrosExtraidos}
               onChange={(e) => setLitrosExtraidos(e.target.value)}
               placeholder="Lo que se extrajo"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
           </div>
 
           {/* Capacidad del pozo */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 flex items-center gap-1 text-gray-700">
-              <Droplets className="w-4 h-4 text-gray-400" /> Capacidad del pozo (litros)
+            <label className={`${labelCls} flex items-center gap-1.5`}>
+              <Droplets className="w-4 h-4 text-muted-foreground" /> Capacidad del pozo (litros)
             </label>
             <input
               type="number"
@@ -124,15 +126,15 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
               value={litrosPozo}
               onChange={(e) => setLitrosPozo(e.target.value)}
               placeholder="Ej: 2000"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             />
             {pedido.clienteId && (
-              <label className="flex items-center gap-2 mt-2 text-sm cursor-pointer text-gray-600">
+              <label className="flex items-center gap-2 mt-2 text-sm cursor-pointer text-muted-foreground">
                 <input
                   type="checkbox"
                   checked={guardarLitros}
                   onChange={(e) => setGuardarLitros(e.target.checked)}
-                  className="rounded w-4 h-4"
+                  className="rounded w-4 h-4 accent-primary"
                 />
                 Guardar en el perfil del cliente
               </label>
@@ -141,13 +143,13 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
 
           {/* Notas */}
           <div>
-            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Notas</label>
+            <label className={labelCls}>Notas</label>
             <textarea
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               rows={2}
               placeholder="Observaciones del servicio..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className={`${inputCls} resize-none`}
             />
           </div>
 
