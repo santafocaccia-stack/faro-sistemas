@@ -3,13 +3,14 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { obtenerCliente } from '@/server/actions/clientes';
 import { ClienteForm } from '@/components/cliente-form';
+import { requireSession } from '@/server/auth/session';
 
 export default async function EditarClientePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, session] = await Promise.all([params, requireSession()]);
   const cliente = await obtenerCliente(id);
   if (!cliente) notFound();
 
@@ -27,7 +28,7 @@ export default async function EditarClientePage({
         <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Editar cliente</h1>
       </div>
 
-      <ClienteForm cliente={cliente} />
+      <ClienteForm cliente={cliente} plan={session.plan} />
     </div>
   );
 }

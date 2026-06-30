@@ -132,11 +132,9 @@ export const NAV_POR_PLAN: Record<PlanId, NavPlan> = {
     primary: [
       PEDIDOS_ATMOS,
       CLIENTES,
-    ],
-    secondary: [
-      REPORTES,
       GASTOS,
     ],
+    secondary: [],
   },
 };
 

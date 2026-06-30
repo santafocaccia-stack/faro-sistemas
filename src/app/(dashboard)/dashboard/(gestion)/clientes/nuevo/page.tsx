@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { ClienteForm } from '@/components/cliente-form';
+import { requireSession } from '@/server/auth/session';
 
-export default function NuevoClientePage() {
+export default async function NuevoClientePage() {
+  const session = await requireSession();
+
   return (
     <div className="px-6 lg:px-10 py-8 max-w-3xl mx-auto animate-fade-up">
       <Link
@@ -15,10 +18,12 @@ export default function NuevoClientePage() {
       <div className="mb-8">
         <h1 className="text-[28px] font-semibold tracking-tight leading-tight">Nuevo cliente</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Datos comerciales, fiscales y configuración de cuenta corriente
+          {session.plan === 'atmosfericos'
+            ? 'Nombre, dirección y datos del pozo'
+            : 'Datos comerciales, fiscales y configuración de cuenta corriente'}
         </p>
       </div>
-      <ClienteForm />
+      <ClienteForm plan={session.plan} />
     </div>
   );
 }

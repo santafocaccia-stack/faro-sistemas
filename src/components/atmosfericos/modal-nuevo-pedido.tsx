@@ -29,7 +29,6 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
   const [localidad, setLocalidad] = useState('');
   const [referencias, setReferencias] = useState('');
   const [mapsLink, setMapsLink] = useState('');
-  const [litrosPozo, setLitrosPozo] = useState('');
   const [notas, setNotas] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +41,6 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
     setClienteSeleccionado(c);
     setDireccion(c.direccion ?? '');
     setLocalidad(c.localidad ?? '');
-    setLitrosPozo(c.litrosPozo ?? '');
     setBusqueda('');
   }
 
@@ -50,7 +48,6 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
     setClienteSeleccionado(null);
     setDireccion('');
     setLocalidad('');
-    setLitrosPozo('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -59,15 +56,17 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
     setLoading(true);
     try {
       await onCreate({
-        clienteId:      clienteSeleccionado?.id ?? null,
-        nombreContacto: clienteSeleccionado ? clienteSeleccionado.nombre : (nombreContacto || null),
+        clienteId:       clienteSeleccionado?.id ?? null,
+        nombreContacto:  clienteSeleccionado
+          ? clienteSeleccionado.nombre
+          : (nombreContacto || null),
         direccion,
-        localidad:      localidad || null,
-        referencias:    referencias || null,
-        mapsLink:       mapsLink || null,
+        localidad:       localidad || null,
+        referencias:     referencias || null,
+        mapsLink:        mapsLink || null,
         fechaProgramada: fecha,
-        litrosPozo:     litrosPozo || null,
-        notas:          notas || null,
+        litrosPozo:      clienteSeleccionado?.litrosPozo ?? null,
+        notas:           notas || null,
       });
     } finally {
       setLoading(false);
@@ -76,52 +75,52 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
-      <div className="bg-background rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-background z-10">
-          <h2 className="font-semibold">Agregar pedido</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-5 h-5" />
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white z-10">
+          <h2 className="font-bold text-lg text-gray-900">Agregar pedido</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1">
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
 
-          {/* Búsqueda de cliente */}
+          {/* Búsqueda de cliente existente */}
           <div>
-            <label className="text-sm font-medium mb-1 block">Cliente existente (opcional)</label>
+            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Cliente guardado (opcional)</label>
             {clienteSeleccionado ? (
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg border bg-muted/30">
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl border-2 border-blue-500 bg-blue-50">
                 <div>
-                  <p className="text-sm font-medium">{clienteSeleccionado.nombre}</p>
+                  <p className="font-semibold text-gray-900">{clienteSeleccionado.nombre}</p>
                   {clienteSeleccionado.direccion && (
-                    <p className="text-xs text-muted-foreground">{clienteSeleccionado.direccion}</p>
+                    <p className="text-sm text-gray-500">{clienteSeleccionado.direccion}</p>
                   )}
                 </div>
-                <button type="button" onClick={limpiarCliente} className="text-muted-foreground hover:text-foreground">
-                  <X className="w-4 h-4" />
+                <button type="button" onClick={limpiarCliente} className="text-gray-400 hover:text-gray-700">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             ) : (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar cliente por nombre o dirección..."
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  placeholder="Buscar por nombre o dirección..."
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {busqueda && clientesFiltrados.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-background border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                     {clientesFiltrados.slice(0, 8).map((c) => (
                       <button
                         key={c.id}
                         type="button"
                         onClick={() => seleccionarCliente(c)}
-                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm border-b last:border-0"
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 text-base border-b last:border-0"
                       >
-                        <p className="font-medium">{c.nombre}</p>
-                        {c.direccion && <p className="text-xs text-muted-foreground">{c.direccion}</p>}
+                        <p className="font-medium text-gray-900">{c.nombre}</p>
+                        {c.direccion && <p className="text-sm text-gray-500">{c.direccion}</p>}
                       </button>
                     ))}
                   </div>
@@ -130,102 +129,90 @@ export function ModalNuevoPedido({ clientes, fecha, onClose, onCreate }: Props) 
             )}
           </div>
 
-          {/* Nombre de contacto (si no es cliente registrado) */}
+          {/* Nombre de contacto (si no es cliente guardado) */}
           {!clienteSeleccionado && (
             <div>
-              <label className="text-sm font-medium mb-1 block">Nombre de contacto</label>
+              <label className="text-sm font-semibold mb-1.5 block text-gray-700">
+                Nombre de contacto <span className="font-normal text-gray-400">(opcional)</span>
+              </label>
               <input
                 type="text"
                 value={nombreContacto}
                 onChange={(e) => setNombreContacto(e.target.value)}
-                placeholder="Nombre de quien atiende"
-                className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="Si no hay, se usa la dirección"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
 
           {/* Dirección */}
           <div>
-            <label className="text-sm font-medium mb-1 block">Dirección *</label>
+            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Dirección *</label>
             <input
               type="text"
               value={direccion}
               onChange={(e) => setDireccion(e.target.value)}
               placeholder="Calle y número"
               required
-              className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Localidad */}
           <div>
-            <label className="text-sm font-medium mb-1 block">Localidad</label>
+            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Localidad</label>
             <input
               type="text"
               value={localidad}
               onChange={(e) => setLocalidad(e.target.value)}
               placeholder="Ciudad / barrio"
-              className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Referencias */}
           <div>
-            <label className="text-sm font-medium mb-1 block">Referencias</label>
+            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Referencias</label>
             <input
               type="text"
               value={referencias}
               onChange={(e) => setReferencias(e.target.value)}
               placeholder="Casa amarilla, portón verde..."
-              className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* Ubicación exacta en Maps */}
+          {/* Maps link */}
           <div>
-            <label className="text-sm font-medium mb-1 block">Ubicación en Google Maps (opcional)</label>
+            <label className="text-sm font-semibold mb-1.5 block text-gray-700">
+              Link de Google Maps <span className="font-normal text-gray-400">(opcional)</span>
+            </label>
             <input
               type="url"
               value={mapsLink}
               onChange={(e) => setMapsLink(e.target.value)}
-              placeholder="Pegá el link de Maps de la ubicación"
-              className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Si la dirección no cae bien en Maps, buscala una vez, tocá «Compartir» y pegá el link acá: la ruta va directo al punto exacto.
-            </p>
-          </div>
-
-          {/* Litros del pozo */}
-          <div>
-            <label className="text-sm font-medium mb-1 block">Litros del pozo (estimado)</label>
-            <input
-              type="number"
-              inputMode="decimal"
-              value={litrosPozo}
-              onChange={(e) => setLitrosPozo(e.target.value)}
-              placeholder="Ej: 2000"
-              className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Pegá el link de la ubicación exacta"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Notas */}
           <div>
-            <label className="text-sm font-medium mb-1 block">Notas</label>
+            <label className="text-sm font-semibold mb-1.5 block text-gray-700">Notas</label>
             <textarea
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               rows={2}
               placeholder="Detalles adicionales..."
-              className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-base focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
 
-          <div className="flex gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={loading}>
+          <div className="flex gap-3 pt-1">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 text-base" disabled={loading}>
               Cancelar
             </Button>
-            <Button type="submit" className="flex-1" disabled={loading || !direccion}>
+            <Button type="submit" className="flex-1 h-12 text-base font-semibold" disabled={loading || !direccion}>
               {loading ? 'Guardando...' : 'Agregar pedido'}
             </Button>
           </div>

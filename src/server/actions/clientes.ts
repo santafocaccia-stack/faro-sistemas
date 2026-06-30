@@ -22,6 +22,7 @@ export type ClienteInput = {
   limiteCredito?: string | null;
   descuentoPorcentaje?: string | null;
   notas?: string | null;
+  litrosPozoEstimado?: string | null;
 };
 
 export async function listarClientes(filtros?: { busqueda?: string; tipo?: TipoCliente }) {
@@ -70,6 +71,7 @@ export async function crearCliente(input: ClienteInput) {
       limiteCredito: input.limiteCredito || null,
       descuentoPorcentaje: input.descuentoPorcentaje || null,
       notas: input.notas || null,
+      litrosPozoEstimado: input.litrosPozoEstimado || null,
     })
     .returning({ id: clientes.id });
 
@@ -96,6 +98,7 @@ export async function actualizarCliente(id: string, input: ClienteInput) {
       limiteCredito: input.limiteCredito || null,
       descuentoPorcentaje: input.descuentoPorcentaje || null,
       notas: input.notas || null,
+      litrosPozoEstimado: input.litrosPozoEstimado || null,
     })
     .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, id)));
 

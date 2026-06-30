@@ -210,6 +210,27 @@ export async function marcarEnCamino(id: string) {
   revalidatePath(RUTA);
 }
 
+/** Editar un pedido existente */
+export async function editarPedido(id: string, input: PedidoAtmosInput) {
+  const session = await requirePermiso('gestionar_atmosfericos');
+
+  await db
+    .update(pedidosAtmosfericos)
+    .set({
+      clienteId:      input.clienteId ?? null,
+      nombreContacto: input.nombreContacto ?? null,
+      direccion:      input.direccion,
+      localidad:      input.localidad ?? null,
+      referencias:    input.referencias ?? null,
+      mapsLink:       input.mapsLink?.trim() || null,
+      notas:          input.notas ?? null,
+      asignadoA:      input.asignadoA ?? null,
+    })
+    .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, id)));
+
+  revalidatePath(RUTA);
+}
+
 /** Cancelar un pedido */
 export async function cancelarPedido(id: string) {
   const session = await requirePermiso('gestionar_atmosfericos');

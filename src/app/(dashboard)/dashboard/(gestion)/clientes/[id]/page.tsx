@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChevronLeft, BookOpen, Pencil, ShoppingCart, ChevronRight } from 'lucide-react';
+import { ChevronLeft, BookOpen, Pencil, ShoppingCart, ChevronRight, Droplets, MapPin, Phone } from 'lucide-react';
 import { obtenerCliente } from '@/server/actions/clientes';
 import { comprasRecientesCliente } from '@/server/actions/ventas';
+import { requireSession } from '@/server/auth/session';
 import { formatARS } from '@/lib/utils';
 
 const tipoLabel: Record<string, string> = {
@@ -30,18 +31,21 @@ export default async function FichaClientePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, session] = await Promise.all([params, requireSession()]);
+  const esAtmos = session.plan === 'atmosfericos';
+
   const cliente = await obtenerCliente(id);
   if (!cliente) notFound();
 
   const saldo = Number(cliente.saldoActual);
-  const compras = await comprasRecientesCliente(id);
+  const compras = esAtmos ? [] : await comprasRecientesCliente(id);
 
   const direccion = [cliente.direccion, cliente.localidad, cliente.provincia]
     .filter(Boolean)
     .join(', ');
 
-  const datos: { label: string; valor: string }[] = [
+  // Datos para planes NO atmosféricos
+  const datosMarket: { label: string; valor: string }[] = [
     { label: 'Tipo', valor: tipoLabel[cliente.tipo] ?? cliente.tipo },
     { label: 'Condición IVA', valor: ivaLabel[cliente.condicionIva] ?? cliente.condicionIva },
     ...(cliente.cuit ? [{ label: 'CUIT', valor: cliente.cuit }] : []),
@@ -67,24 +71,26 @@ export default async function FichaClientePage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border border-border bg-muted text-muted-foreground">
-              {tipoLabel[cliente.tipo]}
-            </span>
-            {cliente.esConsumidorFinal && (
+          {!esAtmos && (
+            <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border border-border bg-muted text-muted-foreground">
-                Consumidor final
+                {tipoLabel[cliente.tipo]}
               </span>
-            )}
-          </div>
+            </div>
+          )}
           <h1 className="text-[28px] font-semibold tracking-tight leading-tight">{cliente.razonSocial}</h1>
-          {cliente.nombreFantasia && (
+          {esAtmos && direccion && (
+            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />{direccion}
+            </p>
+          )}
+          {!esAtmos && cliente.nombreFantasia && (
             <p className="text-sm text-muted-foreground mt-1">{cliente.nombreFantasia}</p>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          {cliente.habilitaCuentaCorriente && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {!esAtmos && cliente.habilitaCuentaCorriente && (
             <Link
               href={`/dashboard/cc/${cliente.id}`}
               className="rounded-xl border border-border bg-card px-4 py-2.5 hover:bg-card/60 transition-colors group flex items-center gap-3"
@@ -107,59 +113,104 @@ export default async function FichaClientePage({
         </div>
       </div>
 
-      {/* Datos del cliente */}
-      <div className="panel p-5">
-        <h2 className="text-sm font-semibold tracking-tight mb-3">Datos</h2>
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
-          {datos.map((d) => (
-            <div key={d.label} className="flex items-baseline justify-between gap-3 border-b border-border/40 pb-2">
-              <dt className="text-[12px] text-muted-foreground">{d.label}</dt>
-              <dd className="text-[13px] font-medium text-right">{d.valor}</dd>
+      {/* Vista rápida para atmosféricos */}
+      {esAtmos && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {cliente.telefono && (
+            <a
+              href={`tel:${cliente.telefono}`}
+              className="rounded-xl border border-border bg-card px-4 py-3 flex items-center gap-3 hover:bg-card/60 transition-colors"
+            >
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Teléfono</p>
+                <p className="font-mono text-sm font-medium">{cliente.telefono}</p>
+              </div>
+            </a>
+          )}
+          {cliente.litrosPozoEstimado && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 flex items-center gap-3">
+              <Droplets className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-[10px] text-blue-500 uppercase tracking-wide">Capacidad del pozo</p>
+                <p className="text-sm font-bold text-blue-700">{cliente.litrosPozoEstimado} L</p>
+              </div>
             </div>
-          ))}
-        </dl>
-        {cliente.notas && (
-          <p className="text-[12px] text-muted-foreground mt-3 whitespace-pre-wrap">{cliente.notas}</p>
-        )}
-      </div>
-
-      {/* Historial de compras */}
-      <div className="panel overflow-hidden">
-        <div className="px-5 py-3 border-b border-border/60 flex items-center justify-between">
-          <h2 className="text-sm font-semibold tracking-tight">Compras recientes</h2>
-          <Link
-            href={`/dashboard/ventas/historial?canal=minorista&cliente=${cliente.id}`}
-            className="text-[12px] text-primary hover:underline"
-          >
-            Ver todo
-          </Link>
+          )}
         </div>
-        {compras.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <ShoppingCart className="h-5 w-5 text-muted-foreground/40 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Sin compras registradas</p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-border/40">
-            {compras.map((v) => (
-              <li key={v.id}>
-                <Link href={`/dashboard/ventas/historial/${v.id}`} className="list-row flex items-center gap-3 px-5 py-2.5">
-                  <span className="font-mono text-xs text-muted-foreground w-14 shrink-0">#{v.numero}</span>
-                  <span className="text-xs text-muted-foreground flex-1 tabular-nums">
-                    {new Date(v.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                    <span className="ml-2 capitalize">{v.canal}</span>
-                  </span>
-                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border uppercase tracking-wide ${estadoBadge[v.estado] ?? 'bg-muted text-muted-foreground'}`}>
-                    {v.estado}
-                  </span>
-                  <span className="font-mono tabular-nums text-[13px] font-semibold w-24 text-right">{formatARS(Number(v.total))}</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-                </Link>
-              </li>
+      )}
+
+      {/* Datos del cliente */}
+      {esAtmos ? (
+        /* Vista simplificada para atmosféricos */
+        <div className="panel p-5 space-y-3">
+          <h2 className="text-sm font-semibold tracking-tight">Datos</h2>
+          {cliente.notas && (
+            <p className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              📝 {cliente.notas}
+            </p>
+          )}
+          {!cliente.litrosPozoEstimado && !cliente.telefono && !cliente.notas && (
+            <p className="text-sm text-muted-foreground">Sin datos adicionales cargados.</p>
+          )}
+        </div>
+      ) : (
+        /* Vista completa para otros planes */
+        <div className="panel p-5">
+          <h2 className="text-sm font-semibold tracking-tight mb-3">Datos</h2>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+            {datosMarket.map((d) => (
+              <div key={d.label} className="flex items-baseline justify-between gap-3 border-b border-border/40 pb-2">
+                <dt className="text-[12px] text-muted-foreground">{d.label}</dt>
+                <dd className="text-[13px] font-medium text-right">{d.valor}</dd>
+              </div>
             ))}
-          </ul>
-        )}
-      </div>
+          </dl>
+          {cliente.notas && (
+            <p className="text-[12px] text-muted-foreground mt-3 whitespace-pre-wrap">{cliente.notas}</p>
+          )}
+        </div>
+      )}
+
+      {/* Historial de compras — solo para planes con ventas */}
+      {!esAtmos && (
+        <div className="panel overflow-hidden">
+          <div className="px-5 py-3 border-b border-border/60 flex items-center justify-between">
+            <h2 className="text-sm font-semibold tracking-tight">Compras recientes</h2>
+            <Link
+              href={`/dashboard/ventas/historial?canal=minorista&cliente=${cliente.id}`}
+              className="text-[12px] text-primary hover:underline"
+            >
+              Ver todo
+            </Link>
+          </div>
+          {compras.length === 0 ? (
+            <div className="px-5 py-10 text-center">
+              <ShoppingCart className="h-5 w-5 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Sin compras registradas</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border/40">
+              {compras.map((v) => (
+                <li key={v.id}>
+                  <Link href={`/dashboard/ventas/historial/${v.id}`} className="list-row flex items-center gap-3 px-5 py-2.5">
+                    <span className="font-mono text-xs text-muted-foreground w-14 shrink-0">#{v.numero}</span>
+                    <span className="text-xs text-muted-foreground flex-1 tabular-nums">
+                      {new Date(v.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      <span className="ml-2 capitalize">{v.canal}</span>
+                    </span>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border uppercase tracking-wide ${estadoBadge[v.estado] ?? 'bg-muted text-muted-foreground'}`}>
+                      {v.estado}
+                    </span>
+                    <span className="font-mono tabular-nums text-[13px] font-semibold w-24 text-right">{formatARS(Number(v.total))}</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

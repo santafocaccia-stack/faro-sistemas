@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { User, Phone, BookOpen, FileText } from 'lucide-react';
+import { User, Phone, BookOpen, FileText, Droplets } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
@@ -13,10 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { crearCliente, actualizarCliente, desactivarCliente, type ClienteInput } from '@/server/actions/clientes';
 import type { Cliente } from '@/server/db/schema';
 
-export function ClienteForm({ cliente }: { cliente?: Cliente }) {
+export function ClienteForm({ cliente, plan }: { cliente?: Cliente; plan?: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEdit = !!cliente;
+  const esAtmos = plan === 'atmosfericos';
 
   const [form, setForm] = useState<ClienteInput>({
     tipo: cliente?.tipo ?? 'minorista',
@@ -28,10 +29,11 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
     telefono: cliente?.telefono ?? '',
     direccion: cliente?.direccion ?? '',
     localidad: cliente?.localidad ?? '',
-    habilitaCuentaCorriente: cliente?.habilitaCuentaCorriente ?? false,
+    habilitaCuentaCorriente: esAtmos ? false : (cliente?.habilitaCuentaCorriente ?? false),
     limiteCredito: cliente?.limiteCredito ?? '',
     descuentoPorcentaje: cliente?.descuentoPorcentaje ?? '',
     notas: cliente?.notas ?? '',
+    litrosPozoEstimado: cliente?.litrosPozoEstimado ?? '',
   });
 
   function set<K extends keyof ClienteInput>(key: K, value: ClienteInput[K]) {
@@ -72,63 +74,75 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
     <form onSubmit={handleSubmit} className="space-y-4">
 
       {/* Datos principales */}
-      <FormSection icon={User} title="Datos del cliente" subtitle="Información comercial y fiscal">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Tipo" htmlFor="tipo" labelCls={labelCls}>
-            <Select value={form.tipo} onValueChange={(v) => set('tipo', v as ClienteInput['tipo'])}>
-              <SelectTrigger id="tipo" className={inputCls}><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="minorista">Minorista</SelectItem>
-                <SelectItem value="mayorista">Mayorista</SelectItem>
-                <SelectItem value="ambos">Ambos</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Condición IVA" htmlFor="condicionIva" labelCls={labelCls}>
-            <Select value={form.condicionIva} onValueChange={(v) => set('condicionIva', v as ClienteInput['condicionIva'])}>
-              <SelectTrigger id="condicionIva" className={inputCls}><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="consumidor_final">Consumidor final</SelectItem>
-                <SelectItem value="responsable_inscripto">Responsable inscripto</SelectItem>
-                <SelectItem value="monotributo">Monotributo</SelectItem>
-                <SelectItem value="exento">Exento</SelectItem>
-                <SelectItem value="no_categorizado">No categorizado</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Razón social *" htmlFor="razonSocial" labelCls={labelCls}>
+      <FormSection icon={User} title="Datos del cliente">
+        {!esAtmos && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Tipo" htmlFor="tipo" labelCls={labelCls}>
+              <Select value={form.tipo} onValueChange={(v) => set('tipo', v as ClienteInput['tipo'])}>
+                <SelectTrigger id="tipo" className={inputCls}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="minorista">Minorista</SelectItem>
+                  <SelectItem value="mayorista">Mayorista</SelectItem>
+                  <SelectItem value="ambos">Ambos</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Condición IVA" htmlFor="condicionIva" labelCls={labelCls}>
+              <Select value={form.condicionIva} onValueChange={(v) => set('condicionIva', v as ClienteInput['condicionIva'])}>
+                <SelectTrigger id="condicionIva" className={inputCls}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="consumidor_final">Consumidor final</SelectItem>
+                  <SelectItem value="responsable_inscripto">Responsable inscripto</SelectItem>
+                  <SelectItem value="monotributo">Monotributo</SelectItem>
+                  <SelectItem value="exento">Exento</SelectItem>
+                  <SelectItem value="no_categorizado">No categorizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+        )}
+        <div className={!esAtmos ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : ''}>
+          <Field label={esAtmos ? 'Nombre del cliente *' : 'Razón social *'} htmlFor="razonSocial" labelCls={labelCls}>
             <Input id="razonSocial" required value={form.razonSocial}
-              onChange={(e) => set('razonSocial', e.target.value)} placeholder="Nombre o empresa" className={inputCls} />
+              onChange={(e) => set('razonSocial', e.target.value)}
+              placeholder={esAtmos ? 'Nombre de la persona o familia' : 'Nombre o empresa'}
+              className={inputCls} />
           </Field>
-          <Field label="Nombre fantasía" htmlFor="nombreFantasia" labelCls={labelCls} hint="opcional">
-            <Input id="nombreFantasia" value={form.nombreFantasia ?? ''}
-              onChange={(e) => set('nombreFantasia', e.target.value)} className={inputCls} />
-          </Field>
+          {!esAtmos && (
+            <Field label="Nombre fantasía" htmlFor="nombreFantasia" labelCls={labelCls} hint="opcional">
+              <Input id="nombreFantasia" value={form.nombreFantasia ?? ''}
+                onChange={(e) => set('nombreFantasia', e.target.value)} className={inputCls} />
+            </Field>
+          )}
         </div>
-        <Field label="CUIT" htmlFor="cuit" labelCls={labelCls}>
-          <Input id="cuit" value={form.cuit ?? ''} onChange={(e) => set('cuit', e.target.value)}
-            placeholder="20-12345678-9" className={`${inputCls} font-mono`} />
-        </Field>
+        {!esAtmos && (
+          <Field label="CUIT" htmlFor="cuit" labelCls={labelCls}>
+            <Input id="cuit" value={form.cuit ?? ''} onChange={(e) => set('cuit', e.target.value)}
+              placeholder="20-12345678-9" className={`${inputCls} font-mono`} />
+          </Field>
+        )}
       </FormSection>
 
-      {/* Contacto */}
+      {/* Contacto y dirección */}
       <FormSection icon={Phone} title="Contacto y dirección">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Teléfono" htmlFor="telefono" labelCls={labelCls}>
             <Input id="telefono" value={form.telefono ?? ''}
               onChange={(e) => set('telefono', e.target.value)} placeholder="11 1234-5678" className={`${inputCls} font-mono`} />
           </Field>
-          <Field label="Email" htmlFor="email" labelCls={labelCls}>
-            <Input id="email" type="email" value={form.email ?? ''}
-              onChange={(e) => set('email', e.target.value)} className={inputCls} />
-          </Field>
+          {!esAtmos && (
+            <Field label="Email" htmlFor="email" labelCls={labelCls}>
+              <Input id="email" type="email" value={form.email ?? ''}
+                onChange={(e) => set('email', e.target.value)} className={inputCls} />
+            </Field>
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Dirección" htmlFor="direccion" labelCls={labelCls}>
+          <Field label={esAtmos ? 'Dirección *' : 'Dirección'} htmlFor="direccion" labelCls={labelCls}>
             <Input id="direccion" value={form.direccion ?? ''}
-              onChange={(e) => set('direccion', e.target.value)} className={inputCls} />
+              onChange={(e) => set('direccion', e.target.value)}
+              required={esAtmos}
+              className={inputCls} />
           </Field>
           <Field label="Localidad" htmlFor="localidad" labelCls={labelCls}>
             <Input id="localidad" value={form.localidad ?? ''}
@@ -137,47 +151,68 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
         </div>
       </FormSection>
 
-      {/* Cuenta corriente */}
-      <FormSection icon={BookOpen} title="Cuenta corriente">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm">Habilitar cuenta corriente</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Permite vender a crédito y registrar cobros</p>
+      {/* Litros del pozo — solo para atmosféricos */}
+      {esAtmos && (
+        <FormSection icon={Droplets} title="Datos del pozo">
+          <Field label="Capacidad estimada del pozo (litros)" htmlFor="litrosPozo" labelCls={labelCls}>
+            <Input
+              id="litrosPozo"
+              type="number"
+              inputMode="decimal"
+              value={form.litrosPozoEstimado ?? ''}
+              onChange={(e) => set('litrosPozoEstimado', e.target.value || null)}
+              placeholder="Ej: 2000"
+              className={`${inputCls} font-mono`}
+            />
+          </Field>
+        </FormSection>
+      )}
+
+      {/* Cuenta corriente — solo para planes que la usan */}
+      {!esAtmos && (
+        <FormSection icon={BookOpen} title="Cuenta corriente">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm">Habilitar cuenta corriente</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Permite vender a crédito y registrar cobros</p>
+            </div>
+            <Switch
+              id="cc"
+              checked={form.habilitaCuentaCorriente}
+              onCheckedChange={(v) => set('habilitaCuentaCorriente', v)}
+            />
           </div>
-          <Switch
-            id="cc"
-            checked={form.habilitaCuentaCorriente}
-            onCheckedChange={(v) => set('habilitaCuentaCorriente', v)}
-          />
-        </div>
-        {form.habilitaCuentaCorriente && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-border/40">
-            <Field label="Límite de crédito" htmlFor="limiteCredito" labelCls={labelCls} hint="opcional">
-              <Input id="limiteCredito" type="number" step="0.01"
-                value={form.limiteCredito ?? ''}
-                onChange={(e) => set('limiteCredito', e.target.value)}
-                placeholder="Sin límite"
-                className={`${inputCls} font-mono tabular-nums`} />
-            </Field>
-            <Field label="Descuento %" htmlFor="descuento" labelCls={labelCls}>
-              <Input id="descuento" type="number" step="0.01" min="0" max="100"
-                value={form.descuentoPorcentaje ?? ''}
-                onChange={(e) => set('descuentoPorcentaje', e.target.value)}
-                placeholder="0"
-                className={`${inputCls} font-mono tabular-nums`} />
-            </Field>
-          </div>
-        )}
-      </FormSection>
+          {form.habilitaCuentaCorriente && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-border/40">
+              <Field label="Límite de crédito" htmlFor="limiteCredito" labelCls={labelCls} hint="opcional">
+                <Input id="limiteCredito" type="number" step="0.01"
+                  value={form.limiteCredito ?? ''}
+                  onChange={(e) => set('limiteCredito', e.target.value)}
+                  placeholder="Sin límite"
+                  className={`${inputCls} font-mono tabular-nums`} />
+              </Field>
+              <Field label="Descuento %" htmlFor="descuento" labelCls={labelCls}>
+                <Input id="descuento" type="number" step="0.01" min="0" max="100"
+                  value={form.descuentoPorcentaje ?? ''}
+                  onChange={(e) => set('descuentoPorcentaje', e.target.value)}
+                  placeholder="0"
+                  className={`${inputCls} font-mono tabular-nums`} />
+              </Field>
+            </div>
+          )}
+        </FormSection>
+      )}
 
       {/* Notas */}
-      <FormSection icon={FileText} title="Notas internas">
+      <FormSection icon={FileText} title="Notas">
         <Textarea
           id="notas"
           rows={3}
           value={form.notas ?? ''}
           onChange={(e) => set('notas', e.target.value)}
-          placeholder="Información adicional, preferencias, datos de contacto..."
+          placeholder={esAtmos
+            ? 'Referencias, horarios, observaciones del lugar...'
+            : 'Información adicional, preferencias, datos de contacto...'}
           className="bg-background/40 border-border/60 text-sm"
         />
       </FormSection>
@@ -197,7 +232,7 @@ export function ClienteForm({ cliente }: { cliente?: Cliente }) {
               </Button>
             }
             title="¿Desactivar este cliente?"
-            description="El cliente no aparecerá en nuevas ventas. Podés reactivarlo después."
+            description="El cliente no aparecerá en la lista. Podés reactivarlo después."
             confirmLabel="Sí, desactivar"
             onConfirm={handleDesactivar}
           />
