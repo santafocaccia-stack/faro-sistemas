@@ -17,10 +17,12 @@ import Link from 'next/link';
 type Props = { tenant: Tenant; mpStatus?: string };
 
 const planLabel: Record<string, string> = {
-  servicios: 'Gesto Servicios',
-  market:    'Gesto Market',
-  food:      'Gesto Food',
-  balanza:   'Gesto Balanza',
+  servicios:    'Gesto Servicios',
+  market:       'Gesto Market',
+  food:         'Gesto Food',
+  balanza:      'Gesto Balanza',
+  prestamista:  'Gesto Préstamos',
+  atmosfericos: 'Gesto Atmosféricos',
   // legacy
   basico: 'Básico',
   pro:    'Pro',
@@ -47,6 +49,9 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
   const [margenObjetivo, setMargenObjetivo] = useState(String(tenant.margenObjetivo ?? '50'));
   const [isPending, startTransition] = useTransition();
   const tieneProductos = planTiene(tenant.plan, 'productos');
+  // Los canales mayorista/minorista solo aplican a planes con punto de venta
+  // (market/food/balanza). Servicios, préstamos y atmosféricos no venden por canal.
+  const tieneCanales = planTiene(tenant.plan, 'pos');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -137,27 +142,29 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
         </div>
       </FormSection>
 
-      {/* Canales activos */}
-      <FormSection icon={ShoppingBag} title="Canales de venta" subtitle="Activá los modos de operación que usás">
-        <CanalRow
-          title="Venta Minorista"
-          description="Mostrador, consumidor final, ticket por unidad"
-          checked={habilitaMinorista}
-          onChange={setHabilitaMinorista}
-        />
-        <CanalRow
-          title="Venta Mayorista"
-          description="Clientes comerciales, cuenta corriente, factura"
-          checked={habilitaMayorista}
-          onChange={setHabilitaMayorista}
-        />
+      {/* Canales activos — solo planes con punto de venta */}
+      {tieneCanales && (
+        <FormSection icon={ShoppingBag} title="Canales de venta" subtitle="Activá los modos de operación que usás">
+          <CanalRow
+            title="Venta Minorista"
+            description="Mostrador, consumidor final, ticket por unidad"
+            checked={habilitaMinorista}
+            onChange={setHabilitaMinorista}
+          />
+          <CanalRow
+            title="Venta Mayorista"
+            description="Clientes comerciales, cuenta corriente, factura"
+            checked={habilitaMayorista}
+            onChange={setHabilitaMayorista}
+          />
 
-        {!habilitaMayorista && !habilitaMinorista && (
-          <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">
-            <p className="text-xs text-destructive">Debe tener al menos un canal activo</p>
-          </div>
-        )}
-      </FormSection>
+          {!habilitaMayorista && !habilitaMinorista && (
+            <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">
+              <p className="text-xs text-destructive">Debe tener al menos un canal activo</p>
+            </div>
+          )}
+        </FormSection>
+      )}
 
       {/* Precios vivos — solo planes con productos */}
       {tieneProductos && (
@@ -223,7 +230,7 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
       <div className="flex justify-end pt-2">
         <Button
           type="submit"
-          disabled={isPending || (!habilitaMayorista && !habilitaMinorista)}
+          disabled={isPending || (tieneCanales && !habilitaMayorista && !habilitaMinorista)}
           className="glow-primary"
         >
           {isPending ? 'Guardando...' : 'Guardar cambios'}
@@ -231,7 +238,8 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
       </div>
     </form>
 
-    <MPSection tenant={tenant} mpStatus={mpStatus} />
+    {/* Mercado Pago: el cobro con QR/tarjeta solo está cableado en el POS. */}
+    {tieneCanales && <MPSection tenant={tenant} mpStatus={mpStatus} />}
     </>
   );
 }
