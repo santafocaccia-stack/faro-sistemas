@@ -74,6 +74,27 @@ export async function listarGastos(mes: string) {
     .orderBy(desc(gastos.fecha));
 }
 
+/** Gastos de un día puntual (YYYY-MM-DD, ART). Para la vista diaria. */
+export async function listarGastosDelDia(fecha: string) {
+  const session = await requirePermiso('ver_reportes');
+  return db
+    .select({
+      id: gastos.id,
+      fecha: gastos.fecha,
+      categoria: gastos.categoria,
+      monto: gastos.monto,
+      descripcion: gastos.descripcion,
+      metodoPago: gastos.metodoPago,
+    })
+    .from(gastos)
+    .where(and(
+      byTenant(session.tenantId, gastos),
+      isNull(gastos.deletedAt),
+      sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date = ${fecha}::date`,
+    ))
+    .orderBy(desc(gastos.fecha));
+}
+
 export async function anularGasto(id: string): Promise<Result> {
   try {
     const session = await requirePermiso('ver_reportes');

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Plus, Trash2, Sparkles, TrendingUp, TrendingDown, Wallet, Loader2, CalendarClock, Sun, Calendar } from 'lucide-react';
+import { Plus, Trash2, Sparkles, TrendingUp, TrendingDown, Wallet, Loader2, CalendarClock } from 'lucide-react';
 import { formatARS } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,8 +46,6 @@ function deltaTxt(p: number | null): { txt: string; up: boolean } {
   return { txt: `${p > 0 ? '+' : ''}${p.toFixed(1)}%`, up: p >= 0 };
 }
 
-type ResumenPeriodo = { ingresos: number; gastos: number };
-
 export function GastosClient({
   mesInicial,
   balanceInicial,
@@ -55,9 +53,6 @@ export function GastosClient({
   configAuto,
   gastosIniciales,
   categorias,
-  resumenHoy,
-  resumenSemana,
-  esAtmos,
 }: {
   mesInicial: string;
   balanceInicial: BalanceMensual;
@@ -65,9 +60,6 @@ export function GastosClient({
   configAuto: ConfigBalanceAuto;
   gastosIniciales: GastoRow[];
   categorias: string[];
-  resumenHoy?: ResumenPeriodo;
-  resumenSemana?: ResumenPeriodo;
-  esAtmos?: boolean;
 }) {
   const [mes, setMes] = useState(mesInicial);
   const [balance, setBalance] = useState(balanceInicial);
@@ -167,25 +159,6 @@ export function GastosClient({
 
   return (
     <div className="space-y-6">
-
-      {/* ── Resumen diario y semanal (solo atmosféricos) ── */}
-      {esAtmos && resumenHoy && resumenSemana && (
-        <div className="grid sm:grid-cols-2 gap-4">
-          <PeriodoCard
-            icon={Sun}
-            titulo="Hoy"
-            ingresos={resumenHoy.ingresos}
-            gastos={resumenHoy.gastos}
-          />
-          <PeriodoCard
-            icon={Calendar}
-            titulo="Esta semana"
-            ingresos={resumenSemana.ingresos}
-            gastos={resumenSemana.gastos}
-          />
-        </div>
-      )}
-
       {/* Selector de mes */}
       <div className="flex items-center gap-3">
         <label className="text-sm text-muted-foreground">Mes</label>
@@ -480,42 +453,6 @@ function Markdown({ text }: { text: string }) {
   });
   flush('uend');
   return <div className="text-sm">{out}</div>;
-}
-
-/** Tarjeta de balance para un período (hoy / esta semana). */
-function PeriodoCard({
-  icon: Icon, titulo, ingresos, gastos: gastosVal,
-}: {
-  icon: typeof Sun;
-  titulo: string;
-  ingresos: number;
-  gastos: number;
-}) {
-  const balance = ingresos - gastosVal;
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <Icon className="h-4 w-4 text-primary" />
-        {titulo}
-      </div>
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Cobrado</p>
-          <p className="font-bold text-sm tabular-nums text-success">{formatARS(ingresos)}</p>
-        </div>
-        <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Gastos</p>
-          <p className="font-bold text-sm tabular-nums text-destructive">{formatARS(gastosVal)}</p>
-        </div>
-        <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Balance</p>
-          <p className={`font-bold text-sm tabular-nums ${balance >= 0 ? 'text-success' : 'text-destructive'}`}>
-            {formatARS(balance)}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /** Negritas **...** dentro de una línea. */
