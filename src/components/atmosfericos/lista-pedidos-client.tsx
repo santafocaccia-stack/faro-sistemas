@@ -24,6 +24,12 @@ import { ModalCompletarPedido } from './modal-completar-pedido';
 import { ModalNuevoPedido } from './modal-nuevo-pedido';
 import { ModalEditarPedido } from './modal-editar-pedido';
 import { ModalBoletaManual } from './modal-boleta-manual';
+import { BotonBoleta } from './boton-boleta';
+
+/* Feature flag: el link de Maps / "Cómo llegar" todavía no anda bien.
+   Se oculta en producción y se mantiene en staging para seguir trabajándolo.
+   Activar con NEXT_PUBLIC_FEATURE_MAPS=1 (env de staging/local). */
+const MAPS_HABILITADO = process.env.NEXT_PUBLIC_FEATURE_MAPS === '1';
 
 type ClienteBasico = {
   id: string;
@@ -234,7 +240,7 @@ export function ListaPedidosClient({
             <History className="w-5 h-5 mr-2" /> Historial
           </Button>
         </Link>
-        {mapsUrl && (
+        {MAPS_HABILITADO && mapsUrl && (
           <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none">
             <Button variant="outline" className="h-11 px-4 text-base w-full">
               <Navigation className="w-5 h-5 mr-2" /> Ver ruta del día
@@ -414,27 +420,24 @@ export function ListaPedidosClient({
 
                             {/* Acciones */}
                             <div className="flex gap-2 flex-wrap pt-1">
-                              <a
-                                href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad, mapsLink: pedido.mapsLink })}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <Button variant="outline" className="h-12 px-4 text-base">
-                                  <Navigation className="w-5 h-5 mr-1.5" /> Cómo llegar
-                                </Button>
-                              </a>
-
-                              {/* Boleta PDF — solo cuando el pozo ya se hizo (completado) */}
-                              {completado && (
+                              {MAPS_HABILITADO && (
                                 <a
-                                  href={`/api/pdf/boleta-atmos?pedido=${pedido.id}`}
+                                  href={mapsUrlDestino({ direccion: pedido.direccion, localidad: pedido.localidad, mapsLink: pedido.mapsLink })}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >
-                                  <Button className="h-12 px-4 text-base font-semibold glow-primary">
-                                    <FileText className="w-5 h-5 mr-1.5" /> Boleta PDF
+                                  <Button variant="outline" className="h-12 px-4 text-base">
+                                    <Navigation className="w-5 h-5 mr-1.5" /> Cómo llegar
                                   </Button>
                                 </a>
+                              )}
+
+                              {/* Boleta — solo cuando el pozo ya se hizo (completado) */}
+                              {completado && (
+                                <BotonBoleta
+                                  url={`/api/pdf/boleta-atmos?pedido=${pedido.id}`}
+                                  numero={String(pedido.fechaProgramada).replace(/-/g, '')}
+                                />
                               )}
 
                               {pedido.estado === 'pendiente' && (
@@ -512,7 +515,7 @@ export function ListaPedidosClient({
       </DragDropContext>
 
       {/* ── Diagnóstico de rutas (colapsado) ── */}
-      {pendientes.length > 0 && (
+      {MAPS_HABILITADO && pendientes.length > 0 && (
         <details className="rounded-xl border border-border bg-card text-xs">
           <summary className="cursor-pointer px-3 py-2.5 font-medium text-muted-foreground select-none">
             🔍 Diagnóstico de ruta

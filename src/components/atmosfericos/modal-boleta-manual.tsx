@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { X, FileText } from 'lucide-react';
+import { X, FileText, Loader2 } from 'lucide-react';
+import { compartirPdf } from '@/lib/compartir-pdf';
 
 type Props = {
   onClose: () => void;
@@ -20,11 +22,13 @@ export function ModalBoletaManual({ onClose }: Props) {
   const [monto, setMonto] = useState('');
   const [litros, setLitros] = useState('');
   const [metodo, setMetodo] = useState('efectivo');
+  const [cargando, setCargando] = useState(false);
 
   const valido = direccion.trim() !== '' && Number(monto) > 0;
 
-  function generar() {
+  async function generar() {
     if (!valido) return;
+    setCargando(true);
     const params = new URLSearchParams({
       direccion: direccion.trim(),
       fecha,
@@ -33,8 +37,20 @@ export function ModalBoletaManual({ onClose }: Props) {
     });
     if (cliente.trim()) params.set('cliente', cliente.trim());
     if (litros.trim()) params.set('litros', litros.trim());
-    window.open(`/api/pdf/boleta-atmos?${params.toString()}`, '_blank');
-    onClose();
+    try {
+      const r = await compartirPdf(
+        `/api/pdf/boleta-atmos?${params.toString()}`,
+        `recibo-${fecha.replace(/-/g, '')}.pdf`,
+        { title: 'Boleta', text: 'Te paso la boleta del servicio.' },
+      );
+      if (r === 'error') { toast.error('No se pudo generar la boleta'); return; }
+      if (r === 'descargado') toast.success('Boleta descargada');
+      onClose();
+    } catch {
+      toast.error('No se pudo generar la boleta');
+    } finally {
+      setCargando(false);
+    }
   }
 
   return (
@@ -132,11 +148,12 @@ export function ModalBoletaManual({ onClose }: Props) {
           </div>
 
           <div className="flex gap-3 pt-1">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 text-base">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 text-base" disabled={cargando}>
               Cancelar
             </Button>
-            <Button type="button" onClick={generar} disabled={!valido} className="flex-1 h-12 text-base font-semibold glow-primary">
-              <FileText className="w-5 h-5 mr-1.5" /> Generar PDF
+            <Button type="button" onClick={generar} disabled={!valido || cargando} className="flex-1 h-12 text-base font-semibold glow-primary">
+              {cargando ? <Loader2 className="w-5 h-5 mr-1.5 animate-spin" /> : <FileText className="w-5 h-5 mr-1.5" />}
+              {cargando ? 'Generando...' : 'Compartir boleta'}
             </Button>
           </div>
         </div>

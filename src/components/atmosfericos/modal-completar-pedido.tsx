@@ -17,13 +17,13 @@ const inputCls =
 const labelCls = 'text-sm font-semibold mb-1.5 block text-foreground';
 
 export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
+  // Un solo campo de litros: lo que se sacó del pozo. Se pre-carga con el
+  // estimado guardado del cliente (si hay) como referencia editable.
   const litrosDefault = pedido.litrosPozo ?? pedido.clienteLitrosPozo ?? '';
-  const [litrosPozo, setLitrosPozo] = useState(litrosDefault);
-  const [litrosExtraidos, setLitrosExtraidos] = useState('');
+  const [litros, setLitros] = useState(litrosDefault);
   const [monto, setMonto] = useState('');
   const [metodoPago, setMetodoPago] = useState('efectivo');
   const [notas, setNotas] = useState(pedido.notas ?? '');
-  const [guardarLitros, setGuardarLitros] = useState(!!pedido.clienteId);
   const [loading, setLoading] = useState(false);
 
   const titulo = pedido.clienteNombre ?? pedido.nombreContacto ?? pedido.direccion;
@@ -34,12 +34,14 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
     setLoading(true);
     try {
       await onCompletar({
-        litrosPozo:             litrosPozo || null,
-        litrosExtraidos:        litrosExtraidos || null,
+        // Mismo valor en ambos: simplifica la UI (un solo "litros") y mantiene
+        // compatibilidad con el guardado del estimado en el cliente.
+        litrosPozo:             litros || null,
+        litrosExtraidos:        litros || null,
         montoCobrado:           monto,
         metodoPago,
         notas:                  notas || null,
-        guardarLitrosEnCliente: guardarLitros,
+        guardarLitrosEnCliente: !!pedido.clienteId,
       });
     } finally {
       setLoading(false);
@@ -100,7 +102,7 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
             </div>
           </div>
 
-          {/* Litros sacados */}
+          {/* Litros (uno solo) */}
           <div>
             <label className={`${labelCls} flex items-center gap-1.5`}>
               <Droplets className="w-4 h-4 text-blue-600" /> Litros sacados
@@ -108,37 +110,11 @@ export function ModalCompletarPedido({ pedido, onClose, onCompletar }: Props) {
             <input
               type="number"
               inputMode="decimal"
-              value={litrosExtraidos}
-              onChange={(e) => setLitrosExtraidos(e.target.value)}
-              placeholder="Lo que se extrajo"
-              className={inputCls}
-            />
-          </div>
-
-          {/* Capacidad del pozo */}
-          <div>
-            <label className={`${labelCls} flex items-center gap-1.5`}>
-              <Droplets className="w-4 h-4 text-muted-foreground" /> Capacidad del pozo (litros)
-            </label>
-            <input
-              type="number"
-              inputMode="decimal"
-              value={litrosPozo}
-              onChange={(e) => setLitrosPozo(e.target.value)}
+              value={litros}
+              onChange={(e) => setLitros(e.target.value)}
               placeholder="Ej: 2000"
               className={inputCls}
             />
-            {pedido.clienteId && (
-              <label className="flex items-center gap-2 mt-2 text-sm cursor-pointer text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={guardarLitros}
-                  onChange={(e) => setGuardarLitros(e.target.checked)}
-                  className="rounded w-4 h-4 accent-primary"
-                />
-                Guardar en el perfil del cliente
-              </label>
-            )}
           </div>
 
           {/* Notas */}
