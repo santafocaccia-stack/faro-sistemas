@@ -2,7 +2,7 @@
 
 import { eq, and, sql, inArray } from 'drizzle-orm';
 import { after } from 'next/server';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import {
   ventas, ventasLineas, pagos, movimientosCuentaCorriente, clientes, productos,
   productoProveedores, pedidosProveedores, pedidosLineas,
@@ -70,7 +70,7 @@ export async function crearVenta(
   // a cuenta corriente) — para mostrar el resumen en el ticket.
   let saldoCC: number | null = null;
 
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     const numero = await siguienteNumero(session.tenantId, input.canal, tx);
 
     const esCuentaCorriente = input.tipoPago === 'cuenta_corriente';
@@ -216,19 +216,21 @@ async function acumularPedidosProveedores(
   const productoIds = lineas.map((l) => l.productoId as string);
 
   // 1. Batch: traer proveedor principal de cada producto en una sola query
-  const proveedorRows = await db
-    .select({
-      productoId: productoProveedores.productoId,
-      proveedorId: productoProveedores.proveedorId,
-    })
-    .from(productoProveedores)
-    .where(
-      and(
-        byTenant(tenantId, productoProveedores),
-        inArray(productoProveedores.productoId, productoIds),
-        eq(productoProveedores.esPrincipal, true),
+  const proveedorRows = await withTenant(tenantId, (db) =>
+    db
+      .select({
+        productoId: productoProveedores.productoId,
+        proveedorId: productoProveedores.proveedorId,
+      })
+      .from(productoProveedores)
+      .where(
+        and(
+          byTenant(tenantId, productoProveedores),
+          inArray(productoProveedores.productoId, productoIds),
+          eq(productoProveedores.esPrincipal, true),
+        ),
       ),
-    );
+  );
 
   if (proveedorRows.length === 0) return;
 
@@ -244,7 +246,7 @@ async function acumularPedidosProveedores(
 
   // 3. Por cada proveedor: find-or-create borrador + upsert líneas
   for (const [proveedorId, items] of porProveedor) {
-    await db.transaction(async (tx) => {
+    await withTenant(tenantId, async (tx) => {
       // Buscar pedido borrador existente
       const [pedidoExistente] = await tx
         .select({ id: pedidosProveedores.id })
@@ -328,17 +330,19 @@ export async function listarVentas(canal: CanalVenta, page = 0, filtros?: Filtro
   if (filtros?.clienteId) conds.push(eq(ventas.clienteId, filtros.clienteId));
   if (filtros?.estado)    conds.push(eq(ventas.estado, filtros.estado));
 
-  const rows = await db
-    .select({
-      venta: ventas,
-      clienteNombre: clientes.razonSocial,
-    })
-    .from(ventas)
-    .leftJoin(clientes, eq(ventas.clienteId, clientes.id))
-    .where(and(...conds))
-    .orderBy(sql`${ventas.fecha} desc`)
-    .limit(PAGE_SIZE + 1)
-    .offset(page * PAGE_SIZE);
+  const rows = await withTenant(session.tenantId, (db) =>
+    db
+      .select({
+        venta: ventas,
+        clienteNombre: clientes.razonSocial,
+      })
+      .from(ventas)
+      .leftJoin(clientes, eq(ventas.clienteId, clientes.id))
+      .where(and(...conds))
+      .orderBy(sql`${ventas.fecha} desc`)
+      .limit(PAGE_SIZE + 1)
+      .offset(page * PAGE_SIZE),
+  );
 
   const hayMas = rows.length > PAGE_SIZE;
   return { rows: rows.slice(0, PAGE_SIZE), hayMas, page };
@@ -347,20 +351,22 @@ export async function listarVentas(canal: CanalVenta, page = 0, filtros?: Filtro
 /** Últimas compras de un cliente (ambos canales) — para la ficha del cliente. */
 export async function comprasRecientesCliente(clienteId: string, limite = 8) {
   const session = await requireSession();
-  return db
-    .select({
-      id:       ventas.id,
-      numero:   ventas.numero,
-      canal:    ventas.canal,
-      fecha:    ventas.fecha,
-      total:    ventas.total,
-      estado:   ventas.estado,
-      tipoPago: ventas.tipoPago,
-    })
-    .from(ventas)
-    .where(and(byTenant(session.tenantId, ventas), eq(ventas.clienteId, clienteId)))
-    .orderBy(sql`${ventas.fecha} desc`)
-    .limit(limite);
+  return withTenant(session.tenantId, (db) =>
+    db
+      .select({
+        id:       ventas.id,
+        numero:   ventas.numero,
+        canal:    ventas.canal,
+        fecha:    ventas.fecha,
+        total:    ventas.total,
+        estado:   ventas.estado,
+        tipoPago: ventas.tipoPago,
+      })
+      .from(ventas)
+      .where(and(byTenant(session.tenantId, ventas), eq(ventas.clienteId, clienteId)))
+      .orderBy(sql`${ventas.fecha} desc`)
+      .limit(limite),
+  );
 }
 
 export async function anularVenta(id: string) {
@@ -368,7 +374,7 @@ export async function anularVenta(id: string) {
   const parsedId = z.string().uuid('ID inválido').safeParse(id);
   if (!parsedId.success) throw new Error(formatZodError(parsedId.error));
 
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     // Traer la venta
     const result = await tx
       .select()
@@ -446,6 +452,7 @@ export async function anularVenta(id: string) {
 
 export async function obtenerVenta(id: string) {
   const session = await requireSession();
+  return withTenant(session.tenantId, async (db) => {
   const [row] = await db
     .select({ venta: ventas, clienteNombre: clientes.razonSocial })
     .from(ventas)
@@ -473,4 +480,5 @@ export async function obtenerVenta(id: string) {
   const metodoPago = pagoRow[0]?.metodo ?? null;
 
   return { ...row, lineas, metodoPago };
+  });
 }
