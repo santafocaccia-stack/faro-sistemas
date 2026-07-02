@@ -1,7 +1,7 @@
 'use server';
 
 import { eq, and, sql, ilike } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import {
   movimientosCuentaCorriente, pagos, clientes,
   type MetodoPago,
@@ -13,26 +13,27 @@ import { revalidatePath } from 'next/cache';
 export async function listarMovimientosCliente(clienteId: string) {
   const session = await requirePermiso('gestionar_cc');
 
-  // Verificar que el cliente pertenece a este tenant antes de retornar sus movimientos
-  const [clienteExiste] = await db
-    .select({ id: clientes.id })
-    .from(clientes)
-    .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, clienteId)))
-    .limit(1);
-  if (!clienteExiste) throw new Error('Cliente no encontrado');
+  return withTenant(session.tenantId, async (db) => {
+    // Verificar que el cliente pertenece a este tenant antes de retornar sus movimientos
+    const [clienteExiste] = await db
+      .select({ id: clientes.id })
+      .from(clientes)
+      .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, clienteId)))
+      .limit(1);
+    if (!clienteExiste) throw new Error('Cliente no encontrado');
 
-  const rows = await db
-    .select()
-    .from(movimientosCuentaCorriente)
-    .where(
-      and(
-        byTenant(session.tenantId, movimientosCuentaCorriente),
-        eq(movimientosCuentaCorriente.clienteId, clienteId),
+    return db
+      .select()
+      .from(movimientosCuentaCorriente)
+      .where(
+        and(
+          byTenant(session.tenantId, movimientosCuentaCorriente),
+          eq(movimientosCuentaCorriente.clienteId, clienteId),
+        )
       )
-    )
-    .orderBy(sql`${movimientosCuentaCorriente.fecha} desc`)
-    .limit(200);
-  return rows;
+      .orderBy(sql`${movimientosCuentaCorriente.fecha} desc`)
+      .limit(200);
+  });
 }
 
 export async function registrarPago(input: {
@@ -46,7 +47,7 @@ export async function registrarPago(input: {
   const monto = Number(input.monto);
   if (isNaN(monto) || monto <= 0) throw new Error('Monto inválido');
 
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     const [cliente] = await tx
       .select({ saldo: clientes.saldoActual })
       .from(clientes)
@@ -105,7 +106,7 @@ export async function registrarPago(input: {
 
 /** Solo estos movimientos pueden revertirse. Las ventas se anulan desde la
  *  pantalla de ventas; los ajustes de debe se compensan con un nuevo haber. */
-const TIPOS_REVERTIBLES = new Set(['pago', 'ajuste_haber', 'nota_credito'] as const);
+const TIPOS_REVERTIBLES = new Set<string>(['pago', 'ajuste_haber', 'nota_credito']);
 
 export async function revertirMovimiento(input: {
   movimientoId: string;
@@ -120,7 +121,7 @@ export async function revertirMovimiento(input: {
   let clienteId: string | undefined;
 
   try {
-    await db.transaction(async (tx) => {
+    await withTenant(session.tenantId, async (tx) => {
       // 1. Obtener y lockear el movimiento original
       const [mov] = await tx
         .select()
@@ -138,7 +139,7 @@ export async function revertirMovimiento(input: {
       clienteId = mov.clienteId;
 
       // 2. Solo se revierten ciertos tipos
-      if (!TIPOS_REVERTIBLES.has(mov.tipo as any)) {
+      if (!TIPOS_REVERTIBLES.has(mov.tipo)) {
         throw new Error(`Los movimientos de tipo "${mov.tipo}" no se pueden revertir`);
       }
 

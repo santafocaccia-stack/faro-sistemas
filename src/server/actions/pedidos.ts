@@ -3,7 +3,7 @@
 import { eq, and, asc, desc, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import {
   pedidosProveedores, pedidosLineas, proveedores, productos, productoProveedores,
 } from '@/server/db/schema';
@@ -20,6 +20,8 @@ export async function crearPedidoManual(proveedorId: string): Promise<string> {
   const session = await requirePermiso('gestionar_proveedores');
   const { tenantId } = session;
 
+  // Todo el find-or-create en una transacción (antes eran queries sueltas).
+  const pedidoId = await withTenant(tenantId, async (db) => {
   // Verificar que el proveedor sea del tenant (byTenant = defensa principal).
   const [prov] = await db
     .select({ id: proveedores.id })
@@ -39,7 +41,7 @@ export async function crearPedidoManual(proveedorId: string): Promise<string> {
     ))
     .limit(1);
 
-  let pedidoId = existente?.id;
+  let pedidoId: string | undefined = existente?.id;
   if (!pedidoId) {
     const [nuevo] = await db
       .insert(pedidosProveedores)
@@ -74,6 +76,9 @@ export async function crearPedidoManual(proveedorId: string): Promise<string> {
     );
   }
 
+  return pedidoId!;
+  });
+
   revalidatePath('/dashboard/pedidos');
   return pedidoId;
 }
@@ -88,75 +93,83 @@ export async function nuevoPedido(formData: FormData) {
 
 export async function listarPedidos() {
   const session = await requirePermiso('gestionar_proveedores');
-  const rows = await db
-    .select({
-      pedido: pedidosProveedores,
-      proveedorNombre: proveedores.nombre,
-    })
-    .from(pedidosProveedores)
-    .innerJoin(proveedores, eq(pedidosProveedores.proveedorId, proveedores.id))
-    .where(byTenant(session.tenantId, pedidosProveedores))
-    .orderBy(desc(pedidosProveedores.createdAt));
-
-  return rows;
+  return withTenant(session.tenantId, (db) =>
+    db
+      .select({
+        pedido: pedidosProveedores,
+        proveedorNombre: proveedores.nombre,
+      })
+      .from(pedidosProveedores)
+      .innerJoin(proveedores, eq(pedidosProveedores.proveedorId, proveedores.id))
+      .where(byTenant(session.tenantId, pedidosProveedores))
+      .orderBy(desc(pedidosProveedores.createdAt)),
+  );
 }
 
 export async function obtenerPedido(id: string) {
   const session = await requirePermiso('gestionar_proveedores');
 
-  const [row] = await db
-    .select({
-      pedido: pedidosProveedores,
-      proveedor: proveedores,
-    })
-    .from(pedidosProveedores)
-    .innerJoin(proveedores, eq(pedidosProveedores.proveedorId, proveedores.id))
-    .where(and(byTenant(session.tenantId, pedidosProveedores), eq(pedidosProveedores.id, id)))
-    .limit(1);
+  return withTenant(session.tenantId, async (db) => {
+    const [row] = await db
+      .select({
+        pedido: pedidosProveedores,
+        proveedor: proveedores,
+      })
+      .from(pedidosProveedores)
+      .innerJoin(proveedores, eq(pedidosProveedores.proveedorId, proveedores.id))
+      .where(and(byTenant(session.tenantId, pedidosProveedores), eq(pedidosProveedores.id, id)))
+      .limit(1);
 
-  if (!row) return null;
+    if (!row) return null;
 
-  const lineas = await db
-    .select({
-      linea: pedidosLineas,
-      productoNombre: productos.nombre,
-      tipoUnidad: productos.tipoUnidad,
-    })
-    .from(pedidosLineas)
-    .innerJoin(productos, eq(pedidosLineas.productoId, productos.id))
-    .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.pedidoId, id)))
-    .orderBy(asc(productos.nombre));
+    const lineas = await db
+      .select({
+        linea: pedidosLineas,
+        productoNombre: productos.nombre,
+        tipoUnidad: productos.tipoUnidad,
+      })
+      .from(pedidosLineas)
+      .innerJoin(productos, eq(pedidosLineas.productoId, productos.id))
+      .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.pedidoId, id)))
+      .orderBy(asc(productos.nombre));
 
-  return { ...row, lineas };
+    return { ...row, lineas };
+  });
 }
 
 export async function actualizarLineaPedido(lineaId: string, cantidad: string) {
   const session = await requirePermiso('gestionar_proveedores');
-  await db
-    .update(pedidosLineas)
-    .set({ cantidadPedida: cantidad })
-    .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.id, lineaId)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(pedidosLineas)
+      .set({ cantidadPedida: cantidad })
+      .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.id, lineaId))),
+  );
   revalidatePath('/dashboard/pedidos');
 }
 
 export async function eliminarLineaPedido(lineaId: string) {
   const session = await requirePermiso('gestionar_proveedores');
-  await db
-    .delete(pedidosLineas)
-    .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.id, lineaId)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .delete(pedidosLineas)
+      .where(and(byTenant(session.tenantId, pedidosLineas), eq(pedidosLineas.id, lineaId))),
+  );
   revalidatePath('/dashboard/pedidos');
 }
 
 export async function confirmarPedido(id: string, notas?: string) {
   const session = await requirePermiso('gestionar_proveedores');
-  await db
-    .update(pedidosProveedores)
-    .set({
-      estado: 'enviado',
-      notas: notas || null,
-      enviadoAt: new Date(),
-    })
-    .where(and(byTenant(session.tenantId, pedidosProveedores), eq(pedidosProveedores.id, id)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(pedidosProveedores)
+      .set({
+        estado: 'enviado',
+        notas: notas || null,
+        enviadoAt: new Date(),
+      })
+      .where(and(byTenant(session.tenantId, pedidosProveedores), eq(pedidosProveedores.id, id))),
+  );
   revalidatePath('/dashboard/pedidos');
   revalidatePath(`/dashboard/pedidos/${id}`);
 }
@@ -167,7 +180,7 @@ export async function recibirPedido(
 ) {
   const session = await requirePermiso('gestionar_proveedores');
 
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     // Marcar el pedido como recibido
     await tx
       .update(pedidosProveedores)
