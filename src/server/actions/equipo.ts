@@ -1,7 +1,7 @@
 'use server';
 
 import { eq, and } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant, dbAdmin } from '@/server/db';
 import { users, usersTenants, type Rol } from '@/server/db/schema';
 import { requirePermiso } from '@/server/auth/session';
 import {
@@ -28,21 +28,21 @@ export type MiembroEquipo = {
 export async function listarEquipo(): Promise<MiembroEquipo[]> {
   const session = await requirePermiso('gestionar_equipo');
 
-  const rows = await db
-    .select({
-      userId: usersTenants.userId,
-      email: users.email,
-      nombreCompleto: users.nombreCompleto,
-      rol: usersTenants.rol,
-      permisos: usersTenants.permisos,
-      creadoEn: usersTenants.createdAt,
-    })
-    .from(usersTenants)
-    .innerJoin(users, eq(usersTenants.userId, users.id))
-    .where(eq(usersTenants.tenantId, session.tenantId))
-    .orderBy(usersTenants.createdAt);
-
-  return rows;
+  return withTenant(session.tenantId, (db) =>
+    db
+      .select({
+        userId: usersTenants.userId,
+        email: users.email,
+        nombreCompleto: users.nombreCompleto,
+        rol: usersTenants.rol,
+        permisos: usersTenants.permisos,
+        creadoEn: usersTenants.createdAt,
+      })
+      .from(usersTenants)
+      .innerJoin(users, eq(usersTenants.userId, users.id))
+      .where(eq(usersTenants.tenantId, session.tenantId))
+      .orderBy(usersTenants.createdAt),
+  );
 }
 
 /* ── Invitar un nuevo miembro ── */
@@ -76,17 +76,19 @@ export async function invitarMiembro(input: InviteInput): Promise<InvitarResult>
   if (!email) return err('CAMPO_REQUERIDO', 'El email es obligatorio');
 
   // Verificar que no sea ya miembro de ESTE tenant
-  const [yaMiembro] = await db
-    .select({ userId: usersTenants.userId })
-    .from(usersTenants)
-    .innerJoin(users, eq(usersTenants.userId, users.id))
-    .where(
-      and(
-        eq(usersTenants.tenantId, session.tenantId),
-        eq(users.email, email),
+  const [yaMiembro] = await withTenant(session.tenantId, (db) =>
+    db
+      .select({ userId: usersTenants.userId })
+      .from(usersTenants)
+      .innerJoin(users, eq(usersTenants.userId, users.id))
+      .where(
+        and(
+          eq(usersTenants.tenantId, session.tenantId),
+          eq(users.email, email),
+        )
       )
-    )
-    .limit(1);
+      .limit(1),
+  );
 
   if (yaMiembro) return err('YA_EXISTE', 'Ese email ya es miembro del equipo');
 
@@ -132,7 +134,10 @@ export async function invitarMiembro(input: InviteInput): Promise<InvitarResult>
     // Limpiar fila huérfana: si quedó una fila en public.users con este
     // email pero otro id (el usuario fue borrado de Auth y recreado, sin
     // trigger que sincronice), la eliminamos para no chocar el UNIQUE(email).
-    const [filaVieja] = await db
+    // dbAdmin: `users` es tabla global y la limpieza de huérfanos es
+    // cross-tenant a propósito (borra membresías de un id que YA NO existe
+    // en Auth — verificado abajo — en todos los tenants).
+    const [filaVieja] = await dbAdmin
       .select({ id: users.id })
       .from(users)
       .where(eq(users.email, email))
@@ -147,15 +152,17 @@ export async function invitarMiembro(input: InviteInput): Promise<InvitarResult>
       if (authUser?.user) {
         return err('YA_EXISTE', 'Ese email pertenece a una cuenta activa. No se puede reasignar.');
       }
-      await db.delete(usersTenants).where(eq(usersTenants.userId, filaVieja.id));
-      await db.delete(users).where(eq(users.id, filaVieja.id));
+      await dbAdmin.delete(usersTenants).where(eq(usersTenants.userId, filaVieja.id));
+      await dbAdmin.delete(users).where(eq(users.id, filaVieja.id));
     }
 
-    await db.insert(users).values({ id: userId, email }).onConflictDoNothing();
-    await db
-      .insert(usersTenants)
-      .values({ userId, tenantId: session.tenantId, rol: input.rol })
-      .onConflictDoNothing();
+    await dbAdmin.insert(users).values({ id: userId, email }).onConflictDoNothing();
+    await withTenant(session.tenantId, (db) =>
+      db
+        .insert(usersTenants)
+        .values({ userId, tenantId: session.tenantId, rol: input.rol })
+        .onConflictDoNothing(),
+    );
   } catch (e) {
     console.error('[invitarMiembro] DB insert:', e);
     return err('ERROR_INTERNO', 'No se pudo registrar el miembro en el equipo');
@@ -180,15 +187,17 @@ export async function cambiarRol(userId: string, nuevoRol: Rol) {
   }
 
   // Cambiar de rol resetea los permisos al preset del nuevo rol (limpia overrides).
-  await db
-    .update(usersTenants)
-    .set({ rol: nuevoRol, permisos: null })
-    .where(
-      and(
-        eq(usersTenants.tenantId, session.tenantId),
-        eq(usersTenants.userId, userId),
-      )
-    );
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(usersTenants)
+      .set({ rol: nuevoRol, permisos: null })
+      .where(
+        and(
+          eq(usersTenants.tenantId, session.tenantId),
+          eq(usersTenants.userId, userId),
+        )
+      ),
+  );
 
   revalidatePath('/dashboard/config/equipo');
 }
@@ -203,11 +212,13 @@ export async function guardarPermisos(userId: string, permisos: Permiso[] | null
   }
 
   // Validar el target dentro del tenant y su rol.
-  const [target] = await db
-    .select({ rol: usersTenants.rol })
-    .from(usersTenants)
-    .where(and(eq(usersTenants.tenantId, session.tenantId), eq(usersTenants.userId, userId)))
-    .limit(1);
+  const [target] = await withTenant(session.tenantId, (db) =>
+    db
+      .select({ rol: usersTenants.rol })
+      .from(usersTenants)
+      .where(and(eq(usersTenants.tenantId, session.tenantId), eq(usersTenants.userId, userId)))
+      .limit(1),
+  );
   if (!target) throw new Error('El miembro no pertenece a este equipo');
 
   // A un dueño no se le editan permisos: siempre tiene acceso total.
@@ -230,10 +241,12 @@ export async function guardarPermisos(userId: string, permisos: Permiso[] | null
     permisos = Array.from(new Set(validos));
   }
 
-  await db
-    .update(usersTenants)
-    .set({ permisos })
-    .where(and(eq(usersTenants.tenantId, session.tenantId), eq(usersTenants.userId, userId)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(usersTenants)
+      .set({ permisos })
+      .where(and(eq(usersTenants.tenantId, session.tenantId), eq(usersTenants.userId, userId))),
+  );
 
   revalidatePath('/dashboard/config/equipo');
 }
@@ -246,14 +259,16 @@ export async function eliminarMiembro(userId: string) {
     throw new Error('No podés eliminarte a vos mismo del equipo');
   }
 
-  await db
-    .delete(usersTenants)
-    .where(
-      and(
-        eq(usersTenants.tenantId, session.tenantId),
-        eq(usersTenants.userId, userId),
-      )
-    );
+  await withTenant(session.tenantId, (db) =>
+    db
+      .delete(usersTenants)
+      .where(
+        and(
+          eq(usersTenants.tenantId, session.tenantId),
+          eq(usersTenants.userId, userId),
+        )
+      ),
+  );
 
   revalidatePath('/dashboard/config/equipo');
 }

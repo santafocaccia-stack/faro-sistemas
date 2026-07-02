@@ -1,7 +1,7 @@
 'use server';
 
 import { eq } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { tenants } from '@/server/db/schema';
 import { requireSession, requirePermiso } from '@/server/auth/session';
 import { margenObjetivoSchema, formatZodError } from '@/server/schemas';
@@ -9,11 +9,13 @@ import { revalidatePath } from 'next/cache';
 
 export async function obtenerTenant() {
   const session = await requireSession();
-  const [tenant] = await db
-    .select()
-    .from(tenants)
-    .where(eq(tenants.id, session.tenantId))
-    .limit(1);
+  const [tenant] = await withTenant(session.tenantId, (db) =>
+    db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, session.tenantId))
+      .limit(1),
+  );
   return tenant ?? null;
 }
 
@@ -42,7 +44,8 @@ export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolea
       margenObjetivo = m.data.toFixed(2);
     }
 
-    await db
+    await withTenant(session.tenantId, (db) =>
+      db
       .update(tenants)
       .set({
         nombre:            input.nombre.trim(),
@@ -55,7 +58,8 @@ export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolea
         ...(input.preciosVivos !== undefined ? { preciosVivos: input.preciosVivos } : {}),
         ...(margenObjetivo !== undefined ? { margenObjetivo } : {}),
       })
-      .where(eq(tenants.id, session.tenantId));
+      .where(eq(tenants.id, session.tenantId)),
+    );
 
     revalidatePath('/dashboard/config');
     return { ok: true };
