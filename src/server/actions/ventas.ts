@@ -4,7 +4,7 @@ import { eq, and, sql, inArray } from 'drizzle-orm';
 import { after } from 'next/server';
 import { withTenant } from '@/server/db';
 import {
-  ventas, ventasLineas, pagos, movimientosCuentaCorriente, clientes, productos,
+  ventas, ventasLineas, pagos, movimientosCuentaCorriente, clientes,
   productoProveedores, pedidosProveedores, pedidosLineas,
   type CanalVenta, type MetodoPago,
 } from '@/server/db/schema';
