@@ -10,7 +10,8 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { and, eq, gte, inArray, sql } from 'drizzle-orm';
-import { db } from '@/server/db';
+// dbAdmin: cron sin sesión — recorre todos los tenants a propósito (CRON_SECRET).
+import { dbAdmin as db } from '@/server/db';
 import { tenants, users, usersTenants, ventas, ventasLineas, productos } from '@/server/db/schema';
 import { buildReporteSemanalHtml, semanaLabel } from '@/lib/email/reporte-semanal';
 

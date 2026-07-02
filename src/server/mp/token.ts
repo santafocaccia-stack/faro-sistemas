@@ -11,22 +11,24 @@
 // No lleva `'use server'`: al importar `@/server/db` ya es inherentemente
 // server-side y no puede entrar en un bundle de cliente.
 import { eq } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { tenants } from '@/server/db/schema';
 
 const MP_APP_ID = process.env.MP_APP_ID!;
 const MP_SECRET = process.env.MP_CLIENT_SECRET!;
 
 export async function getMPNegocioToken(tenantId: string): Promise<string | null> {
-  const [tenant] = await db
-    .select({
-      accessToken:  tenants.mpNegocioAccessToken,
-      refreshToken: tenants.mpNegocioRefreshToken,
-      expiry:       tenants.mpNegocioTokenExpiry,
-    })
-    .from(tenants)
-    .where(eq(tenants.id, tenantId))
-    .limit(1);
+  const [tenant] = await withTenant(tenantId, (db) =>
+    db
+      .select({
+        accessToken:  tenants.mpNegocioAccessToken,
+        refreshToken: tenants.mpNegocioRefreshToken,
+        expiry:       tenants.mpNegocioTokenExpiry,
+      })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1),
+  );
 
   if (!tenant?.accessToken) return null;
 
@@ -52,14 +54,16 @@ export async function getMPNegocioToken(tenantId: string): Promise<string | null
   const nuevo = await res.json();
   const expiry = new Date(Date.now() + nuevo.expires_in * 1000);
 
-  await db
-    .update(tenants)
-    .set({
-      mpNegocioAccessToken:  nuevo.access_token,
-      mpNegocioRefreshToken: nuevo.refresh_token ?? tenant.refreshToken,
-      mpNegocioTokenExpiry:  expiry,
-    })
-    .where(eq(tenants.id, tenantId));
+  await withTenant(tenantId, (db) =>
+    db
+      .update(tenants)
+      .set({
+        mpNegocioAccessToken:  nuevo.access_token,
+        mpNegocioRefreshToken: nuevo.refresh_token ?? tenant.refreshToken,
+        mpNegocioTokenExpiry:  expiry,
+      })
+      .where(eq(tenants.id, tenantId)),
+  );
 
   return nuevo.access_token;
 }

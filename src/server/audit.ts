@@ -6,7 +6,7 @@
  *
  * No lanza si falla — el audit log nunca debe interrumpir la operación principal.
  */
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { auditLogs, type AuditAccion } from '@/server/db/schema';
 import type { Session } from '@/server/auth/session';
 
@@ -24,7 +24,7 @@ export async function audit(
   opts: AuditOpts = {},
 ): Promise<void> {
   try {
-    await db.insert(auditLogs).values({
+    await withTenant(session.tenantId, (db) => db.insert(auditLogs).values({
       tenantId:  session.tenantId,
       userId:    session.userId,
       accion,
@@ -33,7 +33,7 @@ export async function audit(
       before:    opts.before ?? null,
       after:     opts.after  ?? null,
       meta:      opts.meta   ?? null,
-    });
+    }));
   } catch {
     // Audit log nunca interrumpe la operación principal
   }

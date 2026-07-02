@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
-import { db } from '@/server/db';
+import { dbAdmin, withTenant } from '@/server/db';
 import { tenants, usersTenants } from '@/server/db/schema';
 import { getAppUrl } from '@/lib/app-url';
 
@@ -37,7 +37,8 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(`${APP_URL}/login`);
 
-  const [membership] = await db
+  // dbAdmin: lookup pre-tenant (resuelve la membresía del usuario autenticado).
+  const [membership] = await dbAdmin
     .select({ tenantId: usersTenants.tenantId })
     .from(usersTenants)
     .where(eq(usersTenants.userId, user.id))
@@ -69,15 +70,17 @@ export async function GET(req: NextRequest) {
 
   const expiry = new Date(Date.now() + token.expires_in * 1000);
 
-  await db
-    .update(tenants)
-    .set({
-      mpNegocioAccessToken:  token.access_token,
-      mpNegocioRefreshToken: token.refresh_token,
-      mpNegocioTokenExpiry:  expiry,
-      mpNegocioUserId:       String(token.user_id),
-    })
-    .where(eq(tenants.id, membership.tenantId));
+  await withTenant(membership.tenantId, (db) =>
+    db
+      .update(tenants)
+      .set({
+        mpNegocioAccessToken:  token.access_token,
+        mpNegocioRefreshToken: token.refresh_token,
+        mpNegocioTokenExpiry:  expiry,
+        mpNegocioUserId:       String(token.user_id),
+      })
+      .where(eq(tenants.id, membership.tenantId)),
+  );
 
   return NextResponse.redirect(`${APP_URL}/dashboard/config?mp=ok`);
 }

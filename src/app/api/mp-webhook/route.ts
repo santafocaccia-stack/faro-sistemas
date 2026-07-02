@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { db } from '@/server/db';
+// dbAdmin: el webhook no tiene sesión — identifica al tenant por el
+// external_reference del preapproval (firma HMAC verificada arriba).
+import { dbAdmin } from '@/server/db';
 import { tenants } from '@/server/db/schema';
 import type { PlanId } from '@/lib/planes';
 import { sumarMeses } from '@/lib/fechas';
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest) {
   if (preapproval.status === 'authorized') {
     // Encadenar desde el vencimiento vigente (no perder días si paga antes de
     // vencer) — mismo criterio que el cobro por transferencia.
-    const [tenant] = await db
+    const [tenant] = await dbAdmin
       .select({ subscriptionEnd: tenants.subscriptionEnd })
       .from(tenants)
       .where(eq(tenants.id, tenantId))
@@ -107,7 +109,7 @@ export async function POST(req: NextRequest) {
       tenant?.subscriptionEnd && tenant.subscriptionEnd > ahora ? tenant.subscriptionEnd : ahora;
     const subscriptionEnd = sumarMeses(base, 1);
 
-    await db
+    await dbAdmin
       .update(tenants)
       .set({
         status: 'activo',
@@ -117,7 +119,7 @@ export async function POST(req: NextRequest) {
       })
       .where(eq(tenants.id, tenantId));
   } else if (preapproval.status === 'cancelled' || preapproval.status === 'paused') {
-    await db
+    await dbAdmin
       .update(tenants)
       .set({ status: 'suspendido' })
       .where(eq(tenants.id, tenantId));

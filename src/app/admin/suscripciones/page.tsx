@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull, inArray } from 'drizzle-orm';
-import { db } from '@/server/db';
+// dbAdmin: panel super-admin — vista cross-tenant deliberada (requireSuperAdmin).
+import { dbAdmin as db } from '@/server/db';
 import { tenants, users, usersTenants, pagosSuscripcion } from '@/server/db/schema';
 import { PLANES } from '@/lib/planes';
 import { SuscripcionesClient, type PagoPendiente, type TenantRow } from './suscripciones-client';
