@@ -1,9 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { eq, and, ilike, desc, sql, asc } from 'drizzle-orm';
-import { db } from '@/server/db';
-import { productos, productoProveedores, proveedores, categorias, tenants, type TipoUnidad } from '@/server/db/schema';
+import { eq, and, ilike, desc, asc } from 'drizzle-orm';
+import { withTenant } from '@/server/db';
+import { productos, productoProveedores, categorias, tenants, type TipoUnidad } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requireSession, requirePermiso } from '@/server/auth/session';
 import {
@@ -41,11 +41,13 @@ export type ProductoInput = {
  */
 /** ¿El tenant tiene Precios vivos activado? Guard server-side (la UI no alcanza). */
 async function preciosVivosActivo(tenantId: string): Promise<boolean> {
-  const [t] = await db
-    .select({ pv: tenants.preciosVivos })
-    .from(tenants)
-    .where(eq(tenants.id, tenantId))
-    .limit(1);
+  const [t] = await withTenant(tenantId, (db) =>
+    db
+      .select({ pv: tenants.preciosVivos })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1),
+  );
   return t?.pv === true;
 }
 
@@ -71,13 +73,14 @@ export async function aplicarPreciosMasivo(input: {
     ? and(byTenant(session.tenantId, productos), eq(productos.categoriaId, categoriaId), eq(productos.activo, true))
     : and(byTenant(session.tenantId, productos), eq(productos.activo, true));
 
-  const rows = await db
-    .select({ id: productos.id, may: productos.precioMayorista, min: productos.precioMinorista })
-    .from(productos)
-    .where(cond);
-
+  // Lectura + updates en la misma transacción (antes eran 2 pasos separados).
   let n = 0;
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
+    const rows = await tx
+      .select({ id: productos.id, may: productos.precioMayorista, min: productos.precioMinorista })
+      .from(productos)
+      .where(cond);
+
     for (const p of rows) {
       const nMay = calc(Number(p.may));
       const nMin = calc(Number(p.min));
@@ -95,7 +98,9 @@ export async function aplicarPreciosMasivo(input: {
 
 /** Recargo objetivo del negocio (default si el producto no tiene override). */
 async function margenObjetivoNegocio(tenantId: string): Promise<number> {
-  const [t] = await db.select({ m: tenants.margenObjetivo }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+  const [t] = await withTenant(tenantId, (db) =>
+    db.select({ m: tenants.margenObjetivo }).from(tenants).where(eq(tenants.id, tenantId)).limit(1),
+  );
   return Number(t?.m ?? 50);
 }
 
@@ -116,14 +121,16 @@ export async function productosMargenBajo(): Promise<ProductoMargenBajo[]> {
 /** Núcleo reutilizable (recibe tenantId ya autenticado; evita doble requireAdmin). */
 async function calcularMargenBajo(tenantId: string): Promise<ProductoMargenBajo[]> {
   const objNegocio = await margenObjetivoNegocio(tenantId);
-  const rows = await db
-    .select({
-      id: productos.id, nombre: productos.nombre,
-      costo: productos.costoPromedio, precio: productos.precioMinorista,
-      obj: productos.margenObjetivo,
-    })
-    .from(productos)
-    .where(and(byTenant(tenantId, productos), eq(productos.activo, true)));
+  const rows = await withTenant(tenantId, (db) =>
+    db
+      .select({
+        id: productos.id, nombre: productos.nombre,
+        costo: productos.costoPromedio, precio: productos.precioMinorista,
+        obj: productos.margenObjetivo,
+      })
+      .from(productos)
+      .where(and(byTenant(tenantId, productos), eq(productos.activo, true))),
+  );
 
   const out: ProductoMargenBajo[] = [];
   for (const r of rows) {
@@ -154,7 +161,7 @@ export async function ajustarPreciosAlMargen(input: { redondeo: number }): Promi
   const bajos = await calcularMargenBajo(session.tenantId);
   const redon = (v: number) => (r > 0 ? Math.round(v / r) * r : Math.round(v * 100) / 100);
   let n = 0;
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     for (const p of bajos) {
       const nuevo = redon(p.precioSugerido);
       await tx.update(productos)
@@ -178,20 +185,24 @@ export async function listarProductos(filtros?: { busqueda?: string; soloActivos
     conditions.push(ilike(productos.nombre, `%${filtros.busqueda}%`));
   }
 
-  return db
-    .select()
-    .from(productos)
-    .where(and(...conditions))
-    .orderBy(desc(productos.createdAt));
+  return withTenant(session.tenantId, (db) =>
+    db
+      .select()
+      .from(productos)
+      .where(and(...conditions))
+      .orderBy(desc(productos.createdAt)),
+  );
 }
 
 export async function obtenerProducto(id: string) {
   const session = await requireSession();
-  const [producto] = await db
-    .select()
-    .from(productos)
-    .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)))
-    .limit(1);
+  const [producto] = await withTenant(session.tenantId, (db) =>
+    db
+      .select()
+      .from(productos)
+      .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)))
+      .limit(1),
+  );
   return producto ?? null;
 }
 
@@ -209,25 +220,27 @@ export async function crearProducto(input: ProductoInput): Promise<CrearProducto
 
   let creado: { id: string } | undefined;
   try {
-    [creado] = await db
-      .insert(productos)
-      .values({
-        tenantId: session.tenantId,
-        codigo: data.codigo || null,
-        codigoPlu: data.codigoPlu || null,
-        nombre: data.nombre,
-        descripcion: data.descripcion || null,
-        categoriaId: data.categoriaId || null,
-        grupoVarianteId: data.grupoVarianteId || null,
-        tipoUnidad: data.tipoUnidad,
-        stockActual: data.stockActual,
-        stockMinimo: data.stockMinimo || null,
-        costoPromedio: data.costoPromedio,
-        precioMayorista: data.precioMayorista,
-        precioMinorista: data.precioMinorista,
-        activo: data.activo,
-      })
-      .returning({ id: productos.id });
+    [creado] = await withTenant(session.tenantId, (db) =>
+      db
+        .insert(productos)
+        .values({
+          tenantId: session.tenantId,
+          codigo: data.codigo || null,
+          codigoPlu: data.codigoPlu || null,
+          nombre: data.nombre,
+          descripcion: data.descripcion || null,
+          categoriaId: data.categoriaId || null,
+          grupoVarianteId: data.grupoVarianteId || null,
+          tipoUnidad: data.tipoUnidad,
+          stockActual: data.stockActual,
+          stockMinimo: data.stockMinimo || null,
+          costoPromedio: data.costoPromedio,
+          precioMayorista: data.precioMayorista,
+          precioMinorista: data.precioMinorista,
+          activo: data.activo,
+        })
+        .returning({ id: productos.id }),
+    );
   } catch (err) {
     console.error('[crearProducto] Error insertando producto:', err);
     const msg = err instanceof Error ? err.message : String(err);
@@ -240,16 +253,18 @@ export async function crearProducto(input: ProductoInput): Promise<CrearProducto
 
   if (data.vinculos && data.vinculos.length > 0) {
     try {
-      await db.insert(productoProveedores).values(
-        data.vinculos.map((v) => ({
-          tenantId: session.tenantId,
-          productoId: creado!.id,
-          proveedorId: v.proveedorId,
-          precioCosto: v.precioCosto,
-          markupMayorista: v.markupMayorista || null,
-          markupMinorista: v.markupMinorista || null,
-          esPrincipal: v.esPrincipal,
-        })),
+      await withTenant(session.tenantId, (db) =>
+        db.insert(productoProveedores).values(
+          data.vinculos!.map((v) => ({
+            tenantId: session.tenantId,
+            productoId: creado!.id,
+            proveedorId: v.proveedorId,
+            precioCosto: v.precioCosto,
+            markupMayorista: v.markupMayorista || null,
+            markupMinorista: v.markupMinorista || null,
+            esPrincipal: v.esPrincipal,
+          })),
+        ),
       );
     } catch (err) {
       console.error('[crearProducto] Error insertando vinculos:', err);
@@ -278,7 +293,7 @@ export async function actualizarProducto(
   const data = parsed.data;
 
   try {
-    await db.transaction(async (tx) => {
+    await withTenant(session.tenantId, async (tx) => {
       await tx
         .update(productos)
         .set({
@@ -336,26 +351,31 @@ export async function actualizarProducto(
 
 export async function desactivarProducto(id: string) {
   const session = await requireSession();
-  await db
-    .update(productos)
-    .set({ activo: false })
-    .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(productos)
+      .set({ activo: false })
+      .where(and(byTenant(session.tenantId, productos), eq(productos.id, id))),
+  );
   revalidatePath('/dashboard/productos');
 }
 
 export async function toggleActivoProducto(id: string) {
   const session = await requireSession();
-  const [prod] = await db
-    .select({ activo: productos.activo })
-    .from(productos)
-    .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)))
-    .limit(1);
-  if (!prod) throw new Error('Producto no encontrado');
+  // Lectura + escritura en la misma transacción (antes eran 2 llamadas sueltas).
+  await withTenant(session.tenantId, async (tx) => {
+    const [prod] = await tx
+      .select({ activo: productos.activo })
+      .from(productos)
+      .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)))
+      .limit(1);
+    if (!prod) throw new Error('Producto no encontrado');
 
-  await db
-    .update(productos)
-    .set({ activo: !prod.activo })
-    .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)));
+    await tx
+      .update(productos)
+      .set({ activo: !prod.activo })
+      .where(and(byTenant(session.tenantId, productos), eq(productos.id, id)));
+  });
   revalidatePath('/dashboard/productos');
   revalidatePath(`/dashboard/productos/${id}`);
 }
@@ -367,10 +387,12 @@ export async function fijarStock(input: { productoId: string; nuevoStock: string
   const { productoId, nuevoStock } = parsed.data;
   const valor = Number(nuevoStock);
 
-  await db
-    .update(productos)
-    .set({ stockActual: valor.toFixed(3) })
-    .where(and(byTenant(session.tenantId, productos), eq(productos.id, productoId)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(productos)
+      .set({ stockActual: valor.toFixed(3) })
+      .where(and(byTenant(session.tenantId, productos), eq(productos.id, productoId))),
+  );
 
   revalidatePath('/dashboard/productos');
   revalidatePath(`/dashboard/productos/${productoId}`);
@@ -390,7 +412,7 @@ export async function ajustarStock(input: {
   const { productoId, tipo, cantidad: cantidadStr } = parsed.data;
   const cantidad = Number(cantidadStr);
 
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     const result = await tx
       .select({ stock: productos.stockActual })
       .from(productos)
@@ -448,26 +470,28 @@ export async function importarProductosCSV(filas: CsvFila[]): Promise<ImportarCs
   const mapaCategoria: Record<string, string> = {};
 
   if (categoriasUnicas.length > 0) {
-    const existentes = await db
-      .select({ id: categorias.id, nombre: categorias.nombre })
-      .from(categorias)
-      .where(and(byTenant(session.tenantId, categorias), eq(categorias.activo, true)))
-      .orderBy(asc(categorias.nombre));
+    await withTenant(session.tenantId, async (tx) => {
+      const existentes = await tx
+        .select({ id: categorias.id, nombre: categorias.nombre })
+        .from(categorias)
+        .where(and(byTenant(session.tenantId, categorias), eq(categorias.activo, true)))
+        .orderBy(asc(categorias.nombre));
 
-    for (const nombre of categoriasUnicas) {
-      const encontrada = existentes.find(
-        (c) => c.nombre.toLowerCase() === nombre.toLowerCase()
-      );
-      if (encontrada) {
-        mapaCategoria[nombre] = encontrada.id;
-      } else {
-        const [nueva] = await db
-          .insert(categorias)
-          .values({ tenantId: session.tenantId, nombre })
-          .returning({ id: categorias.id });
-        if (nueva) mapaCategoria[nombre] = nueva.id;
+      for (const nombre of categoriasUnicas) {
+        const encontrada = existentes.find(
+          (c) => c.nombre.toLowerCase() === nombre.toLowerCase()
+        );
+        if (encontrada) {
+          mapaCategoria[nombre] = encontrada.id;
+        } else {
+          const [nueva] = await tx
+            .insert(categorias)
+            .values({ tenantId: session.tenantId, nombre })
+            .returning({ id: categorias.id });
+          if (nueva) mapaCategoria[nombre] = nueva.id;
+        }
       }
-    }
+    });
   }
 
   const errores: { fila: number; error: string }[] = [];
@@ -507,8 +531,9 @@ export async function importarProductosCSV(filas: CsvFila[]): Promise<ImportarCs
     try {
       const LOTE = 100;
       for (let i = 0; i < valoresValidos.length; i += LOTE) {
-        await db.insert(productos).values(valoresValidos.slice(i, i + LOTE));
-        insertados += Math.min(LOTE, valoresValidos.length - i);
+        const lote = valoresValidos.slice(i, i + LOTE);
+        await withTenant(session.tenantId, (db) => db.insert(productos).values(lote));
+        insertados += lote.length;
       }
     } catch (e) {
       return {
