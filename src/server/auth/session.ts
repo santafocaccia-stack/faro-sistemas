@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
-import { db } from '@/server/db';
+import { dbAdmin } from '@/server/db';
 import { usersTenants, tenants, type Rol } from '@/server/db/schema';
 import type { PlanId, Capacidad } from '@/lib/planes';
 import type { Permiso } from '@/lib/permisos';
@@ -48,8 +48,10 @@ const getSessionData = cache(async (): Promise<Session | null> => {
   if (!session) return null;
   const user = session.user;
 
-  // JOIN: una sola consulta en lugar de dos secuenciales
-  const [row] = await db
+  // JOIN: una sola consulta en lugar de dos secuenciales.
+  // dbAdmin: este lookup corre ANTES de conocer el tenant (es quien lo
+  // resuelve), por eso es de los pocos caminos cross-tenant legítimos.
+  const [row] = await dbAdmin
     .select({
       tenantId:     usersTenants.tenantId,
       rol:          usersTenants.rol,

@@ -2,7 +2,7 @@
 
 import { and, sql, desc, eq, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { gastos, tenants } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requirePermiso } from '@/server/auth/session';
@@ -34,16 +34,18 @@ export async function crearGasto(input: unknown): Promise<Result> {
     if (!parsed.success) return { ok: false, error: formatZodError(parsed.error) };
     const d = parsed.data;
 
-    await db.insert(gastos).values({
-      tenantId: session.tenantId,
-      // Mediodía UTC → mismo día calendario en ART; evita corrimientos de fecha.
-      fecha: new Date(d.fecha + 'T12:00:00Z'),
-      categoria: d.categoria.trim(),
-      monto: Number(d.monto).toFixed(2),
-      descripcion: d.descripcion?.trim() || null,
-      metodoPago: d.metodoPago ?? null,
-      creadoPor: session.email,
-    });
+    await withTenant(session.tenantId, (db) =>
+      db.insert(gastos).values({
+        tenantId: session.tenantId,
+        // Mediodía UTC → mismo día calendario en ART; evita corrimientos de fecha.
+        fecha: new Date(d.fecha + 'T12:00:00Z'),
+        categoria: d.categoria.trim(),
+        monto: Number(d.monto).toFixed(2),
+        descripcion: d.descripcion?.trim() || null,
+        metodoPago: d.metodoPago ?? null,
+        creadoPor: session.email,
+      }),
+    );
 
     revalidatePath('/dashboard/gastos');
     return { ok: true };
@@ -55,7 +57,8 @@ export async function crearGasto(input: unknown): Promise<Result> {
 export async function listarGastos(mes: string) {
   const session = await requirePermiso('ver_reportes');
   const { inicio, fin } = rangoMes(mes);
-  return db
+  return withTenant(session.tenantId, (db) =>
+    db
     .select({
       id: gastos.id,
       fecha: gastos.fecha,
@@ -71,37 +74,42 @@ export async function listarGastos(mes: string) {
       sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date >= ${inicio}::date`,
       sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date < ${fin}::date`,
     ))
-    .orderBy(desc(gastos.fecha));
+    .orderBy(desc(gastos.fecha)),
+  );
 }
 
 /** Gastos de un día puntual (YYYY-MM-DD, ART). Para la vista diaria. */
 export async function listarGastosDelDia(fecha: string) {
   const session = await requirePermiso('ver_reportes');
-  return db
-    .select({
-      id: gastos.id,
-      fecha: gastos.fecha,
-      categoria: gastos.categoria,
-      monto: gastos.monto,
-      descripcion: gastos.descripcion,
-      metodoPago: gastos.metodoPago,
-    })
-    .from(gastos)
-    .where(and(
-      byTenant(session.tenantId, gastos),
-      isNull(gastos.deletedAt),
-      sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date = ${fecha}::date`,
-    ))
-    .orderBy(desc(gastos.fecha));
+  return withTenant(session.tenantId, (db) =>
+    db
+      .select({
+        id: gastos.id,
+        fecha: gastos.fecha,
+        categoria: gastos.categoria,
+        monto: gastos.monto,
+        descripcion: gastos.descripcion,
+        metodoPago: gastos.metodoPago,
+      })
+      .from(gastos)
+      .where(and(
+        byTenant(session.tenantId, gastos),
+        isNull(gastos.deletedAt),
+        sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date = ${fecha}::date`,
+      ))
+      .orderBy(desc(gastos.fecha)),
+  );
 }
 
 export async function anularGasto(id: string): Promise<Result> {
   try {
     const session = await requirePermiso('ver_reportes');
-    await db
-      .update(gastos)
-      .set({ deletedAt: new Date() })
-      .where(and(byTenant(session.tenantId, gastos), eq(gastos.id, id)));
+    await withTenant(session.tenantId, (db) =>
+      db
+        .update(gastos)
+        .set({ deletedAt: new Date() })
+        .where(and(byTenant(session.tenantId, gastos), eq(gastos.id, id))),
+    );
     revalidatePath('/dashboard/gastos');
     return { ok: true };
   } catch (e) {
@@ -154,11 +162,13 @@ export type ConfigBalanceAuto = { activo: boolean; dia: number | null };
 
 export async function obtenerConfigBalanceAuto(): Promise<ConfigBalanceAuto> {
   const session = await requirePermiso('ver_reportes');
-  const [t] = await db
-    .select({ activo: tenants.balanceAutoActivo, dia: tenants.balanceAutoDia })
-    .from(tenants)
-    .where(eq(tenants.id, session.tenantId))
-    .limit(1);
+  const [t] = await withTenant(session.tenantId, (db) =>
+    db
+      .select({ activo: tenants.balanceAutoActivo, dia: tenants.balanceAutoDia })
+      .from(tenants)
+      .where(eq(tenants.id, session.tenantId))
+      .limit(1),
+  );
   return { activo: t?.activo ?? true, dia: t?.dia ?? null };
 }
 
@@ -169,10 +179,12 @@ export async function guardarConfigBalanceAuto(cfg: ConfigBalanceAuto): Promise<
     // existen en todos los meses, para que la programación sea estable).
     const dia =
       cfg.dia == null ? null : Math.min(Math.max(Math.trunc(cfg.dia), 1), 28);
-    await db
-      .update(tenants)
-      .set({ balanceAutoActivo: cfg.activo, balanceAutoDia: dia })
-      .where(eq(tenants.id, session.tenantId));
+    await withTenant(session.tenantId, (db) =>
+      db
+        .update(tenants)
+        .set({ balanceAutoActivo: cfg.activo, balanceAutoDia: dia })
+        .where(eq(tenants.id, session.tenantId)),
+    );
     revalidatePath('/dashboard/gastos');
     return { ok: true };
   } catch (e) {

@@ -1,9 +1,9 @@
 'use server';
 
 import { and, eq } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { cobrosMp } from '@/server/db/schema';
-import { byTenant } from '@/server/db/tenant-context';
+import { byTenant, byTenantAnd } from '@/server/db/tenant-context';
 import { requireSession } from '@/server/auth/session';
 import { getMPNegocioToken } from '@/server/mp/token';
 import { crearPreferenceCobro } from '@/server/mp/cobro';
@@ -42,16 +42,18 @@ export async function iniciarCobroMP(input: {
       return { ok: false, error: 'El negocio no tiene Mercado Pago conectado. Conectalo en Configuración.' };
     }
 
-    const [cobro] = await db
-      .insert(cobrosMp)
-      .values({
-        tenantId: session.tenantId,
-        monto: monto.toFixed(2),
-        canal: input.canal ?? 'minorista',
-        estado: 'pendiente',
-        creadoPor: session.email,
-      })
-      .returning({ id: cobrosMp.id });
+    const [cobro] = await withTenant(session.tenantId, (db) =>
+      db
+        .insert(cobrosMp)
+        .values({
+          tenantId: session.tenantId,
+          monto: monto.toFixed(2),
+          canal: input.canal ?? 'minorista',
+          estado: 'pendiente',
+          creadoPor: session.email,
+        })
+        .returning({ id: cobrosMp.id }),
+    );
 
     if (!cobro) return { ok: false, error: 'No se pudo crear el cobro' };
 
@@ -64,10 +66,14 @@ export async function iniciarCobroMP(input: {
       notificationUrl,
     });
 
-    await db
-      .update(cobrosMp)
-      .set({ preferenceId: pref.id, initPoint: pref.initPoint })
-      .where(eq(cobrosMp.id, cobro.id));
+    // La llamada HTTP a MP quedó afuera de la transacción a propósito
+    // (no retener la conexión del pool durante un round-trip externo).
+    await withTenant(session.tenantId, (db) =>
+      db
+        .update(cobrosMp)
+        .set({ preferenceId: pref.id, initPoint: pref.initPoint })
+        .where(byTenantAnd(session.tenantId, cobrosMp, eq(cobrosMp.id, cobro.id))),
+    );
 
     // QR generado en el server (no exponemos el link de pago a un tercero).
     const qrDataUrl = await QRCode.toDataURL(pref.initPoint, { margin: 1, width: 320 });
@@ -81,11 +87,13 @@ export async function iniciarCobroMP(input: {
 /** Polling: consulta el estado del cobro contra MP. Solo cobros del propio tenant. */
 export async function consultarCobroMP(cobroId: string): Promise<{ estado: CobroEstado }> {
   const session = await requireSession();
-  const [cobro] = await db
-    .select({ id: cobrosMp.id })
-    .from(cobrosMp)
-    .where(and(byTenant(session.tenantId, cobrosMp), eq(cobrosMp.id, cobroId)))
-    .limit(1);
+  const [cobro] = await withTenant(session.tenantId, (db) =>
+    db
+      .select({ id: cobrosMp.id })
+      .from(cobrosMp)
+      .where(and(byTenant(session.tenantId, cobrosMp), eq(cobrosMp.id, cobroId)))
+      .limit(1),
+  );
   if (!cobro) return { estado: 'expirado' };
 
   const r = await sincronizarCobro(cobroId);
@@ -95,21 +103,25 @@ export async function consultarCobroMP(cobroId: string): Promise<{ estado: Cobro
 /** Cancela un cobro pendiente (el cajero cerró el QR sin pagar). */
 export async function cancelarCobroMP(cobroId: string): Promise<void> {
   const session = await requireSession();
-  await db
-    .update(cobrosMp)
-    .set({ estado: 'cancelado', updatedAt: new Date() })
-    .where(and(
-      byTenant(session.tenantId, cobrosMp),
-      eq(cobrosMp.id, cobroId),
-      eq(cobrosMp.estado, 'pendiente'),
-    ));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(cobrosMp)
+      .set({ estado: 'cancelado', updatedAt: new Date() })
+      .where(and(
+        byTenant(session.tenantId, cobrosMp),
+        eq(cobrosMp.id, cobroId),
+        eq(cobrosMp.estado, 'pendiente'),
+      )),
+  );
 }
 
 /** Asocia la venta recién registrada al cobro aprobado (para trazabilidad). */
 export async function vincularVentaACobro(cobroId: string, ventaId: string): Promise<void> {
   const session = await requireSession();
-  await db
-    .update(cobrosMp)
-    .set({ ventaId, updatedAt: new Date() })
-    .where(and(byTenant(session.tenantId, cobrosMp), eq(cobrosMp.id, cobroId)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(cobrosMp)
+      .set({ ventaId, updatedAt: new Date() })
+      .where(and(byTenant(session.tenantId, cobrosMp), eq(cobrosMp.id, cobroId))),
+  );
 }
