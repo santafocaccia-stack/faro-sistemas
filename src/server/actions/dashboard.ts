@@ -1,7 +1,7 @@
 'use server';
 
 import { and, eq, gt, isNotNull, sql } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import {
   ventas, clientes, productos, tenants,
   presupuestos, prestamos, pedidosAtmosfericos,
@@ -27,8 +27,10 @@ export async function obtenerProgresoOnboarding(): Promise<ProgresoOnboarding & 
   const { tenantId, plan } = session;
   const sinFila = Promise.resolve([] as { uno: number }[]);
 
+  // Promise.all dentro de la transacción: postgres-js pipelinea las queries
+  // en la misma conexión, así que no se pierde el paralelismo.
   const [tenant, clientesRows, productosRows, ventasRows, presupuestosRows, prestamosRows, pedidosRows] =
-    await Promise.all([
+    await withTenant(tenantId, (db) => Promise.all([
       db.select({ cuit: tenants.cuit, direccion: tenants.direccion, telefono: tenants.telefono })
         .from(tenants).where(eq(tenants.id, tenantId)).limit(1),
       // Clientes aplican a todos los planes (excluye consumidor final).
@@ -45,7 +47,7 @@ export async function obtenerProgresoOnboarding(): Promise<ProgresoOnboarding & 
         ? db.select({ uno: UNO }).from(prestamos).where(byTenant(tenantId, prestamos)).limit(1) : sinFila,
       planTiene(plan, 'atmosfericos')
         ? db.select({ uno: UNO }).from(pedidosAtmosfericos).where(byTenant(tenantId, pedidosAtmosfericos)).limit(1) : sinFila,
-    ]);
+    ]));
 
   const t = tenant[0];
   const progreso: ProgresoOnboarding = {
@@ -69,7 +71,7 @@ export async function obtenerKpisDashboard() {
 
   const inicioSemana = sql`date_trunc('week', NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')`;
 
-  const [ventasHoy, ventasSemana, pendienteCC, stockBajo, ultimasVentas] = await Promise.all([
+  const [ventasHoy, ventasSemana, pendienteCC, stockBajo, ultimasVentas] = await withTenant(tenantId, (db) => Promise.all([
     // Ventas del día agrupadas por canal
     db
       .select({
@@ -146,7 +148,7 @@ export async function obtenerKpisDashboard() {
       .where(and(byTenant(tenantId, ventas), sql`${ventas.estado} != 'anulada'`))
       .orderBy(sql`${ventas.fecha} desc`)
       .limit(8),
-  ]);
+  ]));
 
   const minorista = ventasHoy.find((v) => v.canal === 'minorista');
   const mayorista = ventasHoy.find((v) => v.canal === 'mayorista');
