@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { eq, and, desc, gte, sql } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import {
   presupuestos, presupuestosLineas, clientes,
   type PresupuestoEstado, type MetodoPago,
@@ -46,7 +46,8 @@ export type BoletaInput = {
  */
 export async function listarDescripcionesUsadas(): Promise<string[]> {
   const session = await requirePermiso('gestionar_presupuestos');
-  const rows = await db
+  const rows = await withTenant(session.tenantId, (db) =>
+    db
     .select({ descripcion: presupuestosLineas.descripcion })
     .from(presupuestosLineas)
     .innerJoin(
@@ -55,7 +56,8 @@ export async function listarDescripcionesUsadas(): Promise<string[]> {
     )
     .groupBy(presupuestosLineas.descripcion)
     .orderBy(sql`count(*) desc`)
-    .limit(60);
+    .limit(60),
+  );
   return rows
     .map((r) => r.descripcion?.trim())
     .filter((d): d is string => !!d && d.length > 1);
@@ -67,21 +69,23 @@ export async function listarPresupuestos() {
   const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
-  const rows = await db
-    .select({
-      id:            presupuestos.id,
-      numero:        presupuestos.numero,
-      clienteNombre: presupuestos.clienteNombre,
-      clienteRazon:  clientes.razonSocial,
-      fecha:         presupuestos.fecha,
-      validezDias:   presupuestos.validezDias,
-      estado:        presupuestos.estado,
-      total:         presupuestos.total,
-    })
-    .from(presupuestos)
-    .leftJoin(clientes, eq(presupuestos.clienteId, clientes.id))
-    .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.tipo, 'presupuesto')))
-    .orderBy(desc(presupuestos.createdAt));
+  const rows = await withTenant(tenantId, (db) =>
+    db
+      .select({
+        id:            presupuestos.id,
+        numero:        presupuestos.numero,
+        clienteNombre: presupuestos.clienteNombre,
+        clienteRazon:  clientes.razonSocial,
+        fecha:         presupuestos.fecha,
+        validezDias:   presupuestos.validezDias,
+        estado:        presupuestos.estado,
+        total:         presupuestos.total,
+      })
+      .from(presupuestos)
+      .leftJoin(clientes, eq(presupuestos.clienteId, clientes.id))
+      .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.tipo, 'presupuesto')))
+      .orderBy(desc(presupuestos.createdAt)),
+  );
 
   return rows.map((r) => ({
     ...r,
@@ -96,20 +100,22 @@ export async function listarBoletas() {
   const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
-  const rows = await db
-    .select({
-      id:            presupuestos.id,
-      numero:        presupuestos.numero,
-      clienteNombre: presupuestos.clienteNombre,
-      clienteRazon:  clientes.razonSocial,
-      cobradoAt:     presupuestos.cobradoAt,
-      metodoCobro:   presupuestos.metodoCobro,
-      total:         presupuestos.total,
-    })
-    .from(presupuestos)
-    .leftJoin(clientes, eq(presupuestos.clienteId, clientes.id))
-    .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.tipo, 'boleta')))
-    .orderBy(desc(presupuestos.createdAt));
+  const rows = await withTenant(tenantId, (db) =>
+    db
+      .select({
+        id:            presupuestos.id,
+        numero:        presupuestos.numero,
+        clienteNombre: presupuestos.clienteNombre,
+        clienteRazon:  clientes.razonSocial,
+        cobradoAt:     presupuestos.cobradoAt,
+        metodoCobro:   presupuestos.metodoCobro,
+        total:         presupuestos.total,
+      })
+      .from(presupuestos)
+      .leftJoin(clientes, eq(presupuestos.clienteId, clientes.id))
+      .where(and(byTenant(tenantId, presupuestos), eq(presupuestos.tipo, 'boleta')))
+      .orderBy(desc(presupuestos.createdAt)),
+  );
 
   return rows.map((r) => ({
     ...r,
@@ -124,6 +130,7 @@ export async function obtenerPresupuesto(id: string) {
   const session = await requirePermiso('gestionar_presupuestos');
   const { tenantId } = session;
 
+  return withTenant(tenantId, async (db) => {
   const [pres] = await db
     .select()
     .from(presupuestos)
@@ -155,6 +162,7 @@ export async function obtenerPresupuesto(id: string) {
   }
 
   return { pres, lineas, clienteDisplay };
+  });
 }
 
 // ── Crear ─────────────────────────────────────────────────────────────────────
@@ -169,7 +177,7 @@ export async function crearPresupuesto(input: PresupuestoInput) {
   const total = subtotal - descuento;
 
   // Número correlativo por tenant — envuelto en transacción para evitar race condition
-  const creado = await db.transaction(async (tx) => {
+  const creado = await withTenant(tenantId, async (tx) => {
     const result = await tx
       .select({ maxNum: sql<number>`coalesce(max(${presupuestos.numero}), 0)::int` })
       .from(presupuestos)
@@ -224,7 +232,7 @@ export async function crearBoleta(input: BoletaInput) {
   const descuento = Number(input.descuento ?? 0);
   const total = subtotal - descuento;
 
-  const creado = await db.transaction(async (tx) => {
+  const creado = await withTenant(tenantId, async (tx) => {
     // Numeración propia de boletas (independiente de los presupuestos)
     const result = await tx
       .select({ maxNum: sql<number>`coalesce(max(${presupuestos.numero}), 0)::int` })
@@ -285,7 +293,7 @@ export async function editarPresupuesto(id: string, input: PresupuestoInput) {
   const descuento = Number(input.descuento ?? 0);
   const total     = subtotal - descuento;
 
-  await db.transaction(async (tx) => {
+  await withTenant(tenantId, async (tx) => {
     // Verificar que pertenece al tenant
     const check = await tx
       .select({ id: presupuestos.id })
@@ -335,11 +343,13 @@ export async function editarPresupuesto(id: string, input: PresupuestoInput) {
 
 export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEstado) {
   const session = await requirePermiso('gestionar_presupuestos');
-  const result = await db
-    .update(presupuestos)
-    .set({ estado })
-    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
-    .returning({ id: presupuestos.id });
+  const result = await withTenant(session.tenantId, (db) =>
+    db
+      .update(presupuestos)
+      .set({ estado })
+      .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+      .returning({ id: presupuestos.id }),
+  );
   if (result.length === 0) throw new Error('Presupuesto no encontrado');
   revalidatePath('/dashboard/presupuestos');
   revalidatePath(`/dashboard/presupuestos/${id}`);
@@ -356,11 +366,13 @@ export async function marcarCobrado(
   metodo: MetodoPago,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const session = await requirePermiso('gestionar_presupuestos');
-  const result = await db
-    .update(presupuestos)
-    .set({ estado: 'cobrado', cobradoAt: new Date(), metodoCobro: metodo })
-    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
-    .returning({ id: presupuestos.id });
+  const result = await withTenant(session.tenantId, (db) =>
+    db
+      .update(presupuestos)
+      .set({ estado: 'cobrado', cobradoAt: new Date(), metodoCobro: metodo })
+      .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+      .returning({ id: presupuestos.id }),
+  );
   if (result.length === 0) return { ok: false, error: 'Presupuesto no encontrado' };
   revalidatePath('/dashboard/presupuestos');
   revalidatePath(`/dashboard/presupuestos/${id}`);
@@ -373,11 +385,13 @@ export async function revertirCobro(
   id: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const session = await requirePermiso('gestionar_presupuestos');
-  const result = await db
-    .update(presupuestos)
-    .set({ estado: 'aprobado', cobradoAt: null, metodoCobro: null })
-    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
-    .returning({ id: presupuestos.id });
+  const result = await withTenant(session.tenantId, (db) =>
+    db
+      .update(presupuestos)
+      .set({ estado: 'aprobado', cobradoAt: null, metodoCobro: null })
+      .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+      .returning({ id: presupuestos.id }),
+  );
   if (result.length === 0) return { ok: false, error: 'Presupuesto no encontrado' };
   revalidatePath('/dashboard/presupuestos');
   revalidatePath(`/dashboard/presupuestos/${id}`);
@@ -395,37 +409,40 @@ export async function resumenServicios() {
   inicioMes.setDate(1);
   inicioMes.setHours(0, 0, 0, 0);
 
-  const [cobrado] = await db
-    .select({
-      total: sql<string>`coalesce(sum(${presupuestos.total}), 0)`,
-      cantidad: sql<number>`count(*)::int`,
-    })
-    .from(presupuestos)
-    .where(and(
-      byTenant(session.tenantId, presupuestos),
-      eq(presupuestos.estado, 'cobrado'),
-      gte(presupuestos.cobradoAt, inicioMes),
-    ));
-
-  const [porCobrar] = await db
-    .select({
-      total: sql<string>`coalesce(sum(${presupuestos.total}), 0)`,
-      cantidad: sql<number>`count(*)::int`,
-    })
-    .from(presupuestos)
-    .where(and(
-      byTenant(session.tenantId, presupuestos),
-      eq(presupuestos.estado, 'aprobado'),
-    ));
-
-  const [abiertos] = await db
-    .select({ cantidad: sql<number>`count(*)::int` })
-    .from(presupuestos)
-    .where(and(
-      byTenant(session.tenantId, presupuestos),
-      eq(presupuestos.esPlantilla, false),
-      sql`${presupuestos.estado} in ('borrador','enviado')`,
-    ));
+  // Promise.all dentro de la tx: postgres-js pipelinea (sin perder paralelismo).
+  const [[cobrado], [porCobrar], [abiertos]] = await withTenant(session.tenantId, (db) =>
+    Promise.all([
+      db
+        .select({
+          total: sql<string>`coalesce(sum(${presupuestos.total}), 0)`,
+          cantidad: sql<number>`count(*)::int`,
+        })
+        .from(presupuestos)
+        .where(and(
+          byTenant(session.tenantId, presupuestos),
+          eq(presupuestos.estado, 'cobrado'),
+          gte(presupuestos.cobradoAt, inicioMes),
+        )),
+      db
+        .select({
+          total: sql<string>`coalesce(sum(${presupuestos.total}), 0)`,
+          cantidad: sql<number>`count(*)::int`,
+        })
+        .from(presupuestos)
+        .where(and(
+          byTenant(session.tenantId, presupuestos),
+          eq(presupuestos.estado, 'aprobado'),
+        )),
+      db
+        .select({ cantidad: sql<number>`count(*)::int` })
+        .from(presupuestos)
+        .where(and(
+          byTenant(session.tenantId, presupuestos),
+          eq(presupuestos.esPlantilla, false),
+          sql`${presupuestos.estado} in ('borrador','enviado')`,
+        )),
+    ]),
+  );
 
   return {
     cobradoMes: cobrado?.total ?? '0',
@@ -440,10 +457,12 @@ export async function resumenServicios() {
 
 export async function eliminarPresupuesto(id: string) {
   const session = await requirePermiso('gestionar_presupuestos');
-  const result = await db
-    .delete(presupuestos)
-    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
-    .returning({ id: presupuestos.id });
+  const result = await withTenant(session.tenantId, (db) =>
+    db
+      .delete(presupuestos)
+      .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+      .returning({ id: presupuestos.id }),
+  );
   if (result.length === 0) throw new Error('Presupuesto no encontrado');
   revalidatePath('/dashboard/presupuestos');
 }
@@ -461,11 +480,13 @@ export async function guardarComoPlantilla(
   if (!nombrePlantilla.trim()) return { ok: false, error: 'El nombre de la plantilla es requerido' };
 
   const session = await requirePermiso('gestionar_presupuestos');
-  const result = await db
-    .update(presupuestos)
-    .set({ esPlantilla: true, nombrePlantilla: nombrePlantilla.trim() })
-    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
-    .returning({ id: presupuestos.id });
+  const result = await withTenant(session.tenantId, (db) =>
+    db
+      .update(presupuestos)
+      .set({ esPlantilla: true, nombrePlantilla: nombrePlantilla.trim() })
+      .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
+      .returning({ id: presupuestos.id }),
+  );
 
   if (result.length === 0) return { ok: false, error: 'Presupuesto no encontrado' };
   revalidatePath('/dashboard/presupuestos');
@@ -478,16 +499,18 @@ export async function guardarComoPlantilla(
  */
 export async function listarPlantillas() {
   const session = await requirePermiso('gestionar_presupuestos');
-  const rows = await db
-    .select({
-      id:              presupuestos.id,
-      nombrePlantilla: presupuestos.nombrePlantilla,
-      total:           presupuestos.total,
-      notas:           presupuestos.notas,
-    })
-    .from(presupuestos)
-    .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.esPlantilla, true)))
-    .orderBy(desc(presupuestos.createdAt));
+  const rows = await withTenant(session.tenantId, (db) =>
+    db
+      .select({
+        id:              presupuestos.id,
+        nombrePlantilla: presupuestos.nombrePlantilla,
+        total:           presupuestos.total,
+        notas:           presupuestos.notas,
+      })
+      .from(presupuestos)
+      .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.esPlantilla, true)))
+      .orderBy(desc(presupuestos.createdAt)),
+  );
 
   return rows.map((r) => ({ ...r, total: Number(r.total) }));
 }
@@ -506,7 +529,7 @@ export async function usarPlantilla(
   if (!datos) return { ok: false, error: 'Plantilla no encontrada' };
 
   try {
-    const creado = await db.transaction(async (tx) => {
+    const creado = await withTenant(tenantId, async (tx) => {
       const result = await tx
         .select({ maxNum: sql<number>`coalesce(max(${presupuestos.numero}), 0)::int` })
         .from(presupuestos)
