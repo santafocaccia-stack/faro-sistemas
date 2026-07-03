@@ -1,7 +1,7 @@
 'use server';
 
 import { eq, and, isNull, asc, sql, gte } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import {
   prestamos,
   cuotas,
@@ -47,11 +47,13 @@ export async function crearPrestamo(input: PrestamoInput) {
   if (!cant || cant < 1) return { ok: false as const, error: 'Cantidad de cuotas inválida' };
 
   // Verificar que el deudor pertenece al tenant
-  const [cli] = await db
-    .select({ id: clientes.id })
-    .from(clientes)
-    .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, input.clienteId)))
-    .limit(1);
+  const [cli] = await withTenant(session.tenantId, (db) =>
+    db
+      .select({ id: clientes.id })
+      .from(clientes)
+      .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, input.clienteId)))
+      .limit(1),
+  );
   if (!cli) return { ok: false as const, error: 'Deudor no encontrado' };
 
   const sistema = input.sistema ?? 'frances';
@@ -64,7 +66,7 @@ export async function crearPrestamo(input: PrestamoInput) {
     fechaPrimerVencimiento: new Date(input.fechaPrimerVencimiento + 'T00:00:00'),
   });
 
-  const id = await db.transaction(async (tx) => {
+  const id = await withTenant(session.tenantId, async (tx) => {
     const [p] = await tx
       .insert(prestamos)
       .values({
@@ -105,7 +107,8 @@ export async function crearPrestamo(input: PrestamoInput) {
 // ─── Listado ─────────────────────────────────────────────────────────────────
 export async function listarPrestamos() {
   const session = await requireSession();
-  return db
+  return withTenant(session.tenantId, (db) =>
+    db
     .select({
       id: prestamos.id,
       estado: prestamos.estado,
@@ -122,12 +125,14 @@ export async function listarPrestamos() {
     .from(prestamos)
     .innerJoin(clientes, eq(prestamos.clienteId, clientes.id))
     .where(and(byTenant(session.tenantId, prestamos), isNull(prestamos.deletedAt)))
-    .orderBy(asc(prestamos.estado));
+    .orderBy(asc(prestamos.estado)),
+  );
 }
 
 // ─── Detalle (con mora on-read) ──────────────────────────────────────────────
 export async function obtenerPrestamo(id: string) {
   const session = await requireSession();
+  return withTenant(session.tenantId, async (db) => {
   const [p] = await db
     .select()
     .from(prestamos)
@@ -167,6 +172,7 @@ export async function obtenerPrestamo(id: string) {
     .orderBy(asc(pagosPrestamo.fecha));
 
   return { prestamo: p, cliente: cli, cuotas: lineas, pagos };
+  });
 }
 
 // ─── Registrar pago (imputación mora → interés → capital) ────────────────────
@@ -180,7 +186,7 @@ export async function registrarPagoPrestamo(input: {
   const monto = Number(input.monto);
   if (!monto || monto <= 0) return { ok: false as const, error: 'Monto inválido' };
 
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     const [p] = await tx
       .select()
       .from(prestamos)
@@ -264,24 +270,27 @@ export async function dashboardPrestamos() {
   inicioMes.setDate(1);
   inicioMes.setHours(0, 0, 0, 0);
 
-  const [totales] = await db
-    .select({
-      totalPrestado: sql<string>`coalesce(sum(${prestamos.capital}), 0)`,
-      activos: sql<number>`count(*) filter (where ${prestamos.estado} in ('vigente','en_mora'))::int`,
-      enMora: sql<number>`count(*) filter (where ${prestamos.estado} = 'en_mora')::int`,
-    })
-    .from(prestamos)
-    .where(and(byTenant(session.tenantId, prestamos), isNull(prestamos.deletedAt)));
-
-  const [aCobrar] = await db
-    .select({ saldo: sql<string>`coalesce(sum(${cuotas.montoCuota} - ${cuotas.montoPagado}), 0)` })
-    .from(cuotas)
-    .where(and(byTenant(session.tenantId, cuotas), sql`${cuotas.estado} <> 'pagada'`));
-
-  const [cobradoMes] = await db
-    .select({ total: sql<string>`coalesce(sum(${pagosPrestamo.montoTotal}), 0)` })
-    .from(pagosPrestamo)
-    .where(and(byTenant(session.tenantId, pagosPrestamo), isNull(pagosPrestamo.anuladoAt), gte(pagosPrestamo.fecha, inicioMes)));
+  // Promise.all dentro de la tx: postgres-js pipelinea (sin perder paralelismo).
+  const [[totales], [aCobrar], [cobradoMes]] = await withTenant(session.tenantId, (db) =>
+    Promise.all([
+      db
+        .select({
+          totalPrestado: sql<string>`coalesce(sum(${prestamos.capital}), 0)`,
+          activos: sql<number>`count(*) filter (where ${prestamos.estado} in ('vigente','en_mora'))::int`,
+          enMora: sql<number>`count(*) filter (where ${prestamos.estado} = 'en_mora')::int`,
+        })
+        .from(prestamos)
+        .where(and(byTenant(session.tenantId, prestamos), isNull(prestamos.deletedAt))),
+      db
+        .select({ saldo: sql<string>`coalesce(sum(${cuotas.montoCuota} - ${cuotas.montoPagado}), 0)` })
+        .from(cuotas)
+        .where(and(byTenant(session.tenantId, cuotas), sql`${cuotas.estado} <> 'pagada'`)),
+      db
+        .select({ total: sql<string>`coalesce(sum(${pagosPrestamo.montoTotal}), 0)` })
+        .from(pagosPrestamo)
+        .where(and(byTenant(session.tenantId, pagosPrestamo), isNull(pagosPrestamo.anuladoAt), gte(pagosPrestamo.fecha, inicioMes))),
+    ]),
+  );
 
   return {
     totalPrestado: totales?.totalPrestado ?? '0',
