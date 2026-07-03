@@ -2,7 +2,7 @@
 
 import { eq } from 'drizzle-orm';
 import { requireSession } from '@/server/auth/session';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { tenants } from '@/server/db/schema';
 
 // NOTA: el helper para LEER el token OAuth de MP del negocio vive en
@@ -12,13 +12,15 @@ import { tenants } from '@/server/db/schema';
 
 export async function desconectarMP() {
   const session = await requireSession();
-  await db
-    .update(tenants)
-    .set({
-      mpNegocioAccessToken:  null,
-      mpNegocioRefreshToken: null,
-      mpNegocioTokenExpiry:  null,
-      mpNegocioUserId:       null,
-    })
-    .where(eq(tenants.id, session.tenantId));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(tenants)
+      .set({
+        mpNegocioAccessToken:  null,
+        mpNegocioRefreshToken: null,
+        mpNegocioTokenExpiry:  null,
+        mpNegocioUserId:       null,
+      })
+      .where(eq(tenants.id, session.tenantId)),
+  );
 }

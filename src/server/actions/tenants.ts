@@ -1,7 +1,9 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { db } from '@/server/db';
+// dbAdmin: el alta de tenant crea filas ANTES de que exista contexto de tenant
+// (el id nace en el insert) — es uno de los caminos cross-tenant legítimos.
+import { dbAdmin } from '@/server/db';
 import { tenants, users, usersTenants, clientes } from '@/server/db/schema';
 
 import type { PlanId } from '@/lib/planes';
@@ -31,7 +33,7 @@ export async function crearTenant(input: CrearTenantInput): Promise<{ ok: true }
   const slug = `${slugify(input.nombreNegocio)}-${Date.now()}`;
 
   try {
-    await db.transaction(async (tx) => {
+    await dbAdmin.transaction(async (tx) => {
       const trialEnd = new Date();
       trialEnd.setDate(trialEnd.getDate() + 14);
 
