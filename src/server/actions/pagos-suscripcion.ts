@@ -4,7 +4,10 @@ import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireSession } from '@/server/auth/session';
 import { requireSuperAdmin } from '@/server/auth/super-admin';
-import { db } from '@/server/db';
+// dbAdmin: las operaciones de super-admin (confirmar/rechazar/activar) operan
+// sobre cualquier tenant a propósito (guard: requireSuperAdmin). El aviso del
+// cliente usa withTenant.
+import { withTenant, dbAdmin } from '@/server/db';
 import { tenants, users, usersTenants, pagosSuscripcion } from '@/server/db/schema';
 import { PLANES, type PlanId } from '@/lib/planes';
 import { getDolarMep } from '@/lib/dolar';
@@ -32,7 +35,7 @@ function comprobanteId(pagoId: string): string {
 
 /** Email del owner de un tenant (para mandarle comprobantes). */
 async function emailOwner(tenantId: string): Promise<string | null> {
-  const [row] = await db
+  const [row] = await dbAdmin
     .select({ email: users.email })
     .from(usersTenants)
     .innerJoin(users, eq(users.id, usersTenants.userId))
@@ -60,33 +63,36 @@ export async function avisarTransferencia(planId: PlanId): Promise<Result> {
     const plan = PLANES[planId];
 
     // ¿Ya hay un aviso pendiente para este tenant? Evitar duplicados.
-    const [pendiente] = await db
-      .select({ id: pagosSuscripcion.id })
-      .from(pagosSuscripcion)
-      .where(and(eq(pagosSuscripcion.tenantId, session.tenantId), eq(pagosSuscripcion.estado, 'avisado')))
-      .limit(1);
+    // Find-or-refresh atómico en una transacción.
+    await withTenant(session.tenantId, async (db) => {
+      const [pendiente] = await db
+        .select({ id: pagosSuscripcion.id })
+        .from(pagosSuscripcion)
+        .where(and(eq(pagosSuscripcion.tenantId, session.tenantId), eq(pagosSuscripcion.estado, 'avisado')))
+        .limit(1);
 
-    if (pendiente) {
-      await db
-        .update(pagosSuscripcion)
-        .set({
+      if (pendiente) {
+        await db
+          .update(pagosSuscripcion)
+          .set({
+            plan: planId,
+            precioUsd: String(plan.precioUsd),
+            dolarMep: String(dolarMep),
+            montoArs: String(montoArs),
+            avisadoEn: new Date(),
+          })
+          .where(eq(pagosSuscripcion.id, pendiente.id));
+      } else {
+        await db.insert(pagosSuscripcion).values({
+          tenantId: session.tenantId,
           plan: planId,
+          estado: 'avisado',
           precioUsd: String(plan.precioUsd),
           dolarMep: String(dolarMep),
           montoArs: String(montoArs),
-          avisadoEn: new Date(),
-        })
-        .where(eq(pagosSuscripcion.id, pendiente.id));
-    } else {
-      await db.insert(pagosSuscripcion).values({
-        tenantId: session.tenantId,
-        plan: planId,
-        estado: 'avisado',
-        precioUsd: String(plan.precioUsd),
-        dolarMep: String(dolarMep),
-        montoArs: String(montoArs),
-      });
-    }
+        });
+      }
+    });
 
     // Notificaciones (no bloquean el resultado si el email falla / no hay key).
     const appUrl = getAppUrl();
@@ -121,7 +127,7 @@ export async function confirmarPago(pagoId: string): Promise<Result> {
   try {
     const admin = await requireSuperAdmin();
 
-    const [pago] = await db
+    const [pago] = await dbAdmin
       .select()
       .from(pagosSuscripcion)
       .where(eq(pagosSuscripcion.id, pagoId))
@@ -130,7 +136,7 @@ export async function confirmarPago(pagoId: string): Promise<Result> {
     if (!pago) return { ok: false, error: 'Pago no encontrado' };
     if (pago.estado === 'confirmado') return { ok: false, error: 'Este pago ya estaba confirmado' };
 
-    const [tenant] = await db
+    const [tenant] = await dbAdmin
       .select({ nombre: tenants.nombre, subscriptionEnd: tenants.subscriptionEnd })
       .from(tenants)
       .where(eq(tenants.id, pago.tenantId))
@@ -141,7 +147,7 @@ export async function confirmarPago(pagoId: string): Promise<Result> {
     const base = tenant.subscriptionEnd && tenant.subscriptionEnd > ahora ? tenant.subscriptionEnd : ahora;
     const periodoHasta = masUnMes(base);
 
-    await db.transaction(async (tx) => {
+    await dbAdmin.transaction(async (tx) => {
       await tx
         .update(pagosSuscripcion)
         .set({
@@ -186,7 +192,7 @@ export async function confirmarPago(pagoId: string): Promise<Result> {
 export async function rechazarPago(pagoId: string, motivo?: string): Promise<Result> {
   try {
     await requireSuperAdmin();
-    const [pago] = await db
+    const [pago] = await dbAdmin
       .select({ estado: pagosSuscripcion.estado })
       .from(pagosSuscripcion)
       .where(eq(pagosSuscripcion.id, pagoId))
@@ -194,7 +200,7 @@ export async function rechazarPago(pagoId: string, motivo?: string): Promise<Res
     if (!pago) return { ok: false, error: 'Pago no encontrado' };
     if (pago.estado === 'confirmado') return { ok: false, error: 'No se puede rechazar un pago ya confirmado' };
 
-    await db
+    await dbAdmin
       .update(pagosSuscripcion)
       .set({ estado: 'rechazado', notas: motivo ?? null })
       .where(eq(pagosSuscripcion.id, pagoId));
@@ -215,7 +221,7 @@ export async function activarManual(tenantId: string, planId: PlanId): Promise<R
     if (!(planId in PLANES)) return { ok: false, error: 'Plan inválido' };
     const admin = await requireSuperAdmin();
 
-    const [tenant] = await db
+    const [tenant] = await dbAdmin
       .select({ nombre: tenants.nombre, subscriptionEnd: tenants.subscriptionEnd })
       .from(tenants)
       .where(eq(tenants.id, tenantId))
@@ -231,7 +237,7 @@ export async function activarManual(tenantId: string, planId: PlanId): Promise<R
     const periodoHasta = masUnMes(base);
 
     let pagoId = '';
-    await db.transaction(async (tx) => {
+    await dbAdmin.transaction(async (tx) => {
       const [nuevo] = await tx
         .insert(pagosSuscripcion)
         .values({

@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireSession } from '@/server/auth/session';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { tenants } from '@/server/db/schema';
 import { PLANES, type PlanId } from '@/lib/planes';
 import { getDolarMep } from '@/lib/dolar';
@@ -50,10 +50,12 @@ export async function crearSuscripcionMP(planId: PlanId) {
   const data = await res.json();
 
   // Guardar el ID de suscripción en el tenant
-  await db
-    .update(tenants)
-    .set({ mpSubscriptionId: data.id })
-    .where(eq(tenants.id, session.tenantId));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(tenants)
+      .set({ mpSubscriptionId: data.id })
+      .where(eq(tenants.id, session.tenantId)),
+  );
 
   redirect(data.init_point);
 }
@@ -62,11 +64,13 @@ export async function cancelarSuscripcion(): Promise<{ ok: boolean; error?: stri
   try {
     const session = await requireSession();
 
-    const [tenant] = await db
-      .select({ mpSubscriptionId: tenants.mpSubscriptionId })
-      .from(tenants)
-      .where(eq(tenants.id, session.tenantId))
-      .limit(1);
+    const [tenant] = await withTenant(session.tenantId, (db) =>
+      db
+        .select({ mpSubscriptionId: tenants.mpSubscriptionId })
+        .from(tenants)
+        .where(eq(tenants.id, session.tenantId))
+        .limit(1),
+    );
 
     if (!tenant?.mpSubscriptionId) return { ok: false, error: 'No hay suscripción activa' };
 
@@ -84,10 +88,12 @@ export async function cancelarSuscripcion(): Promise<{ ok: boolean; error?: stri
 
     if (!res.ok) return { ok: false, error: 'Error al cancelar la suscripción en Mercado Pago' };
 
-    await db
-      .update(tenants)
-      .set({ status: 'cancelado', mpSubscriptionId: null })
-      .where(eq(tenants.id, session.tenantId));
+    await withTenant(session.tenantId, (db) =>
+      db
+        .update(tenants)
+        .set({ status: 'cancelado', mpSubscriptionId: null })
+        .where(eq(tenants.id, session.tenantId)),
+    );
 
     revalidatePath('/dashboard/config');
     return { ok: true };
