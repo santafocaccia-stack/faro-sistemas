@@ -1,7 +1,7 @@
 'use server';
 
 import { eq, and, gte, lte, isNull, asc } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import {
   turnos,
   vencimientos,
@@ -20,7 +20,8 @@ import { revalidatePath } from 'next/cache';
 
 export async function listarTurnos(desdeISO: string, hastaISO: string) {
   const session = await requireSession();
-  const rows = await db
+  const rows = await withTenant(session.tenantId, (db) =>
+    db
     .select({
       id: turnos.id,
       titulo: turnos.titulo,
@@ -44,7 +45,8 @@ export async function listarTurnos(desdeISO: string, hastaISO: string) {
         lte(turnos.inicio, new Date(hastaISO)),
       ),
     )
-    .orderBy(asc(turnos.inicio));
+    .orderBy(asc(turnos.inicio)),
+  );
   return rows;
 }
 
@@ -64,7 +66,8 @@ export async function crearTurno(input: TurnoInput) {
   if (!input.titulo?.trim()) return { ok: false as const, error: 'El título es obligatorio' };
   if (!input.inicio) return { ok: false as const, error: 'La fecha/hora es obligatoria' };
 
-  const [row] = await db
+  const [row] = await withTenant(session.tenantId, (db) =>
+    db
     .insert(turnos)
     .values({
       tenantId: session.tenantId,
@@ -77,7 +80,8 @@ export async function crearTurno(input: TurnoInput) {
       duracionMin: input.duracionMin ?? 60,
       montoEstimado: input.montoEstimado || null,
     })
-    .returning({ id: turnos.id });
+    .returning({ id: turnos.id }),
+  );
 
   revalidatePath('/dashboard/agenda');
   return { ok: true as const, id: row!.id };
@@ -85,7 +89,8 @@ export async function crearTurno(input: TurnoInput) {
 
 export async function actualizarTurno(id: string, input: Partial<TurnoInput>) {
   const session = await requireSession();
-  await db
+  await withTenant(session.tenantId, (db) =>
+    db
     .update(turnos)
     .set({
       ...(input.titulo !== undefined ? { titulo: input.titulo.trim() } : {}),
@@ -97,27 +102,32 @@ export async function actualizarTurno(id: string, input: Partial<TurnoInput>) {
       ...(input.duracionMin !== undefined ? { duracionMin: input.duracionMin } : {}),
       ...(input.montoEstimado !== undefined ? { montoEstimado: input.montoEstimado || null } : {}),
     })
-    .where(and(byTenant(session.tenantId, turnos), eq(turnos.id, id)));
+    .where(and(byTenant(session.tenantId, turnos), eq(turnos.id, id))),
+  );
   revalidatePath('/dashboard/agenda');
   return { ok: true as const };
 }
 
 export async function cambiarEstadoTurno(id: string, estado: EstadoTurno) {
   const session = await requireSession();
-  await db
-    .update(turnos)
-    .set({ estado })
-    .where(and(byTenant(session.tenantId, turnos), eq(turnos.id, id)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(turnos)
+      .set({ estado })
+      .where(and(byTenant(session.tenantId, turnos), eq(turnos.id, id))),
+  );
   revalidatePath('/dashboard/agenda');
   return { ok: true as const };
 }
 
 export async function eliminarTurno(id: string) {
   const session = await requireSession();
-  await db
-    .update(turnos)
-    .set({ deletedAt: new Date() })
-    .where(and(byTenant(session.tenantId, turnos), eq(turnos.id, id)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(turnos)
+      .set({ deletedAt: new Date() })
+      .where(and(byTenant(session.tenantId, turnos), eq(turnos.id, id))),
+  );
   revalidatePath('/dashboard/agenda');
   return { ok: true as const };
 }
@@ -141,11 +151,13 @@ function avanzarFecha(fecha: Date, periodicidad: Periodicidad): Date {
 
 export async function listarVencimientos() {
   const session = await requireSession();
-  const rows = await db
-    .select()
-    .from(vencimientos)
-    .where(and(byTenant(session.tenantId, vencimientos), isNull(vencimientos.deletedAt)))
-    .orderBy(asc(vencimientos.proximoVencimiento));
+  const rows = await withTenant(session.tenantId, (db) =>
+    db
+      .select()
+      .from(vencimientos)
+      .where(and(byTenant(session.tenantId, vencimientos), isNull(vencimientos.deletedAt)))
+      .orderBy(asc(vencimientos.proximoVencimiento)),
+  );
 
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
@@ -173,23 +185,26 @@ export async function crearVencimiento(input: VencimientoInput) {
   if (!input.titulo?.trim()) return { ok: false as const, error: 'El título es obligatorio' };
   if (!input.proximoVencimiento) return { ok: false as const, error: 'La fecha es obligatoria' };
 
-  await db.insert(vencimientos).values({
-    tenantId: session.tenantId,
-    titulo: input.titulo.trim(),
-    tipo: input.tipo,
-    proximoVencimiento: input.proximoVencimiento,
-    periodicidad: input.periodicidad,
-    diasAvisoAnticipado: input.diasAvisoAnticipado ?? 7,
-    montoEstimado: input.montoEstimado || null,
-    notas: input.notas || null,
-  });
+  await withTenant(session.tenantId, (db) =>
+    db.insert(vencimientos).values({
+      tenantId: session.tenantId,
+      titulo: input.titulo.trim(),
+      tipo: input.tipo,
+      proximoVencimiento: input.proximoVencimiento,
+      periodicidad: input.periodicidad,
+      diasAvisoAnticipado: input.diasAvisoAnticipado ?? 7,
+      montoEstimado: input.montoEstimado || null,
+      notas: input.notas || null,
+    }),
+  );
   revalidatePath('/dashboard/agenda');
   return { ok: true as const };
 }
 
 export async function actualizarVencimiento(id: string, input: Partial<VencimientoInput>) {
   const session = await requireSession();
-  await db
+  await withTenant(session.tenantId, (db) =>
+    db
     .update(vencimientos)
     .set({
       ...(input.titulo !== undefined ? { titulo: input.titulo.trim() } : {}),
@@ -200,7 +215,8 @@ export async function actualizarVencimiento(id: string, input: Partial<Vencimien
       ...(input.montoEstimado !== undefined ? { montoEstimado: input.montoEstimado || null } : {}),
       ...(input.notas !== undefined ? { notas: input.notas || null } : {}),
     })
-    .where(and(byTenant(session.tenantId, vencimientos), eq(vencimientos.id, id)));
+    .where(and(byTenant(session.tenantId, vencimientos), eq(vencimientos.id, id))),
+  );
   revalidatePath('/dashboard/agenda');
   return { ok: true as const };
 }
@@ -208,7 +224,7 @@ export async function actualizarVencimiento(id: string, input: Partial<Vencimien
 /** Marca el vencimiento actual como pagado, registra la ocurrencia y avanza al próximo. */
 export async function marcarVencimientoPagado(id: string, montoPagado?: string) {
   const session = await requireSession();
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     const [v] = await tx
       .select()
       .from(vencimientos)
@@ -242,10 +258,12 @@ export async function marcarVencimientoPagado(id: string, montoPagado?: string) 
 
 export async function eliminarVencimiento(id: string) {
   const session = await requireSession();
-  await db
-    .update(vencimientos)
-    .set({ deletedAt: new Date() })
-    .where(and(byTenant(session.tenantId, vencimientos), eq(vencimientos.id, id)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(vencimientos)
+      .set({ deletedAt: new Date() })
+      .where(and(byTenant(session.tenantId, vencimientos), eq(vencimientos.id, id))),
+  );
   revalidatePath('/dashboard/agenda');
   return { ok: true as const };
 }
