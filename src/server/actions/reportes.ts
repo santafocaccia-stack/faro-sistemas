@@ -1,7 +1,7 @@
 'use server';
 
 import { and, eq, sql, type SQL } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant, type Tx } from '@/server/db';
 import { ventas, ventasLineas, pagos, productos, presupuestos, pagosPrestamo } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requirePermiso } from '@/server/auth/session';
@@ -77,6 +77,7 @@ export async function obtenerSerieReporte(granularidad: Granularidad = 'dia') {
 
   // Filas { d: 'YYYY-MM-DD', monto } según el plan
   let filas: { d: string; monto: number }[] = [];
+  await withTenant(tenantId, async (db) => {
   if (planTiene(plan as PlanId, 'pos')) {
     filas = (await db.select({
       d: sql<string>`(${ventas.fecha} AT TIME ZONE ${tz})::date::text`,
@@ -106,6 +107,7 @@ export async function obtenerSerieReporte(granularidad: Granularidad = 'dia') {
       sql`(${pagosPrestamo.fecha} AT TIME ZONE ${tz})::date >= ${spanStartIso}::date`,
     ))).map((r) => ({ d: r.d, monto: Number(r.monto) }));
   }
+  });
 
   // Acumular por bucket
   const sumas = new Map<number, number>();
@@ -150,6 +152,7 @@ function inicioDesde(periodo: Periodo) {
  * lo que dejaba las tarjetas desactualizadas frente al gráfico.
  */
 async function fetchReporteData(tenantId: string, desde: SQL) {
+  return withTenant(tenantId, async (db: Tx) => {
     const filtroBase = and(
       byTenant(tenantId, ventas),
       sql`${ventas.fecha} >= ${desde}`,
@@ -212,6 +215,7 @@ async function fetchReporteData(tenantId: string, desde: SQL) {
     ]);
 
     return { resumen, porCanal, porMetodo, porDia, topProductos };
+  });
 }
 
 /** Reporte para una ventana que arranca en `desde` (SQL date). */
