@@ -2,11 +2,8 @@
 
 import { eq, and, asc, desc, lt } from 'drizzle-orm';
 import { withTenant } from '@/server/db';
-import {
-  pedidosAtmosfericos, clientes,
-  type EstadoPedidoAtmos,
-} from '@/server/db/schema';
-import { byTenant, byTenantAnd } from '@/server/db/tenant-context';
+import { pedidosAtmosfericos, clientes } from '@/server/db/schema';
+import { byTenant } from '@/server/db/tenant-context';
 import { requireSession, requirePermiso } from '@/server/auth/session';
 import { revalidatePath } from 'next/cache';
 

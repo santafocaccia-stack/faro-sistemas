@@ -7,7 +7,10 @@
  * que el `external_reference` coincida con el cobro.
  */
 import { eq } from 'drizzle-orm';
-import { db } from '@/server/db';
+// dbAdmin solo para el lookup inicial: el webhook no tiene sesión y ubica el
+// cobro por su id (external_reference verificado contra MP más abajo). La
+// escritura posterior ya corre con withTenant del tenant dueño del cobro.
+import { dbAdmin, withTenant } from '@/server/db';
 import { cobrosMp } from '@/server/db/schema';
 import { getMPNegocioToken } from '@/server/mp/token';
 import { buscarPagoPorReferencia, obtenerPago, type EstadoPagoMp } from '@/server/mp/cobro';
@@ -32,7 +35,7 @@ export async function sincronizarCobro(
   cobroId: string,
   paymentIdHint?: string,
 ): Promise<{ estado: CobroEstado; ventaId: string | null }> {
-  const [cobro] = await db
+  const [cobro] = await dbAdmin
     .select()
     .from(cobrosMp)
     .where(eq(cobrosMp.id, cobroId))
@@ -60,10 +63,12 @@ export async function sincronizarCobro(
   const estado = mapEstado(pago.status);
   if (estado === 'pendiente') return { estado: 'pendiente', ventaId: cobro.ventaId };
 
-  await db
-    .update(cobrosMp)
-    .set({ estado, paymentId: pago.id, updatedAt: new Date() })
-    .where(eq(cobrosMp.id, cobroId));
+  await withTenant(cobro.tenantId, (db) =>
+    db
+      .update(cobrosMp)
+      .set({ estado, paymentId: pago.id, updatedAt: new Date() })
+      .where(eq(cobrosMp.id, cobroId)),
+  );
 
   return { estado, ventaId: cobro.ventaId };
 }

@@ -6,7 +6,7 @@
  * vive fuera de `gastos.ts` (que es 'use server' y solo expone acciones async).
  */
 import { and, eq, sql, desc, isNull, inArray } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant, dbAdmin } from '@/server/db';
 import {
   gastos,
   ventas,
@@ -37,6 +37,7 @@ async function ingresosDelRango(
 ): Promise<number> {
   const num = (r?: { s: string }) => Number(r?.s ?? 0);
 
+  return withTenant(tenantId, async (db) => {
   if (planTiene(plan, 'pos')) {
     const [r] = await db
       .select({ s: sql<string>`coalesce(sum(${ventas.total}), 0)::text` })
@@ -87,19 +88,22 @@ async function ingresosDelRango(
     return num(r);
   }
   return 0;
+  });
 }
 
 /** Filas de gastos (no anulados) en el rango [inicio, fin). */
 async function gastosFilasDelRango(tenantId: string, inicio: string, fin: string) {
-  return db
-    .select({ categoria: gastos.categoria, monto: gastos.monto })
-    .from(gastos)
-    .where(and(
-      byTenant(tenantId, gastos),
-      isNull(gastos.deletedAt),
-      sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date >= ${inicio}::date`,
-      sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date < ${fin}::date`,
-    ));
+  return withTenant(tenantId, (db) =>
+    db
+      .select({ categoria: gastos.categoria, monto: gastos.monto })
+      .from(gastos)
+      .where(and(
+        byTenant(tenantId, gastos),
+        isNull(gastos.deletedAt),
+        sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date >= ${inicio}::date`,
+        sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date < ${fin}::date`,
+      )),
+  );
 }
 
 /** Balance del mes 'YYYY-MM' para un tenant/plan (sin sesión). */
@@ -137,11 +141,13 @@ export async function obtenerBalanceGuardado(
   tenantId: string,
   mes: string,
 ): Promise<BalanceGuardado | null> {
-  const [row] = await db
-    .select()
-    .from(balancesMensuales)
-    .where(and(byTenant(tenantId, balancesMensuales), eq(balancesMensuales.mes, mes)))
-    .limit(1);
+  const [row] = await withTenant(tenantId, (db) =>
+    db
+      .select()
+      .from(balancesMensuales)
+      .where(and(byTenant(tenantId, balancesMensuales), eq(balancesMensuales.mes, mes)))
+      .limit(1),
+  );
   if (!row) return null;
   return {
     analisis: row.analisis,
@@ -168,7 +174,8 @@ export async function generarYGuardarBalance(
     negocio: tenant.nombre,
   });
 
-  await db
+  await withTenant(tenant.id, (db) =>
+    db
     .insert(balancesMensuales)
     .values({
       tenantId: tenant.id,
@@ -187,18 +194,21 @@ export async function generarYGuardarBalance(
         origen,
         updatedAt: new Date(),
       },
-    });
+    }),
+  );
 
   return { analisis: texto, generadoPorIa: generadoPorIA, datos };
 }
 
 /** Meses con balance guardado para un tenant (más recientes primero). */
 export async function listarMesesConBalance(tenantId: string): Promise<string[]> {
-  const rows = await db
-    .select({ mes: balancesMensuales.mes })
-    .from(balancesMensuales)
-    .where(byTenant(tenantId, balancesMensuales))
-    .orderBy(desc(balancesMensuales.mes));
+  const rows = await withTenant(tenantId, (db) =>
+    db
+      .select({ mes: balancesMensuales.mes })
+      .from(balancesMensuales)
+      .where(byTenant(tenantId, balancesMensuales))
+      .orderBy(desc(balancesMensuales.mes)),
+  );
   return rows.map((r) => r.mes);
 }
 
@@ -217,7 +227,8 @@ export async function procesarBalancesMensuales(
   const month0 = ahoraArt.getMonth();
   const hoy = ahoraArt.getDate();
 
-  const filas = await db
+  // dbAdmin: el cron recorre todos los tenants a propósito (sin sesión).
+  const filas = await dbAdmin
     .select({
       id: tenants.id,
       nombre: tenants.nombre,
