@@ -5,6 +5,18 @@
 > Actualizado: 2026-06-21.
 
 ## Dónde quedamos
+- **RLS real — etapa 1 COMPLETA (2026-07-03, branch `staging`)**: los 35 archivos
+  que usaban `db` migrados a `withTenant()` (tx + `SET LOCAL app.tenant_id`) o
+  `dbAdmin` (cross-tenant explícito: sesión, webhooks, crons, super-admin, alta
+  de tenant, huérfanos de equipo). SQL listo: `drizzle/0014_rls.sql` (policies
+  fail-closed, seguro de aplicar ya — inerte mientras la app conecte como
+  `postgres`, cierra PostgREST anon) y `drizzle/0015_rol_gesto_app.sql` (cutover:
+  rol sin BYPASSRLS + cambio de DATABASE_URL; DATABASE_URL_ADMIN para dbAdmin).
+  Fixes de paso: update de cobros-mp sin byTenant, Consumidor Final ahora
+  protegido en update/desactivar de clientes, varias actions ahora atómicas.
+  tsc/lint/tests(60)/build verdes. **Falta**: aplicar 0014 en staging+prod, QA,
+  cutover de rol, y tareas #2-#9 de la auditoría (tokens MP, rate limit, CSP,
+  OWASP, calidad, perf, UX).
 - Rama `master`. Build/typecheck/lint/tests verdes (60 tests).
 - **Módulo Gastos + balance mensual con IA (2026-06-23) — deployado** (commit `7f27a32`):
   `/dashboard/gastos` para los 6 planes (capacidad `gastos`, admin). Carga de egresos

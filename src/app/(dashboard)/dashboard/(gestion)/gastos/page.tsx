@@ -11,7 +11,7 @@ import { categoriasGasto } from '@/lib/gastos';
 import { PageHeader } from '@/components/ui/page-header';
 import { GastosClient } from './gastos-client';
 import { GastosAtmosClient } from './gastos-atmos-client';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { gastos, pedidosAtmosfericos } from '@/server/db/schema';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { byTenant } from '@/server/db/tenant-context';
@@ -61,36 +61,40 @@ export default async function GastosPage({
 
     const [
       gastosDelDia, balanceMes,
-      cobradoDiaRows, cobradoSemanaRows, gastosSemanaRows,
+      [cobradoDiaRows, cobradoSemanaRows, gastosSemanaRows],
     ] = await Promise.all([
       listarGastosDelDia(dia),
       obtenerBalanceMensual(),
-      // Cobrado del día (pedidos completados del día seleccionado)
-      db.select({ monto: pedidosAtmosfericos.montoCobrado })
-        .from(pedidosAtmosfericos)
-        .where(and(
-          byTenant(session.tenantId, pedidosAtmosfericos),
-          eq(pedidosAtmosfericos.fechaProgramada, dia),
-          eq(pedidosAtmosfericos.estado, 'completado'),
-        )),
-      // Cobrado de la semana actual
-      db.select({ monto: pedidosAtmosfericos.montoCobrado })
-        .from(pedidosAtmosfericos)
-        .where(and(
-          byTenant(session.tenantId, pedidosAtmosfericos),
-          sql`${pedidosAtmosfericos.fechaProgramada} >= ${lunes}::date`,
-          sql`${pedidosAtmosfericos.fechaProgramada} <= ${hoy}::date`,
-          eq(pedidosAtmosfericos.estado, 'completado'),
-        )),
-      // Gastos de la semana actual
-      db.select({ monto: gastos.monto })
-        .from(gastos)
-        .where(and(
-          byTenant(session.tenantId, gastos),
-          isNull(gastos.deletedAt),
-          sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date >= ${lunes}::date`,
-          sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date <= ${hoy}::date`,
-        )),
+      withTenant(session.tenantId, (db) =>
+        Promise.all([
+          // Cobrado del día (pedidos completados del día seleccionado)
+          db.select({ monto: pedidosAtmosfericos.montoCobrado })
+            .from(pedidosAtmosfericos)
+            .where(and(
+              byTenant(session.tenantId, pedidosAtmosfericos),
+              eq(pedidosAtmosfericos.fechaProgramada, dia),
+              eq(pedidosAtmosfericos.estado, 'completado'),
+            )),
+          // Cobrado de la semana actual
+          db.select({ monto: pedidosAtmosfericos.montoCobrado })
+            .from(pedidosAtmosfericos)
+            .where(and(
+              byTenant(session.tenantId, pedidosAtmosfericos),
+              sql`${pedidosAtmosfericos.fechaProgramada} >= ${lunes}::date`,
+              sql`${pedidosAtmosfericos.fechaProgramada} <= ${hoy}::date`,
+              eq(pedidosAtmosfericos.estado, 'completado'),
+            )),
+          // Gastos de la semana actual
+          db.select({ monto: gastos.monto })
+            .from(gastos)
+            .where(and(
+              byTenant(session.tenantId, gastos),
+              isNull(gastos.deletedAt),
+              sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date >= ${lunes}::date`,
+              sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date <= ${hoy}::date`,
+            )),
+        ]),
+      ),
     ]);
 
     return (

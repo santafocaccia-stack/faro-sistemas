@@ -1,6 +1,6 @@
 import { requireSession } from '@/server/auth/session';
 import { listarPedidosDelDia } from '@/server/actions/pedidos-atmosfericos';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { clientes, gastos } from '@/server/db/schema';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { byTenant } from '@/server/db/tenant-context';
@@ -23,28 +23,32 @@ export default async function AtmosfericosPage({
   const { fecha } = await searchParams;
   const hoy = fecha ?? new Date().toISOString().slice(0, 10);
 
-  const [pedidos, clientesDisponibles, gastosDelDia] = await Promise.all([
+  const [pedidos, [clientesDisponibles, gastosDelDia]] = await Promise.all([
     listarPedidosDelDia(hoy),
-    db
-      .select({
-        id:          clientes.id,
-        nombre:      clientes.razonSocial,
-        direccion:   clientes.direccion,
-        localidad:   clientes.localidad,
-        litrosPozo:  clientes.litrosPozoEstimado,
-        telefono:    clientes.telefono,
-      })
-      .from(clientes)
-      .where(and(byTenant(session.tenantId, clientes), eq(clientes.activo, true)))
-      .orderBy(clientes.razonSocial),
-    db
-      .select({ monto: gastos.monto })
-      .from(gastos)
-      .where(and(
-        byTenant(session.tenantId, gastos),
-        isNull(gastos.deletedAt),
-        sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date = ${hoy}::date`,
-      )),
+    withTenant(session.tenantId, (db) =>
+      Promise.all([
+        db
+          .select({
+            id:          clientes.id,
+            nombre:      clientes.razonSocial,
+            direccion:   clientes.direccion,
+            localidad:   clientes.localidad,
+            litrosPozo:  clientes.litrosPozoEstimado,
+            telefono:    clientes.telefono,
+          })
+          .from(clientes)
+          .where(and(byTenant(session.tenantId, clientes), eq(clientes.activo, true)))
+          .orderBy(clientes.razonSocial),
+        db
+          .select({ monto: gastos.monto })
+          .from(gastos)
+          .where(and(
+            byTenant(session.tenantId, gastos),
+            isNull(gastos.deletedAt),
+            sql`(${gastos.fecha} AT TIME ZONE ${TZ})::date = ${hoy}::date`,
+          )),
+      ]),
+    ),
   ]);
 
   const gastosHoy = gastosDelDia.reduce((s, g) => s + Number(g.monto), 0);

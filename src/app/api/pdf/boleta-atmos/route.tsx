@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { and, eq } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import { pedidosAtmosfericos, clientes } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { obtenerTenant } from '@/server/actions/config';
@@ -37,7 +37,8 @@ export async function GET(req: NextRequest) {
     const pedidoId = sp.get('pedido');
 
     if (pedidoId) {
-      const [row] = await db
+      const [row] = await withTenant(session.tenantId, (db) =>
+        db
         .select({
           direccion:       pedidosAtmosfericos.direccion,
           localidad:       pedidosAtmosfericos.localidad,
@@ -52,7 +53,8 @@ export async function GET(req: NextRequest) {
         .from(pedidosAtmosfericos)
         .leftJoin(clientes, eq(pedidosAtmosfericos.clienteId, clientes.id))
         .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, pedidoId)))
-        .limit(1);
+        .limit(1),
+      );
 
       if (!row) {
         return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
@@ -84,7 +86,10 @@ export async function GET(req: NextRequest) {
     const numero = sp.get('numero')?.trim() || fecha.replace(/-/g, '');
     const metodoLabel = metodo ? (METODO_LABEL[metodo] ?? metodo) : null;
 
+    // renderToBuffer de @react-pdf renderiza sincrónicamente en el server y SÍ
+    // propaga errores a este try/catch — la regla apunta a React DOM, no aplica.
     const buffer = await renderToBuffer(
+      // eslint-disable-next-line react-hooks/error-boundaries
       <BoletaAtmosPDF
         numero={numero}
         fecha={fecha}
