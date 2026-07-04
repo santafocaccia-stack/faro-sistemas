@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ChevronLeft, Pencil } from 'lucide-react';
 import { obtenerPresupuesto } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
+import { METODO_LABEL } from '@/lib/constants';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -17,11 +18,6 @@ const ESTADO_BADGE: Record<string, { label: string; cls: string }> = {
   rechazado: { label: 'Rechazado', cls: 'bg-destructive/10 text-destructive border-destructive/20' },
   vencido:   { label: 'Vencido',   cls: 'bg-warning/10 text-warning border-warning/20' },
   cobrado:   { label: 'Cobrado',   cls: 'bg-success/10 text-success border-success/20' },
-};
-
-const METODO_LABEL: Record<string, string> = {
-  efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta_debito: 'Débito',
-  tarjeta_credito: 'Crédito', mercado_pago: 'Mercado Pago', cheque: 'Cheque', otro: 'Otro',
 };
 
 type Props = { params: Promise<{ id: string }> };
