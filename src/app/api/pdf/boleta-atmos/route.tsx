@@ -82,8 +82,11 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Número de recibo: AAAAMMDD (referencia simple por día)
-    const numero = sp.get('numero')?.trim() || fecha.replace(/-/g, '');
+    // Número de recibo: AAAAMMDD (referencia simple por día). Sanitizado a
+    // [A-Za-z0-9_.-]: va al header Content-Disposition (evita inyección/quotes).
+    const numero = (sp.get('numero')?.trim() || fecha.replace(/-/g, ''))
+      .replace(/[^\w.-]/g, '')
+      .slice(0, 40) || 'recibo';
     const metodoLabel = metodo ? (METODO_LABEL[metodo] ?? metodo) : null;
 
     // renderToBuffer de @react-pdf renderiza sincrónicamente en el server y SÍ

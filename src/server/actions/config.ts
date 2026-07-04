@@ -35,6 +35,9 @@ export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolea
   try {
     const session = await requirePermiso('gestionar_config');
     if (!input.nombre.trim()) return { ok: false, error: 'El nombre del negocio es obligatorio' };
+    // Topes de longitud (campos libres que luego van a PDFs, tickets y emails).
+    const clamp = (v: string | null | undefined, max: number) =>
+      (v?.trim() || null)?.slice(0, max) ?? null;
 
     // Validar margen objetivo solo si viene con valor (numeric(5,2): 0..999.99, sin NaN).
     let margenObjetivo: string | undefined;
@@ -48,11 +51,11 @@ export async function actualizarConfig(input: ConfigInput): Promise<{ ok: boolea
       db
       .update(tenants)
       .set({
-        nombre:            input.nombre.trim(),
-        cuit:              input.cuit?.trim() || null,
-        direccion:         input.direccion?.trim() || null,
-        telefono:          input.telefono?.trim() || null,
-        emailNegocio:      input.emailNegocio?.trim() || null,
+        nombre:            input.nombre.trim().slice(0, 120),
+        cuit:              clamp(input.cuit, 20),
+        direccion:         clamp(input.direccion, 200),
+        telefono:          clamp(input.telefono, 40),
+        emailNegocio:      clamp(input.emailNegocio, 120),
         habilitaMayorista: input.habilitaMayorista,
         habilitaMinorista: input.habilitaMinorista,
         ...(input.preciosVivos !== undefined ? { preciosVivos: input.preciosVivos } : {}),

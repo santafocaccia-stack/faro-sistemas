@@ -18,7 +18,10 @@ async function handle(req: Request) {
   try {
     const url = new URL(req.url);
     const cobroId = url.searchParams.get('cobro');
-    if (!cobroId) return NextResponse.json({ ok: true });
+    // Solo UUIDs válidos llegan a la DB (los cobros usan uuid v4 no adivinable).
+    if (!cobroId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cobroId)) {
+      return NextResponse.json({ ok: true });
+    }
 
     // El payment id puede venir en la query (?id=, ?data.id=) o en el body JSON.
     let paymentId =

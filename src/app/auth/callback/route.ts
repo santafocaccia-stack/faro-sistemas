@@ -27,7 +27,11 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const tokenHash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
-  const next = searchParams.get('next') ?? '/dashboard';
+  // Solo paths internos (defensa anti open-redirect: nada de '//' ni esquemas).
+  const nextRaw = searchParams.get('next') ?? '/dashboard';
+  const next = nextRaw.startsWith('/') && !nextRaw.startsWith('//') && !nextRaw.includes('\\')
+    ? nextRaw
+    : '/dashboard';
 
   const supabase = await createClient();
 
