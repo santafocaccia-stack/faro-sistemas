@@ -9,12 +9,17 @@ import { tenants } from '@/server/db/schema';
 import { PLANES, type PlanId } from '@/lib/planes';
 import { getDolarMep } from '@/lib/dolar';
 import { getAppUrl } from '@/lib/app-url';
+import { rateLimit } from '@/server/rate-limit';
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!;
 
 export async function crearSuscripcionMP(planId: PlanId) {
   const session = await requireSession({ allowExpired: true });
   const plan = PLANES[planId];
+
+  // Cada llamada crea un preapproval en MP — limitar ráfagas por tenant.
+  const rl = rateLimit(`crearSuscripcionMP:${session.tenantId}`, 5, 10 * 60_000);
+  if (!rl.ok) throw new Error(`Demasiados intentos seguidos. Esperá ${Math.ceil(rl.retrySeg / 60)} min.`);
 
   const dolarMep = await getDolarMep();
   const montoArs = Math.round(plan.precioUsd * dolarMep);

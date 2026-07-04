@@ -13,6 +13,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
 import { err, ok, type ActionResult } from '@/lib/errors';
+import { rateLimit } from '@/server/rate-limit';
 
 /* ── Tipos ── */
 export type MiembroEquipo = {
@@ -74,6 +75,10 @@ export async function invitarMiembro(input: InviteInput): Promise<InvitarResult>
 
   const email = input.email.trim().toLowerCase();
   if (!email) return err('CAMPO_REQUERIDO', 'El email es obligatorio');
+
+  // Cada invitación dispara un email — limitar abuso por tenant.
+  const rl = rateLimit(`invitarMiembro:${session.tenantId}`, 10, 60 * 60_000);
+  if (!rl.ok) return err('RATE_LIMIT', `Demasiadas invitaciones seguidas. Probá de nuevo en ${Math.ceil(rl.retrySeg / 60)} min.`);
 
   // Verificar que no sea ya miembro de ESTE tenant
   const [yaMiembro] = await withTenant(session.tenantId, (db) =>

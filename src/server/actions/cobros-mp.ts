@@ -9,6 +9,7 @@ import { getMPNegocioToken } from '@/server/mp/token';
 import { crearPreferenceCobro } from '@/server/mp/cobro';
 import { sincronizarCobro, type CobroEstado } from '@/server/mp/cobro-service';
 import { getAppUrl } from '@/lib/app-url';
+import { rateLimit } from '@/server/rate-limit';
 import QRCode from 'qrcode';
 
 /** ¿El negocio tiene Mercado Pago conectado? (para mostrar/ocultar el método). */
@@ -35,6 +36,12 @@ export async function iniciarCobroMP(input: {
     const monto = Number(input.monto);
     if (!Number.isFinite(monto) || monto <= 0) {
       return { ok: false, error: 'Monto inválido' };
+    }
+
+    // Cada cobro crea una preference en MP — limitar ráfagas por tenant.
+    const rl = rateLimit(`iniciarCobroMP:${session.tenantId}`, 15, 60_000);
+    if (!rl.ok) {
+      return { ok: false, error: `Demasiados cobros seguidos. Esperá ${rl.retrySeg}s e intentá de nuevo.` };
     }
 
     const token = await getMPNegocioToken(session.tenantId);

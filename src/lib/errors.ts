@@ -24,6 +24,8 @@ export type ErrorCode =
   | 'ESTADO_INVALIDO'        // operación inválida para el estado actual
   // Idempotencia
   | 'OPERACION_DUPLICADA'    // idempotency key ya fue procesada (use el resultado cacheado)
+  // Abuso
+  | 'RATE_LIMIT'             // demasiados intentos en poco tiempo
   // Genérico
   | 'ERROR_INTERNO';         // error inesperado del servidor
 

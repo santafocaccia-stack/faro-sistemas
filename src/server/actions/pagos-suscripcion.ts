@@ -14,6 +14,7 @@ import { getDolarMep } from '@/lib/dolar';
 import { getAppUrl } from '@/lib/app-url';
 import { montoArsPlan } from '@/lib/transferencia';
 import { sumarMeses } from '@/lib/fechas';
+import { rateLimit } from '@/server/rate-limit';
 import { enviarEmail } from '@/lib/email/enviar';
 import {
   buildAvisoTransferenciaAdminHtml,
@@ -57,6 +58,10 @@ export async function avisarTransferencia(planId: PlanId): Promise<Result> {
   try {
     if (!(planId in PLANES)) return { ok: false, error: 'Plan inválido' };
     const session = await requireSession({ allowExpired: true });
+
+    // Cada aviso manda emails (al admin y al cliente) — limitar por tenant.
+    const rl = rateLimit(`avisarTransferencia:${session.tenantId}`, 5, 10 * 60_000);
+    if (!rl.ok) return { ok: false, error: `Ya registramos tu aviso. Probá de nuevo en ${Math.ceil(rl.retrySeg / 60)} min.` };
 
     const dolarMep = await getDolarMep();
     const montoArs = montoArsPlan(planId, dolarMep);
