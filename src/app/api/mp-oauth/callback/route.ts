@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
 import { dbAdmin, withTenant } from '@/server/db';
 import { tenants, usersTenants } from '@/server/db/schema';
+import { cifrarToken } from '@/server/mp/cifrado';
 import { getAppUrl } from '@/lib/app-url';
 
 const MP_APP_ID     = process.env.MP_APP_ID!;
@@ -74,8 +75,8 @@ export async function GET(req: NextRequest) {
     db
       .update(tenants)
       .set({
-        mpNegocioAccessToken:  token.access_token,
-        mpNegocioRefreshToken: token.refresh_token,
+        mpNegocioAccessToken:  cifrarToken(token.access_token),
+        mpNegocioRefreshToken: cifrarToken(token.refresh_token),
         mpNegocioTokenExpiry:  expiry,
         mpNegocioUserId:       String(token.user_id),
       })

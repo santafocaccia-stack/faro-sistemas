@@ -13,6 +13,7 @@
 import { eq } from 'drizzle-orm';
 import { withTenant } from '@/server/db';
 import { tenants } from '@/server/db/schema';
+import { cifrarToken, descifrarToken } from '@/server/mp/cifrado';
 
 const MP_APP_ID = process.env.MP_APP_ID!;
 const MP_SECRET = process.env.MP_CLIENT_SECRET!;
@@ -32,11 +33,15 @@ export async function getMPNegocioToken(tenantId: string): Promise<string | null
 
   if (!tenant?.accessToken) return null;
 
+  // Cifrados at-rest (los valores legado en texto plano se leen igual).
+  const accessToken = descifrarToken(tenant.accessToken);
+  const refreshToken = descifrarToken(tenant.refreshToken);
+
   // Renovar si vence en menos de 5 minutos
   const venceProonto = tenant.expiry && tenant.expiry.getTime() - Date.now() < 5 * 60 * 1000;
-  if (!venceProonto) return tenant.accessToken;
+  if (!venceProonto) return accessToken;
 
-  if (!tenant.refreshToken) return null;
+  if (!refreshToken) return null;
 
   const res = await fetch('https://api.mercadopago.com/oauth/token', {
     method: 'POST',
@@ -44,12 +49,12 @@ export async function getMPNegocioToken(tenantId: string): Promise<string | null
     body: JSON.stringify({
       client_id:     MP_APP_ID,
       client_secret: MP_SECRET,
-      refresh_token: tenant.refreshToken,
+      refresh_token: refreshToken,
       grant_type:    'refresh_token',
     }),
   });
 
-  if (!res.ok) return tenant.accessToken;
+  if (!res.ok) return accessToken;
 
   const nuevo = await res.json();
   const expiry = new Date(Date.now() + nuevo.expires_in * 1000);
@@ -58,8 +63,8 @@ export async function getMPNegocioToken(tenantId: string): Promise<string | null
     db
       .update(tenants)
       .set({
-        mpNegocioAccessToken:  nuevo.access_token,
-        mpNegocioRefreshToken: nuevo.refresh_token ?? tenant.refreshToken,
+        mpNegocioAccessToken:  cifrarToken(nuevo.access_token),
+        mpNegocioRefreshToken: cifrarToken(nuevo.refresh_token ?? refreshToken),
         mpNegocioTokenExpiry:  expiry,
       })
       .where(eq(tenants.id, tenantId)),
