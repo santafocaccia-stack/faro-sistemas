@@ -1,7 +1,7 @@
 'use server';
 
 import { eq, and, asc, desc, lt } from 'drizzle-orm';
-import { db } from '@/server/db';
+import { withTenant } from '@/server/db';
 import {
   pedidosAtmosfericos, clientes,
   type EstadoPedidoAtmos,
@@ -39,7 +39,8 @@ export async function listarPedidosDelDia(fecha?: string) {
   const session = await requireSession();
   const hoy = fecha ?? new Date().toISOString().slice(0, 10);
 
-  const rows = await db
+  const rows = await withTenant(session.tenantId, (db) =>
+    db
     .select({
       id:              pedidosAtmosfericos.id,
       clienteId:       pedidosAtmosfericos.clienteId,
@@ -73,7 +74,8 @@ export async function listarPedidosDelDia(fecha?: string) {
         eq(pedidosAtmosfericos.activo, true),
       )
     )
-    .orderBy(asc(pedidosAtmosfericos.orden));
+    .orderBy(asc(pedidosAtmosfericos.orden)),
+  );
 
   return rows;
 }
@@ -84,6 +86,8 @@ export type PedidoDelDia = Awaited<ReturnType<typeof listarPedidosDelDia>>[numbe
 export async function crearPedido(input: PedidoAtmosInput) {
   const session = await requirePermiso('gestionar_atmosfericos');
 
+  // Todo el flujo (orden siguiente + pre-llenado + insert) en una transacción.
+  const creado = await withTenant(session.tenantId, async (db) => {
   // Calcular el próximo orden (al final de la lista del día)
   const existentes = await db
     .select({ orden: pedidosAtmosfericos.orden })
@@ -119,7 +123,7 @@ export async function crearPedido(input: PedidoAtmosInput) {
     }
   }
 
-  const [creado] = await db
+  const [row] = await db
     .insert(pedidosAtmosfericos)
     .values({
       tenantId:       session.tenantId,
@@ -137,6 +141,9 @@ export async function crearPedido(input: PedidoAtmosInput) {
     })
     .returning({ id: pedidosAtmosfericos.id });
 
+  return row;
+  });
+
   revalidatePath(RUTA);
   return creado;
 }
@@ -146,7 +153,7 @@ export async function reordenarPedidos(ids: string[], fecha: string) {
   const session = await requirePermiso('gestionar_atmosfericos');
 
   // Actualizar el orden de cada pedido en una transacción
-  await db.transaction(async (tx) => {
+  await withTenant(session.tenantId, async (tx) => {
     for (let i = 0; i < ids.length; i++) {
       await tx
         .update(pedidosAtmosfericos)
@@ -168,6 +175,7 @@ export async function reordenarPedidos(ids: string[], fecha: string) {
 export async function completarPedido(id: string, input: PedidoAtmosCompletarInput) {
   const session = await requireSession();
 
+  await withTenant(session.tenantId, async (db) => {
   const [pedido] = await db
     .select()
     .from(pedidosAtmosfericos)
@@ -196,6 +204,7 @@ export async function completarPedido(id: string, input: PedidoAtmosCompletarInp
       .set({ litrosPozoEstimado: input.litrosPozo })
       .where(and(byTenant(session.tenantId, clientes), eq(clientes.id, pedido.clienteId)));
   }
+  });
 
   revalidatePath(RUTA);
 }
@@ -203,10 +212,12 @@ export async function completarPedido(id: string, input: PedidoAtmosCompletarInp
 /** Cambiar estado a "en_camino" */
 export async function marcarEnCamino(id: string) {
   const session = await requireSession();
-  await db
-    .update(pedidosAtmosfericos)
-    .set({ estado: 'en_camino' })
-    .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, id)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(pedidosAtmosfericos)
+      .set({ estado: 'en_camino' })
+      .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, id))),
+  );
   revalidatePath(RUTA);
 }
 
@@ -214,7 +225,8 @@ export async function marcarEnCamino(id: string) {
 export async function editarPedido(id: string, input: PedidoAtmosInput) {
   const session = await requirePermiso('gestionar_atmosfericos');
 
-  await db
+  await withTenant(session.tenantId, (db) =>
+    db
     .update(pedidosAtmosfericos)
     .set({
       clienteId:      input.clienteId ?? null,
@@ -226,7 +238,8 @@ export async function editarPedido(id: string, input: PedidoAtmosInput) {
       notas:          input.notas ?? null,
       asignadoA:      input.asignadoA ?? null,
     })
-    .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, id)));
+    .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, id))),
+  );
 
   revalidatePath(RUTA);
 }
@@ -234,10 +247,12 @@ export async function editarPedido(id: string, input: PedidoAtmosInput) {
 /** Cancelar un pedido */
 export async function cancelarPedido(id: string) {
   const session = await requirePermiso('gestionar_atmosfericos');
-  await db
-    .update(pedidosAtmosfericos)
-    .set({ estado: 'cancelado', activo: false })
-    .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, id)));
+  await withTenant(session.tenantId, (db) =>
+    db
+      .update(pedidosAtmosfericos)
+      .set({ estado: 'cancelado', activo: false })
+      .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, id))),
+  );
   revalidatePath(RUTA);
 }
 
@@ -246,7 +261,8 @@ export async function listarHistorial() {
   const session = await requireSession();
   const hoy = new Date().toISOString().slice(0, 10);
 
-  const rows = await db
+  const rows = await withTenant(session.tenantId, (db) =>
+    db
     .select({
       id:              pedidosAtmosfericos.id,
       nombreContacto:  pedidosAtmosfericos.nombreContacto,
@@ -270,7 +286,8 @@ export async function listarHistorial() {
         eq(pedidosAtmosfericos.activo, true),
       )
     )
-    .orderBy(desc(pedidosAtmosfericos.fechaProgramada), asc(pedidosAtmosfericos.orden));
+    .orderBy(desc(pedidosAtmosfericos.fechaProgramada), asc(pedidosAtmosfericos.orden)),
+  );
 
   // Agrupar por fecha en JS
   const porFecha = new Map<string, typeof rows>();
@@ -293,7 +310,8 @@ export type DiaHistorial = Awaited<ReturnType<typeof listarHistorial>>[number];
 export async function listarPedidosDeCliente(clienteId: string) {
   const session = await requireSession();
 
-  return db
+  return withTenant(session.tenantId, (db) =>
+    db
     .select({
       id:              pedidosAtmosfericos.id,
       direccion:       pedidosAtmosfericos.direccion,
@@ -315,7 +333,8 @@ export async function listarPedidosDeCliente(clienteId: string) {
         eq(pedidosAtmosfericos.activo, true),
       )
     )
-    .orderBy(desc(pedidosAtmosfericos.fechaProgramada));
+    .orderBy(desc(pedidosAtmosfericos.fechaProgramada)),
+  );
 }
 
 export type PedidoDeCliente = Awaited<ReturnType<typeof listarPedidosDeCliente>>[number];
@@ -327,6 +346,8 @@ export async function guardarClienteDesdePedido(
 ) {
   const session = await requirePermiso('gestionar_atmosfericos');
 
+  // Lectura + alta de cliente + vínculo en una sola transacción.
+  await withTenant(session.tenantId, async (db) => {
   const [pedido] = await db
     .select()
     .from(pedidosAtmosfericos)
@@ -356,6 +377,7 @@ export async function guardarClienteDesdePedido(
       .set({ clienteId: nuevoCliente.id, nombreContacto: nombreCliente })
       .where(and(byTenant(session.tenantId, pedidosAtmosfericos), eq(pedidosAtmosfericos.id, pedidoId)));
   }
+  });
 
   revalidatePath(RUTA);
   revalidatePath('/dashboard/clientes');
