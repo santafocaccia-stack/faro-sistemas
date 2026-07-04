@@ -9,7 +9,7 @@ import {
   type CanalVenta, type MetodoPago,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
-import { requireSession } from '@/server/auth/session';
+import { requireSession, requireRol } from '@/server/auth/session';
 import { revalidatePath } from 'next/cache';
 import { calcularTotalesVenta, validarLimiteCredito } from '@/lib/business-logic';
 import { nuevaVentaSchema, formatZodError } from '@/server/schemas';
@@ -370,7 +370,10 @@ export async function comprasRecientesCliente(clienteId: string, limite = 8) {
 }
 
 export async function anularVenta(id: string) {
-  const session = await requireSession();
+  // Anular revierte stock y cuenta corriente — operación de supervisor.
+  // El rol empleado no puede anular (criterio estándar de POS: "void" lo
+  // autoriza el dueño/admin).
+  const session = await requireRol(['owner', 'admin']);
   const parsedId = z.string().uuid('ID inválido').safeParse(id);
   if (!parsedId.success) throw new Error(formatZodError(parsedId.error));
 
