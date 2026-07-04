@@ -14,9 +14,18 @@
   rol sin BYPASSRLS + cambio de DATABASE_URL; DATABASE_URL_ADMIN para dbAdmin).
   Fixes de paso: update de cobros-mp sin byTenant, Consumidor Final ahora
   protegido en update/desactivar de clientes, varias actions ahora atómicas.
-  tsc/lint/tests(60)/build verdes. **Falta**: aplicar 0014 en staging+prod, QA,
-  cutover de rol, y tareas #2-#9 de la auditoría (tokens MP, rate limit, CSP,
-  OWASP, calidad, perf, UX).
+  tsc/lint/tests(60)/build verdes.
+- **RLS etapa 2 — STAGING COMPLETO (2026-07-04)**: 0014 aplicado en DB staging
+  (28 policies; test 8/8 con rol sin bypass: fail-closed + aislamiento), rol
+  `gesto_app` creado (0015) y **cutover hecho**: Vercel preview/staging usa
+  DATABASE_URL=gesto_app + DATABASE_URL_ADMIN=postgres. Smoke HTTP verde.
+  El password de gesto_app staging vive en la env DATABASE_URL de Vercel
+  (preview/staging). Alias staging reapuntado; protección SSO de Vercel
+  desactivada (staging vuelve a ser público). Scripts: `scripts/aplicar-sql.mjs`
+  y `scripts/test-rls.mjs`.
+  **Falta**: QA autenticado en staging, repetir 0014+0015+cutover en PROD, y
+  tareas #2-#9 de la auditoría (tokens MP, rate limit, CSP, OWASP, calidad,
+  perf, UX).
 - Rama `master`. Build/typecheck/lint/tests verdes (60 tests).
 - **Módulo Gastos + balance mensual con IA (2026-06-23) — deployado** (commit `7f27a32`):
   `/dashboard/gastos` para los 6 planes (capacidad `gastos`, admin). Carga de egresos
