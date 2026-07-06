@@ -111,13 +111,13 @@ export function AgendaClient({
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="icon" className="h-9 w-9">
-            <Link href={`/dashboard/agenda?semana=${offset - 1}`}><ChevronLeft className="h-4 w-4" /></Link>
+            <Link href={`/dashboard/agenda?semana=${offset - 1}`} aria-label="Semana anterior"><ChevronLeft className="h-4 w-4" /></Link>
           </Button>
           {offset !== 0 && (
             <Button asChild variant="outline" size="sm" className="h-9"><Link href="/dashboard/agenda">Hoy</Link></Button>
           )}
           <Button asChild variant="outline" size="icon" className="h-9 w-9">
-            <Link href={`/dashboard/agenda?semana=${offset + 1}`}><ChevronRight className="h-4 w-4" /></Link>
+            <Link href={`/dashboard/agenda?semana=${offset + 1}`} aria-label="Semana siguiente"><ChevronRight className="h-4 w-4" /></Link>
           </Button>
           <Button size="sm" className="h-9 glow-primary" onClick={() => setFormTurno((v) => !v)}>
             <Plus className="h-4 w-4 mr-1.5" />Nuevo turno
