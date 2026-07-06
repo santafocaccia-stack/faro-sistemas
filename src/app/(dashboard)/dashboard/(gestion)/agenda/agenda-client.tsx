@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Plus, Trash2, AlarmClock, CalendarDays, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   crearTurno,
   cambiarEstadoTurno,
