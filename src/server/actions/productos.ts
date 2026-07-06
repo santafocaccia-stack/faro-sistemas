@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { eq, and, ilike, desc, asc } from 'drizzle-orm';
+import { eq, and, ilike, desc, asc, sql } from 'drizzle-orm';
 import { withTenant } from '@/server/db';
 import { productos, productoProveedores, categorias, tenants, type TipoUnidad } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
@@ -73,23 +73,31 @@ export async function aplicarPreciosMasivo(input: {
     ? and(byTenant(session.tenantId, productos), eq(productos.categoriaId, categoriaId), eq(productos.activo, true))
     : and(byTenant(session.tenantId, productos), eq(productos.activo, true));
 
-  // Lectura + updates en la misma transacción (antes eran 2 pasos separados).
+  // Lectura + update masivo en una transacción. Un solo UPDATE con unnest
+  // (N productos → 1 query) en lugar de un UPDATE por fila.
   let n = 0;
   await withTenant(session.tenantId, async (tx) => {
     const rows = await tx
       .select({ id: productos.id, may: productos.precioMayorista, min: productos.precioMinorista })
       .from(productos)
       .where(cond);
+    if (rows.length === 0) return;
 
-    for (const p of rows) {
-      const nMay = calc(Number(p.may));
-      const nMin = calc(Number(p.min));
-      await tx
-        .update(productos)
-        .set({ precioMayorista: nMay.toFixed(2), precioMinorista: nMin.toFixed(2) })
-        .where(and(byTenant(session.tenantId, productos), eq(productos.id, p.id)));
-      n++;
-    }
+    const idChunks  = rows.map((p) => sql`${p.id}`);
+    const mayChunks = rows.map((p) => sql`${calc(Number(p.may)).toFixed(2)}`);
+    const minChunks = rows.map((p) => sql`${calc(Number(p.min)).toFixed(2)}`);
+    await tx.execute(sql`
+      UPDATE productos
+      SET    precio_mayorista = u.may, precio_minorista = u.min
+      FROM   unnest(
+               ARRAY[${sql.join(idChunks,  sql`, `)}]::uuid[],
+               ARRAY[${sql.join(mayChunks, sql`, `)}]::numeric[],
+               ARRAY[${sql.join(minChunks, sql`, `)}]::numeric[]
+             ) AS u(id, may, min)
+      WHERE  productos.id        = u.id
+        AND  productos.tenant_id = ${session.tenantId}::uuid
+    `);
+    n = rows.length;
   });
 
   revalidatePath('/dashboard/productos');
@@ -160,16 +168,25 @@ export async function ajustarPreciosAlMargen(input: { redondeo: number }): Promi
   const { redondeo: r } = parsed.data;
   const bajos = await calcularMargenBajo(session.tenantId);
   const redon = (v: number) => (r > 0 ? Math.round(v / r) * r : Math.round(v * 100) / 100);
+  // Un solo UPDATE con unnest (N productos → 1 query).
   let n = 0;
-  await withTenant(session.tenantId, async (tx) => {
-    for (const p of bajos) {
-      const nuevo = redon(p.precioSugerido);
-      await tx.update(productos)
-        .set({ precioMinorista: nuevo.toFixed(2) })
-        .where(and(byTenant(session.tenantId, productos), eq(productos.id, p.id)));
-      n++;
-    }
-  });
+  if (bajos.length > 0) {
+    await withTenant(session.tenantId, async (tx) => {
+      const idChunks  = bajos.map((p) => sql`${p.id}`);
+      const minChunks = bajos.map((p) => sql`${redon(p.precioSugerido).toFixed(2)}`);
+      await tx.execute(sql`
+        UPDATE productos
+        SET    precio_minorista = u.min
+        FROM   unnest(
+                 ARRAY[${sql.join(idChunks,  sql`, `)}]::uuid[],
+                 ARRAY[${sql.join(minChunks, sql`, `)}]::numeric[]
+               ) AS u(id, min)
+        WHERE  productos.id        = u.id
+          AND  productos.tenant_id = ${session.tenantId}::uuid
+      `);
+      n = bajos.length;
+    });
+  }
   revalidatePath('/dashboard/productos');
   return { ok: true, ajustados: n };
 }
