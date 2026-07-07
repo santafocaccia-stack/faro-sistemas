@@ -2,9 +2,20 @@
 
 > Estado VIVO para retomar en chat nuevo gastando mínimo contexto.
 > El resto (stack, reglas, mapa, backlog largo) ya está en `CLAUDE.md` — NO lo releas.
-> Actualizado: 2026-06-21.
+> Actualizado: 2026-07-07.
 
 ## Dónde quedamos
+- **Auditoría integral 2026-07 COMPLETA — todo en PROD (2026-07-07)**: tareas #1-#9
+  cerradas. En prod: 0014 (RLS, 27 policies, test-rls 8/8), 0015 (rol `gesto_app`
+  sin bypass; password solo en env de Vercel), 0016 (índice pagos_prestamo),
+  0017 (limpieza de policies legacy `auth_tenant_id()` que rompían a gesto_app,
+  RLS off en `users` = paridad staging, y REVOKE de anon/authenticated sobre
+  public — la app no usa el Data API). Vercel production: DATABASE_URL=gesto_app +
+  DATABASE_URL_ADMIN=postgres vía API REST. Backup completo de datos pre-cutover
+  en `backups/` (gitignoreado, 29 tablas / 247 filas) con `scripts/backup-db.mjs`.
+  Además deployado: cifrado tokens MP (`MP_TOKEN_ENC_KEY` verificada en prod),
+  rate limiting, CSP enforce, fixes OWASP, perf (unnest masivo), página Cocina,
+  aria-labels.
 - **RLS real — etapa 1 COMPLETA (2026-07-03, branch `staging`)**: los 35 archivos
   que usaban `db` migrados a `withTenant()` (tx + `SET LOCAL app.tenant_id`) o
   `dbAdmin` (cross-tenant explícito: sesión, webhooks, crons, super-admin, alta

@@ -60,3 +60,5 @@ next-env.d.ts
 # cache local del hook de contexto (firma de estado, no versionar)
 /.claude/hooks/.last-state
 .gstack/
+
+backups/
