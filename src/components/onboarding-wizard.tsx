@@ -83,7 +83,7 @@ export function OnboardingWizard({
               {RICHARD.nombre} te acompaña en {negocio}
             </h2>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {completados} de {total} {completados === 1 ? 'paso completado' : 'pasos completados'} · {RICHARD.lemaChecklist}
+              {completados} de {total} pasos completados · {RICHARD.lemaChecklist}
             </p>
           </div>
         </div>

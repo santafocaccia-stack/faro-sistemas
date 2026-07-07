@@ -88,7 +88,9 @@ export function DashboardClient({
               <Zap className="h-3.5 w-3.5 text-warning shrink-0" />
               {mensajeMotivacional}
             </span>
-          ) : 'Arrancá el día — registrá tu primera venta.'}
+          ) : saludo === 'Buenos días'
+            ? 'Arrancá el día — registrá tu primera venta.'
+            : 'Todavía no hay ventas hoy — registrá la primera.'}
         >
           <Link
             href="/dashboard/ventas"
