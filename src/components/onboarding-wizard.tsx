@@ -90,7 +90,7 @@ export function OnboardingWizard({
 
         <button
           onClick={handleDismiss}
-          className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-white/5 transition-colors shrink-0"
+          className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors shrink-0"
           title="Ocultar"
         >
           <X className="h-3.5 w-3.5" />
@@ -118,7 +118,7 @@ export function OnboardingWizard({
               href={paso.href}
               className={cn(
                 'flex items-center gap-3 px-2.5 py-2.5 rounded-lg group transition-all',
-                done ? 'opacity-50 hover:opacity-70' : 'hover:bg-white/[0.04]',
+                done ? 'opacity-50 hover:opacity-70' : 'hover:bg-foreground/[0.04]',
               )}
             >
               <div className={cn(

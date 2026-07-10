@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
   Settings, LogOut, Search, Command, UsersRound,
   ShoppingCart, ArrowRight,
@@ -69,7 +70,7 @@ export function DashboardSidebar({ email, plan, rol, permisos, tenantNombre, onO
 
       {/* ── Header: Logo + nombre del negocio ─────────────── */}
       <div className="relative h-[3.75rem] flex items-center px-3 border-b border-sidebar-border shrink-0">
-        <Link href="/dashboard" className="flex items-center gap-2.5 group min-w-0 px-1.5 py-1.5 -mx-1.5 rounded-lg hover:bg-white/[0.03] transition-colors flex-1">
+        <Link href="/dashboard" className="flex items-center gap-2.5 group min-w-0 px-1.5 py-1.5 -mx-1.5 rounded-lg hover:bg-foreground/[0.04] transition-colors flex-1">
           <div className="relative h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-[oklch(0.55_0.20_30)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_4px_14px_oklch(0.70_0.22_43_/_0.40)] shrink-0">
             <span className="text-primary-foreground font-bold text-sm leading-none tracking-tight">G</span>
           </div>
@@ -166,8 +167,8 @@ export function DashboardSidebar({ email, plan, rol, permisos, tenantNombre, onO
                 className={cn(
                   'relative flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-all duration-150',
                   active
-                    ? 'bg-white/[0.06] text-foreground font-medium nav-active-ribbon'
-                    : 'text-muted-foreground hover:bg-white/[0.03] hover:text-foreground',
+                    ? 'bg-foreground/[0.06] text-foreground font-medium nav-active-ribbon'
+                    : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
                 )}
               >
                 <Icon
@@ -197,6 +198,7 @@ export function DashboardSidebar({ email, plan, rol, permisos, tenantNombre, onO
               {email.split('@')[1]}
             </p>
           </div>
+          <ThemeToggle className="!h-7 !w-7 border-0 bg-transparent" />
           <button
             onClick={handleLogout}
             title="Cerrar sesión"
@@ -244,8 +246,8 @@ function NavLink({
         'relative flex items-center gap-2.5 rounded-md transition-all duration-150',
         compact ? 'px-2 py-1 text-[12.5px]' : 'px-2.5 py-1.5 text-[13px]',
         active
-          ? 'bg-white/[0.06] text-foreground font-medium nav-active-ribbon'
-          : 'text-muted-foreground hover:bg-white/[0.03] hover:text-foreground',
+          ? 'bg-foreground/[0.06] text-foreground font-medium nav-active-ribbon'
+          : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
       )}
     >
       <Icon

@@ -118,7 +118,7 @@ export default async function EditarProductoPage({
                 <Link
                   key={v.id}
                   href={`/dashboard/productos/${v.id}`}
-                  className="flex items-center justify-between px-5 py-3 hover:bg-white/[0.02] transition-colors group"
+                  className="flex items-center justify-between px-5 py-3 hover:bg-foreground/[0.02] transition-colors group"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">

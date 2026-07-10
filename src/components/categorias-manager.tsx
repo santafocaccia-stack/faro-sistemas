@@ -207,7 +207,7 @@ function Section({
                     </button>
                     <button
                       onClick={cancelarEditar}
-                      className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+                      className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
                       title="Cancelar"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -218,7 +218,7 @@ function Section({
                     <span className="flex-1 text-[13px] truncate">{item.nombre}</span>
                     <button
                       onClick={() => comenzarEditar(item)}
-                      className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white/5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
+                      className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
                       title="Editar"
                     >
                       <Pencil className="h-3.5 w-3.5" />

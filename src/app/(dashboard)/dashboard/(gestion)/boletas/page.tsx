@@ -90,7 +90,7 @@ export default async function BoletasPage() {
                   return (
                     <TableRow
                       key={b.id}
-                      className="relative hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer"
+                      className="relative hover:bg-foreground/[0.02] border-b border-border/40 last:border-0 cursor-pointer"
                     >
                       <TableCell className="pl-4 py-3">
                         <Link href={`/dashboard/presupuestos/${b.id}`} className="block font-mono text-xs text-muted-foreground hover:text-foreground transition-colors before:absolute before:inset-0 before:content-['']">

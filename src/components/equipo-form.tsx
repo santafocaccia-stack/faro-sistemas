@@ -150,7 +150,7 @@ export function EquipoForm({ equipo, miRol, miUserId, permisosDisponibles }: Pro
           const puedeEditarPermisos = puedeEditar && miembro.rol !== 'owner';
 
           return (
-            <div key={miembro.userId} className="px-4 sm:px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
+            <div key={miembro.userId} className="px-4 sm:px-5 py-3.5 hover:bg-foreground/[0.02] transition-colors">
               {/* Fila superior: avatar + info */}
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center shrink-0">

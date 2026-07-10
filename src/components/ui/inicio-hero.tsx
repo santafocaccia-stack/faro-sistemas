@@ -1,6 +1,6 @@
 /**
- * Hero del inicio: saludo con personalidad, teñido por el acento del plan.
- * Gradiente sutil + glow del color de la vertical (no plano/apagado).
+ * Hero del inicio (rediseño "Mostrador"): banda cálida con presencia propia,
+ * marca de agua "G" gigante cortada por el borde y glow del acento del plan.
  * Sirve en server y client components (sin hooks).
  */
 export function InicioHero({
@@ -17,31 +17,19 @@ export function InicioHero({
   children?: React.ReactNode;
 }) {
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-border p-5 sm:p-6"
-      style={{
-        backgroundImage:
-          'linear-gradient(135deg, color-mix(in oklab, var(--primary) 12%, var(--card)), var(--card) 62%)',
-      }}
-    >
-      {/* Glow del acento */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-20 -right-12 h-56 w-56 rounded-full blur-3xl"
-        style={{ background: 'radial-gradient(circle, var(--primary), transparent 68%)', opacity: 0.2 }}
-      />
-      {/* Borde-acento izquierdo */}
-      <div aria-hidden className="absolute left-0 top-5 bottom-5 w-[3px] rounded-full" style={{ background: 'var(--primary)' }} />
+    <div className="hero-band p-5 sm:p-7">
+      {/* Marca de agua decorativa */}
+      <span aria-hidden className="hero-watermark hidden sm:block">G</span>
 
       <div className="relative">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary capitalize">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary capitalize">
           {fechaLabel}
         </p>
-        <h1 className="text-[26px] sm:text-[32px] font-semibold tracking-tight leading-[1.1] mt-1.5">
+        <h1 className="text-[27px] sm:text-[34px] font-semibold tracking-[-0.02em] leading-[1.08] mt-2">
           {saludo}, <span className="text-primary capitalize">{nombre}</span> 👋
         </h1>
-        {nota && <div className="text-sm text-muted-foreground mt-2">{nota}</div>}
-        {children && <div className="mt-4">{children}</div>}
+        {nota && <div className="text-[14px] sm:text-[15px] text-muted-foreground mt-2.5 leading-relaxed">{nota}</div>}
+        {children && <div className="mt-5 sm:max-w-sm">{children}</div>}
       </div>
     </div>
   );

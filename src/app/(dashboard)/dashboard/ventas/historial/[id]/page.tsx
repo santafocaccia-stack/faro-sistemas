@@ -110,7 +110,7 @@ export default async function DetalleVentaPage({ params }: Props) {
             </TableHeader>
             <TableBody>
               {lineas.map((l) => (
-                <TableRow key={l.id} className="hover:bg-white/[0.02] border-b border-border/40 last:border-0">
+                <TableRow key={l.id} className="hover:bg-foreground/[0.02] border-b border-border/40 last:border-0">
                   <TableCell className="pl-4 py-2.5 text-[13px] font-medium">{l.descripcion}</TableCell>
                   <TableCell className="text-right py-2.5 font-mono tabular-nums text-[13px] text-muted-foreground">{Number(l.cantidad)}</TableCell>
                   <TableCell className="hidden sm:table-cell text-right py-2.5 font-mono tabular-nums text-[13px] text-muted-foreground">{formatARS(Number(l.precioUnitario))}</TableCell>

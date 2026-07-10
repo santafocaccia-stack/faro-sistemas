@@ -264,7 +264,7 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
                   <button
                     key={p.id}
                     onClick={() => agregarProducto(p)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/[0.04] transition-colors text-left border-b border-border/30 last:border-0"
+                    className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-foreground/[0.04] transition-colors text-left border-b border-border/30 last:border-0"
                   >
                     <p className="text-[13px] font-medium">{p.nombre}</p>
                     <p className="text-sm font-semibold text-primary shrink-0 ml-3">

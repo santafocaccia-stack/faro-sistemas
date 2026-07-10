@@ -19,41 +19,57 @@
 :root {
   --radius: 0.75rem; /* 12px — más amigable que el anterior 10px */
 
-  /* Light mode — crema suave, no blanco puro */
-  --background:          oklch(0.97  0.005  75);
-  --foreground:          oklch(0.13  0.008  55);
-  --card:                oklch(1     0      0);
-  --card-foreground:     oklch(0.13  0.008  55);
-  --card-raised:         oklch(0.985 0.003  75);
-  --popover:             oklch(1     0      0);
-  --popover-foreground:  oklch(0.13  0.008  55);
-  --primary:             oklch(0.66  0.22   43);   /* #F96800 — naranja brasa */
-  --primary-foreground:  oklch(0.99  0.004  75);
-  --secondary:           oklch(0.93  0.006  75);
-  --secondary-foreground:oklch(0.20  0.008  55);
-  --muted:               oklch(0.93  0.006  75);
-  --muted-foreground:    oklch(0.50  0.008  55);
-  --accent:              oklch(0.91  0.008  75);
-  --accent-foreground:   oklch(0.20  0.008  55);
-  --destructive:         oklch(0.57  0.22   18);
-  --success:             oklch(0.65  0.17  145);
-  --warning:             oklch(0.76  0.14   78);
-  --border:              oklch(0.13  0.008  55  / 0.10);
-  --input:               oklch(0.13  0.008  55  / 0.10);
-  --ring:                oklch(0.66  0.22   43  / 0.40);
-  --sidebar:             oklch(0.95  0.006  75);
-  --sidebar-foreground:  oklch(0.13  0.008  55);
-  --sidebar-primary:     oklch(0.66  0.22   43);
-  --sidebar-primary-foreground: oklch(0.99 0.004 75);
-  --sidebar-accent:      oklch(0.90  0.008  75);
-  --sidebar-accent-foreground: oklch(0.20 0.008 55);
-  --sidebar-border:      oklch(0.13  0.008  55  / 0.07);
-  --sidebar-ring:        oklch(0.66  0.22   43  / 0.40);
-  --chart-1:             oklch(0.66  0.22   43);
-  --chart-2:             oklch(0.65  0.17  145);
-  --chart-3:             oklch(0.76  0.14   78);
-  --chart-4:             oklch(0.55  0.14  255);
-  --chart-5:             oklch(0.65  0.18  310);
+  /* ── LIGHT "Mostrador" (v3, rediseño 2026-07) ──────────────
+     Light-first: neutro cálido (no blanco puro), jerarquía por
+     espaciado, naranja como acento quirúrgico. Contraste AA. */
+  --background:          #FAF8F5;
+  --foreground:          #211D18;   /* casi negro cálido — 15.4:1 */
+  --card:                #FFFFFF;
+  --card-foreground:     #211D18;
+  --card-raised:         #F4F1ED;   /* hover / inset sutil */
+  --popover:             #FFFFFF;
+  --popover-foreground:  #211D18;
+  --primary:             #E85D00;   /* naranja Gesto, rol de acento */
+  --primary-foreground:  #FFFFFF;
+  --secondary:           #F4F1ED;
+  --secondary-foreground:#37312A;
+  --muted:               #F4F1ED;
+  --muted-foreground:    #5C554C;   /* 7.2:1 */
+  --accent:              #F0EBE4;
+  --accent-foreground:   #37312A;
+  --destructive:         oklch(0.55  0.22   18);
+  --success:             #1E7B3C;   /* verde éxito AA sobre claro */
+  --warning:             #9A6A08;   /* ámbar texto AA sobre claro */
+  --border:              #E9E4DD;   /* hairline cálida */
+  --input:               #DDD6CC;
+  --ring:                oklch(0.62  0.19   40  / 0.35);
+  --sidebar:             #FFFFFF;
+  --sidebar-foreground:  #211D18;
+  --sidebar-primary:     #E85D00;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent:      #F4F1ED;
+  --sidebar-accent-foreground: #37312A;
+  --sidebar-border:      #E9E4DD;
+  --sidebar-ring:        oklch(0.62  0.19   40  / 0.35);
+  --chart-1:             #E85D00;
+  --chart-2:             #1E7B3C;
+  --chart-3:             #B45309;
+  --chart-4:             oklch(0.50  0.14  255);
+  --chart-5:             oklch(0.55  0.18  310);
+
+  /* Zonas y ornamentos (rediseño "Mostrador") */
+  --hero-bg:       linear-gradient(118deg, #FBE8CE 0%, #FAF0E0 52%, #F8F2E8 100%);
+  --hero-border:   #EFD9BB;
+  --hero-glow:     radial-gradient(460px 300px at 80% 40%, rgba(232, 93, 0, .12), transparent 70%);
+  --band-bg:       #F2EDE4;   /* banda de KPIs */
+  --band-border:   #E4DCCE;
+  --paper-bg:      #FFFBEF;   /* papel de ticket */
+  --paper-border:  #E6DBC2;
+  --notch-line:    #C4B490;   /* línea de corte del ticket */
+  --watermark-op:  0.12;      /* "G" gigante decorativa */
+  --scroll-thumb:  oklch(0 0 0 / 0.14);
+  --scroll-thumb-hover: oklch(0 0 0 / 0.24);
+  --scheme: light;
 }
 
 /* ── DARK — "Brasas en la noche" ────────────────────────────
@@ -63,54 +79,69 @@
    ─────────────────────────────────────────────────────────── */
 .dark {
 
-  /* Superficies — 4 niveles de profundidad */
-  --background:          oklch(0.115 0.008  55);  /* #0E0D0B — negro cálido */
-  --foreground:          oklch(0.955 0.005  75);  /* crema, no blanco puro */
-  --card:                oklch(0.175 0.009  55);  /* surface levantada (subida p/ más profundidad) */
-  --card-foreground:     oklch(0.955 0.005  75);
-  --card-raised:         oklch(0.215 0.010  55);  /* panel destacado / hover */
-  --popover:             oklch(0.21  0.009  55);  /* overlays, tooltips */
-  --popover-foreground:  oklch(0.955 0.005  75);
+  /* ── DARK "Mostrador de noche" (v3, rediseño 2026-07) ──────
+     Gris-marrón profundo (no negro puro), misma lógica de acento
+     quirúrgico que el claro. Naranja gana luminancia de noche. */
+  --background:          #16130F;
+  --foreground:          #F3EEE7;   /* crema — 14.8:1 */
+  --card:                #1E1A15;
+  --card-foreground:     #F3EEE7;
+  --card-raised:         #26211B;   /* panel destacado / hover */
+  --popover:             #26211B;
+  --popover-foreground:  #F3EEE7;
 
-  /* Brand — Naranja brasa, más vibrante que v1 */
-  --primary:             oklch(0.70  0.22   43);  /* ≈ #FF7518 */
-  --primary-foreground:  oklch(0.11  0.010  50);  /* casi negro, máximo contraste */
+  --primary:             #FF7518;   /* brasa */
+  --primary-foreground:  #1C0F04;   /* tinta oscura sobre naranja — 8:1 */
 
-  --secondary:           oklch(0.22  0.008  55);
-  --secondary-foreground:oklch(0.95  0.005  75);
+  --secondary:           #26211B;
+  --secondary-foreground:#F3EEE7;
 
-  --muted:               oklch(0.20  0.007  55);
-  --muted-foreground:    oklch(0.62  0.006  70);  /* más claro que v1 → mejor legibilidad */
+  --muted:               #221D18;
+  --muted-foreground:    #B5AB9E;   /* 7.1:1 */
 
-  --accent:              oklch(0.25  0.008  55);
-  --accent-foreground:   oklch(0.95  0.005  75);
+  --accent:              #2A241D;
+  --accent-foreground:   #F3EEE7;
 
   /* Semánticos — ajustados para fondos oscuros cálidos */
   --destructive:         oklch(0.62  0.22   18);
-  --success:             oklch(0.70  0.18  145);  /* verde más luminoso */
+  --success:             #6FCE8B;   /* 8.3:1 sobre oscuro */
   --warning:             oklch(0.80  0.14   78);
 
-  /* Bordes con alpha cálido */
-  --border:              oklch(0.96  0.005  75  / 0.09);
-  --input:               oklch(0.96  0.005  75  / 0.11);
-  --ring:                oklch(0.70  0.22   43  / 0.50);
+  /* Bordes hairline cálidos */
+  --border:              #2E2822;
+  --input:               #3C352D;
+  --ring:                oklch(0.70  0.22   43  / 0.45);
 
-  /* Sidebar — un escalón más oscuro que background */
-  --sidebar:             oklch(0.095 0.007  55);
-  --sidebar-foreground:  oklch(0.955 0.005  75);
-  --sidebar-primary:     oklch(0.70  0.22   43);
-  --sidebar-primary-foreground: oklch(0.11 0.010 50);
-  --sidebar-accent:      oklch(0.185 0.009  55);
-  --sidebar-accent-foreground: oklch(0.955 0.005 75);
-  --sidebar-border:      oklch(0.96  0.005  75  / 0.06);
-  --sidebar-ring:        oklch(0.70  0.22   43  / 0.50);
+  /* Sidebar — apenas distinta del background */
+  --sidebar:             #1A1712;
+  --sidebar-foreground:  #F3EEE7;
+  --sidebar-primary:     #FF7518;
+  --sidebar-primary-foreground: #1C0F04;
+  --sidebar-accent:      #26211B;
+  --sidebar-accent-foreground: #F3EEE7;
+  --sidebar-border:      #2E2822;
+  --sidebar-ring:        oklch(0.70  0.22   43  / 0.45);
 
   /* Charts */
-  --chart-1: oklch(0.70  0.22   43);
-  --chart-2: oklch(0.70  0.18  145);
+  --chart-1: #FF7518;
+  --chart-2: #6FCE8B;
   --chart-3: oklch(0.80  0.14   78);
   --chart-4: oklch(0.62  0.14  255);
   --chart-5: oklch(0.70  0.18  310);
+
+  /* Zonas y ornamentos (oscuro: brasa profunda) */
+  --hero-bg:       linear-gradient(118deg, #31200F 0%, #271A0F 48%, #1E1610 100%);
+  --hero-border:   #46331C;
+  --hero-glow:     radial-gradient(460px 300px at 80% 40%, rgba(255, 117, 24, .20), transparent 70%);
+  --band-bg:       #1E1913;
+  --band-border:   #322B21;
+  --paper-bg:      #251F15;
+  --paper-border:  #423826;
+  --notch-line:    #6B5A38;
+  --watermark-op:  0.17;
+  --scroll-thumb:  oklch(1 0 0 / 0.10);
+  --scroll-thumb-hover: oklch(1 0 0 / 0.18);
+  --scheme: dark;
 }
 
 /* ── MAPEO Tailwind v4 ──────────────────────────────────────
@@ -167,10 +198,18 @@
    Eso sobrescribe --primary (y derivados) para esa vertical, así
    TODOS los botones, nav activo, ribbon, focus y tintes (bg-primary/10,
    text-primary, border-primary/30) toman el color del plan sin refactor.
-   La app es siempre dark, así que solo definimos valores dark.
-   Croma bajado (~0.15 vs 0.22 de marca) para que no sea chillón.
-   ─────────────────────────────────────────────────────────── */
+   Cada plan define su acento en AMBOS temas: claro (L~0.52, tinta
+   blanca) y oscuro (L~0.67, tinta oscura). Croma contenido para que
+   no sea chillón. */
 [data-plan="servicios"] {
+  --primary:             oklch(0.50 0.15 250);
+  --primary-foreground:  #FFFFFF;
+  --ring:                oklch(0.50 0.15 250 / 0.40);
+  --sidebar-primary:     oklch(0.50 0.15 250);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-ring:        oklch(0.50 0.15 250 / 0.40);
+}
+.dark [data-plan="servicios"] {
   --primary:             oklch(0.66 0.15 250);
   --primary-foreground:  oklch(0.16 0.02 250);
   --ring:                oklch(0.66 0.15 250 / 0.50);
@@ -179,6 +218,14 @@
   --sidebar-ring:        oklch(0.66 0.15 250 / 0.50);
 }
 [data-plan="market"] {
+  --primary:             oklch(0.56 0.16 45);
+  --primary-foreground:  #FFFFFF;
+  --ring:                oklch(0.56 0.16 45 / 0.40);
+  --sidebar-primary:     oklch(0.56 0.16 45);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-ring:        oklch(0.56 0.16 45 / 0.40);
+}
+.dark [data-plan="market"] {
   --primary:             oklch(0.68 0.16 45);
   --primary-foreground:  oklch(0.17 0.03 45);
   --ring:                oklch(0.68 0.16 45 / 0.50);
@@ -187,6 +234,14 @@
   --sidebar-ring:        oklch(0.68 0.16 45 / 0.50);
 }
 [data-plan="food"] {
+  --primary:             oklch(0.52 0.14 158);
+  --primary-foreground:  #FFFFFF;
+  --ring:                oklch(0.52 0.14 158 / 0.40);
+  --sidebar-primary:     oklch(0.52 0.14 158);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-ring:        oklch(0.52 0.14 158 / 0.40);
+}
+.dark [data-plan="food"] {
   --primary:             oklch(0.67 0.15 158);
   --primary-foreground:  oklch(0.15 0.03 158);
   --ring:                oklch(0.67 0.15 158 / 0.50);
@@ -195,6 +250,14 @@
   --sidebar-ring:        oklch(0.67 0.15 158 / 0.50);
 }
 [data-plan="balanza"] {
+  --primary:             oklch(0.52 0.16 320);
+  --primary-foreground:  #FFFFFF;
+  --ring:                oklch(0.52 0.16 320 / 0.40);
+  --sidebar-primary:     oklch(0.52 0.16 320);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-ring:        oklch(0.52 0.16 320 / 0.40);
+}
+.dark [data-plan="balanza"] {
   --primary:             oklch(0.66 0.16 320);
   --primary-foreground:  oklch(0.16 0.02 320);
   --ring:                oklch(0.66 0.16 320 / 0.50);
@@ -203,6 +266,14 @@
   --sidebar-ring:        oklch(0.66 0.16 320 / 0.50);
 }
 [data-plan="prestamista"] {
+  --primary:             oklch(0.50 0.12 200);
+  --primary-foreground:  #FFFFFF;
+  --ring:                oklch(0.50 0.12 200 / 0.40);
+  --sidebar-primary:     oklch(0.50 0.12 200);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-ring:        oklch(0.50 0.12 200 / 0.40);
+}
+.dark [data-plan="prestamista"] {
   --primary:             oklch(0.67 0.13 200);
   --primary-foreground:  oklch(0.15 0.02 200);
   --ring:                oklch(0.67 0.13 200 / 0.50);
@@ -284,6 +355,7 @@
 }
 
 html {
+  color-scheme: var(--scheme, light);
   font-feature-settings: "cv11", "ss01", "ss03";
   /* Tap highlight transparente en mobile — evita el flash gris */
   -webkit-tap-highlight-color: transparent;
@@ -303,13 +375,18 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Gradiente ambiental — más cálido que v1 */
+/* Gradiente ambiental — un lavado cálido por tema */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: -1;
+  background:
+    radial-gradient(ellipse 70% 50% at 0% 0%,   oklch(0.62 0.19 40 / 0.045), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, oklch(0.55 0.15 150 / 0.03), transparent 60%);
+}
+.dark body::before {
   background:
     radial-gradient(ellipse 70% 50% at 0% 0%,   oklch(0.70 0.22 43 / 0.07), transparent 60%),
     radial-gradient(ellipse 50% 40% at 100% 100%, oklch(0.65 0.17 145 / 0.04), transparent 60%);
@@ -348,13 +425,13 @@ body::before {
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: oklch(1 0 0 / 0.10);
+  background: var(--scroll-thumb);
   border-radius: 3px;
   border: 1px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(1 0 0 / 0.18);
+  background: var(--scroll-thumb-hover);
   background-clip: padding-box;
 }
 
@@ -419,27 +496,40 @@ button, [role="button"], a, input[type="checkbox"], input[type="radio"] {
 .glow-primary {
   background-image: linear-gradient(
     180deg,
-    color-mix(in oklab, var(--primary) 86%, white 15%),
+    color-mix(in oklab, var(--primary) 88%, white 12%),
     var(--primary)
   );
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--primary) 30%, transparent),
+    0 4px 14px color-mix(in oklab, var(--primary) 22%, transparent);
+}
+.glow-primary:hover {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary) 80%, white 20%),
+    color-mix(in oklab, var(--primary) 95%, white 5%)
+  );
+  box-shadow:
+    0 1px 3px color-mix(in oklab, var(--primary) 35%, transparent),
+    0 6px 20px color-mix(in oklab, var(--primary) 30%, transparent);
+}
+.glow-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 0 12px color-mix(in oklab, var(--primary) 28%, transparent);
+}
+.dark .glow-primary {
   box-shadow:
     0 0 0 1px oklch(1 0 0 / 0.08) inset,
     0 1px 2px oklch(0 0 0 / 0.45),
     0 8px 22px color-mix(in oklab, var(--primary) 32%, transparent);
 }
-.glow-primary:hover {
-  background-image: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--primary) 78%, white 22%),
-    color-mix(in oklab, var(--primary) 95%, white 6%)
-  );
+.dark .glow-primary:hover {
   box-shadow:
     0 0 0 1px oklch(1 0 0 / 0.10) inset,
     0 1px 3px oklch(0 0 0 / 0.45),
     0 10px 28px color-mix(in oklab, var(--primary) 42%, transparent);
 }
-.glow-primary:active {
-  transform: translateY(1px);
+.dark .glow-primary:active {
   box-shadow:
     0 0 0 1px oklch(0 0 0 / 0.10) inset,
     0 0 12px color-mix(in oklab, var(--primary) 28%, transparent);
@@ -448,15 +538,25 @@ button, [role="button"], a, input[type="checkbox"], input[type="radio"] {
 /* CTA success — verde con glow */
 .glow-success {
   box-shadow:
-    0 0 0 1px oklch(1 0 0 / 0.06) inset,
-    0 1px 2px oklch(0 0 0 / 0.40),
-    0 0 18px oklch(0.70 0.18 145 / 0.22);
+    0 1px 2px color-mix(in oklab, var(--success) 30%, transparent),
+    0 0 14px color-mix(in oklab, var(--success) 18%, transparent);
 }
 .glow-success:hover {
   box-shadow:
+    0 1px 3px color-mix(in oklab, var(--success) 35%, transparent),
+    0 0 22px color-mix(in oklab, var(--success) 28%, transparent);
+}
+.dark .glow-success {
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 0.06) inset,
+    0 1px 2px oklch(0 0 0 / 0.40),
+    0 0 18px color-mix(in oklab, var(--success) 22%, transparent);
+}
+.dark .glow-success:hover {
+  box-shadow:
     0 0 0 1px oklch(1 0 0 / 0.08) inset,
     0 1px 3px oklch(0 0 0 / 0.40),
-    0 0 26px oklch(0.70 0.18 145 / 0.35);
+    0 0 26px color-mix(in oklab, var(--success) 35%, transparent);
 }
 
 /* ── PANELES Y SUPERFICIES ───────────────────────────────────
@@ -606,7 +706,7 @@ button, [role="button"], a, input[type="checkbox"], input[type="radio"] {
 
 /* Texto de números grandes (KPIs) */
 .text-kpi {
-  font-size: 1.5rem;       /* 24px */
+  font-size: 1.625rem;     /* 26px */
   font-weight: 700;
   letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums slashed-zero;
@@ -616,12 +716,12 @@ button, [role="button"], a, input[type="checkbox"], input[type="radio"] {
 
 /* Etiqueta de campo */
 .field-label {
-  font-size: 0.625rem;     /* 10px */
+  font-size: 0.6875rem;    /* 11px */
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--color-muted-foreground);
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 /* Badge de estado estándar */
@@ -633,6 +733,73 @@ button, [role="button"], a, input[type="checkbox"], input[type="radio"] {
   font-size: 0.625rem;     /* 10px */
   font-weight: 600;
   border: 1px solid transparent;
+}
+
+/* ── ZONAS "MOSTRADOR" (rediseño 2026-07) ────────────────────
+   Bandas y ornamentos que le dan ritmo vertical a las pantallas:
+   hero cálido con marca de agua, banda de KPIs, papel de ticket. */
+.hero-band {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--hero-border);
+  border-radius: var(--radius-2xl);
+  background: var(--hero-bg);
+}
+.hero-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--hero-glow);
+}
+/* "G" gigante decorativa, cortada por el borde del hero */
+.hero-watermark {
+  position: absolute;
+  right: -40px;
+  bottom: -120px;
+  font-size: 340px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: var(--primary);
+  opacity: var(--watermark-op);
+  pointer-events: none;
+  user-select: none;
+}
+
+.kpi-band {
+  background: var(--band-bg);
+  border: 1px solid var(--band-border);
+  border-radius: var(--radius-xl);
+}
+
+/* Papel de ticket: fondo distinto + línea de corte punteada arriba */
+.ticket-paper {
+  position: relative;
+  background: var(--paper-bg);
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-xl);
+}
+.ticket-paper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  border-top: 2px dashed var(--notch-line);
+}
+/* Muescas troqueladas laterales (radial a cada lado de la línea de corte) */
+.ticket-paper::after {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  right: -9px;
+  height: 18px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle 9px at 9px 50%, var(--background) 98%, transparent) left center / 18px 18px no-repeat,
+    radial-gradient(circle 9px at 9px 50%, var(--background) 98%, transparent) right center / 18px 18px no-repeat;
 }
 
 /* ── VIEW TRANSITIONS ────────────────────────────────────────── */

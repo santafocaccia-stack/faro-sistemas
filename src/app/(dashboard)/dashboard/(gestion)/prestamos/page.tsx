@@ -114,7 +114,7 @@ export default async function PrestamosPage() {
               {prestamos.map((p) => {
                 const badge = ESTADO[p.estado] ?? ESTADO.vigente!;
                 return (
-                  <TableRow key={p.id} className="relative hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer">
+                  <TableRow key={p.id} className="relative hover:bg-foreground/[0.02] border-b border-border/40 last:border-0 cursor-pointer">
                     <TableCell className="pl-4 py-3">
                       <Link href={`/dashboard/prestamos/${p.id}`} className="block text-[13px] font-medium hover:text-primary transition-colors before:absolute before:inset-0 before:content-['']">
                         {p.clienteNombre}

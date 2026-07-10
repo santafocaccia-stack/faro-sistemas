@@ -12,9 +12,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="es"
-      className={`${GeistSans.variable} ${GeistMono.variable} dark h-full antialiased`}
+      suppressHydrationWarning
+      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
     >
       <head>
+        {/* Tema claro/oscuro — se aplica ANTES del primer paint para evitar
+            flash. Preferencia guardada > preferencia del sistema. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('gesto:theme');if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
         {/* Escala de fuente accesible — aplica el zoom guardado ANTES del primer
             paint para evitar parpadeo. Se usa `zoom` (no font-size) porque gran
             parte de la UI usa tamaños en px que no escalan con rem. */}

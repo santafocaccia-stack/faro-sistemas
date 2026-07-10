@@ -124,7 +124,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
                     key={p.id}
                     value={`producto ${p.nombre} ${p.codigo ?? ''}`}
                     onSelect={() => go(`/dashboard/productos/${p.id}`)}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm aria-selected:bg-white/[0.06] data-[selected=true]:bg-white/[0.06] transition-colors"
+                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm aria-selected:bg-foreground/[0.06] data-[selected=true]:bg-foreground/[0.06] transition-colors"
                   >
                     <div className="h-7 w-7 rounded-md bg-muted border border-border/60 flex items-center justify-center shrink-0">
                       <Package className="h-3.5 w-3.5 text-muted-foreground" />
@@ -149,7 +149,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
                     key={c.id}
                     value={`cliente ${c.razonSocial} ${c.nombreFantasia ?? ''} ${c.cuit ?? ''}`}
                     onSelect={() => go(c.habilitaCuentaCorriente ? `/dashboard/cc/${c.id}` : `/dashboard/clientes/${c.id}`)}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm aria-selected:bg-white/[0.06] data-[selected=true]:bg-white/[0.06] transition-colors"
+                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm aria-selected:bg-foreground/[0.06] data-[selected=true]:bg-foreground/[0.06] transition-colors"
                   >
                     <div className="h-7 w-7 rounded-full bg-muted border border-border/60 flex items-center justify-center shrink-0">
                       <span className="text-[10px] font-semibold uppercase text-muted-foreground">
@@ -207,7 +207,7 @@ function CommandItem({
     <Command.Item
       value={label}
       onSelect={onSelect}
-      className="flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm text-foreground aria-selected:bg-white/[0.06] data-[selected=true]:bg-white/[0.06] transition-colors"
+      className="flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm text-foreground aria-selected:bg-foreground/[0.06] data-[selected=true]:bg-foreground/[0.06] transition-colors"
     >
       <Icon className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
       <span className="flex-1">{label}</span>

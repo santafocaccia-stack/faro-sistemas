@@ -140,7 +140,7 @@ export async function ServiciosInicio({
       {/* CTA presupuestos */}
       <Link
         href="/dashboard/presupuestos"
-        className="panel p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
+        className="panel p-4 flex items-center justify-between hover:bg-foreground/[0.02] transition-colors"
       >
         <span className="text-[13px] font-medium flex items-center gap-2">
           <FileText className="h-4 w-4 text-primary" /> Ver y cobrar presupuestos

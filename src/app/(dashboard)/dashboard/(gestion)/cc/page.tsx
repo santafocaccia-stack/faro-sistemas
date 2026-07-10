@@ -112,7 +112,7 @@ export default async function CuentaCorrientePage() {
                 const limite = Number(c.limiteCredito ?? 0);
                 const excedido = limite > 0 && saldo > limite;
                 return (
-                  <TableRow key={c.id} className="relative hover:bg-white/[0.02] border-b border-border/40 last:border-0 cursor-pointer">
+                  <TableRow key={c.id} className="relative hover:bg-foreground/[0.02] border-b border-border/40 last:border-0 cursor-pointer">
                     <TableCell className="pl-4 py-2.5">
                       <Link href={`/dashboard/cc/${c.id}`} className="block before:absolute before:inset-0 before:content-['']">
                         <p className="text-[13px] font-medium">{c.razonSocial}</p>

@@ -111,15 +111,13 @@ export function DashboardClient({
       </FadeUp>
 
       {/* ── KPI Cards ─────────────────────────────────────── */}
-      <StaggerList className="grid grid-cols-3 gap-3">
+      <StaggerList className="kpi-band grid grid-cols-3 divide-x divide-border/60 p-1.5">
 
         {/* Hoy */}
         <StaggerItem>
           <div className={cn(
-            'rounded-xl border bg-card p-3.5 sm:p-4 space-y-1',
-            totalHoy > 0
-              ? 'border-primary/25 bg-primary/5'
-              : 'border-border',
+            'rounded-lg p-3.5 sm:p-4 space-y-1 h-full',
+            totalHoy > 0 && 'bg-primary/5',
           )}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
               Hoy
@@ -156,7 +154,7 @@ export function DashboardClient({
 
         {/* Semana */}
         <StaggerItem>
-          <div className="rounded-xl border border-border bg-card p-3.5 sm:p-4 space-y-1">
+          <div className="rounded-lg p-3.5 sm:p-4 space-y-1 h-full">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
               Semana
             </p>
@@ -173,10 +171,10 @@ export function DashboardClient({
         <StaggerItem>
           <Link href="/dashboard/cc" className="block group">
             <div className={cn(
-              'rounded-xl border bg-card p-3.5 sm:p-4 space-y-1 transition-colors',
+              'rounded-lg p-3.5 sm:p-4 space-y-1 h-full transition-colors',
               cobrosTotal > 0
-                ? 'border-destructive/25 bg-destructive/5 hover:border-destructive/40'
-                : 'border-border hover:border-border/80',
+                ? 'bg-destructive/5 hover:bg-destructive/10'
+                : 'hover:bg-foreground/[0.03]',
             )}>
               <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
                 Cobros
@@ -310,7 +308,7 @@ export function DashboardClient({
           {ultimasVentas.length === 0 ? (
             <EmptyVentas />
           ) : (
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="ticket-paper">
               {ultimasVentas.map((v, i) => {
                 const cfg = estadoConfig[v.estado] ?? { dot: 'bg-muted-foreground', label: v.estado };
                 const hora = horaRelativa(v.fecha);
@@ -321,7 +319,7 @@ export function DashboardClient({
                     href={`/dashboard/ventas/historial/${v.id}`}
                     className={cn(
                       'flex items-center gap-3 px-4 py-3.5',
-                      'hover:bg-white/[0.025] transition-colors',
+                      'hover:bg-foreground/[0.025] transition-colors',
                       i < ultimasVentas.length - 1 && 'border-b border-border/40',
                     )}
                   >

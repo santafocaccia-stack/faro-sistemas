@@ -89,7 +89,7 @@ export async function PrestamistaInicio({
                 <Link
                   key={p.id}
                   href={`/dashboard/prestamos/${p.id}`}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors"
+                  className="flex items-center justify-between px-4 py-3 hover:bg-foreground/[0.02] transition-colors"
                 >
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium truncate">{p.clienteNombre}</p>

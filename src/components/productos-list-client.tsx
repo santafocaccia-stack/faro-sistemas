@@ -265,7 +265,7 @@ export function ProductosListClient({ productos, categorias, gruposVariantes = [
                 <div
                   key={p.id}
                   className={cn(
-                    'relative grid grid-cols-[1fr_auto_auto_auto_auto] sm:grid-cols-[1fr_100px_100px_100px_auto] items-center gap-0 hover:bg-white/[0.02] transition-colors cursor-pointer group',
+                    'relative grid grid-cols-[1fr_auto_auto_auto_auto] sm:grid-cols-[1fr_100px_100px_100px_auto] items-center gap-0 hover:bg-foreground/[0.02] transition-colors cursor-pointer group',
                     !p.activo && 'opacity-50',
                   )}
                   onClick={() => router.push(`/dashboard/productos/${p.id}`)}
@@ -320,7 +320,7 @@ export function ProductosListClient({ productos, categorias, gruposVariantes = [
                     <div className="relative">
                       <button
                         onClick={(e) => { e.stopPropagation(); setMenuAbierto(menuAbierto === p.id ? null : p.id); }}
-                        className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                         title="Acciones"
                       >
                         <MoreHorizontal className="h-4 w-4" />
@@ -334,7 +334,7 @@ export function ProductosListClient({ productos, categorias, gruposVariantes = [
                           <div className="absolute right-0 top-8 z-50 w-44 rounded-lg border border-border bg-popover shadow-xl py-1 text-[13px]">
                             <Link
                               href={`/dashboard/productos/${p.id}`}
-                              className="flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors"
+                              className="flex items-center gap-2.5 px-3 py-2 hover:bg-foreground/5 transition-colors"
                               onClick={() => setMenuAbierto(null)}
                             >
                               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -342,7 +342,7 @@ export function ProductosListClient({ productos, categorias, gruposVariantes = [
                             </Link>
                             <Link
                               href={`/dashboard/productos/${p.id}#stock`}
-                              className="flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors"
+                              className="flex items-center gap-2.5 px-3 py-2 hover:bg-foreground/5 transition-colors"
                               onClick={() => setMenuAbierto(null)}
                             >
                               <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
@@ -350,7 +350,7 @@ export function ProductosListClient({ productos, categorias, gruposVariantes = [
                             </Link>
                             <div className="border-t border-border/50 my-1" />
                             <button
-                              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors text-left"
+                              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-foreground/5 transition-colors text-left"
                               onClick={(e) => handleToggleActivo(e, p.id, p.nombre, p.activo)}
                             >
                               <Power className={cn('h-3.5 w-3.5', p.activo ? 'text-destructive' : 'text-success')} />

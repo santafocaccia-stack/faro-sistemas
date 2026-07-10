@@ -195,7 +195,7 @@ export function MobileBottomNav({ email, plan, rol, permisos }: { email: string;
           </div>
           <button
             onClick={() => setMasOpen(false)}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -214,7 +214,7 @@ export function MobileBottomNav({ email, plan, rol, permisos }: { email: string;
                   'flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all',
                   active
                     ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-white/[0.04] hover:text-foreground',
+                    : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
                 )}
               >
                 <Icon

@@ -100,7 +100,7 @@ export default async function DetalleCCPage({ params }: Props) {
                 {movimientos.map((m) => {
                   const tipo = tipoLabel[m.tipo] ?? { label: m.tipo, className: 'bg-muted text-muted-foreground' };
                   return (
-                    <TableRow key={m.id} className="hover:bg-white/[0.02] border-b border-border/40 last:border-0">
+                    <TableRow key={m.id} className="hover:bg-foreground/[0.02] border-b border-border/40 last:border-0">
                       <TableCell className="pl-4 py-2.5 font-mono tabular-nums text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(m.fecha).toLocaleDateString('es-AR', {
                           day: '2-digit', month: '2-digit', year: '2-digit',
