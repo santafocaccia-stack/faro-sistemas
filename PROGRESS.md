@@ -5,6 +5,18 @@
 > Actualizado: 2026-07-07.
 
 ## Dónde quedamos
+- **Rediseño "Mostrador" (V2) con tema claro/oscuro — EN PROD (2026-07-10, commit 841cd81)**:
+  dirección elegida por el usuario entre 3 mockups de agentes (artifact
+  842f4301...e912). Paletas nuevas claro+oscuro en `globals.css` (hex V2 + tokens
+  de zona: `--hero-bg/--band-bg/--paper-bg/--watermark-op`...), utilidades
+  `.hero-band`/`.hero-watermark`/`.kpi-band`/`.ticket-paper`, acentos por plan en
+  ambos temas (`[data-plan]` claro + `.dark [data-plan]`), efectos theme-aware,
+  toggle en sidebar (`theme-toggle.tsx`, localStorage `gesto:theme` + sistema,
+  script anti-FOUC en layout), overlays `bg-white/*`→`bg-foreground/*` (19 files).
+  QA por JS computado en ambos temas (screenshot del browser pane inestable en
+  Windows). **Pendiente del rediseño**: pulir pantalla por pantalla (historial,
+  reportes, config), Richard decorativo en el hero, revisión tipográfica fina
+  mobile. Ojo: tras editar globals.css conviene borrar `.next` (Turbopack cachea).
 - **Auditoría integral 2026-07 COMPLETA — todo en PROD (2026-07-07)**: tareas #1-#9
   cerradas. En prod: 0014 (RLS, 27 policies, test-rls 8/8), 0015 (rol `gesto_app`
   sin bypass; password solo en env de Vercel), 0016 (índice pagos_prestamo),
