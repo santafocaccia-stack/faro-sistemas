@@ -4,6 +4,16 @@
 > El resto (stack, reglas, mapa, backlog largo) ya está en `CLAUDE.md` — NO lo releas.
 > Actualizado: 2026-07-07.
 
+## Backlog acordado con el dueño (2026-07-10) — anotado, NO empezar sin pedido
+1. **Gastos y balance**: sacar el botón "generar análisis" — el análisis IA debe
+   correr solo en una fecha determinada (cron, ej. cierre de mes).
+2. **Agenda**: rediseñar el formato (hoy poco intuitivo) + alertas que avisen
+   12 horas antes y 1 hora antes de cada evento.
+3. **Pulido pantalla por pantalla** con la lógica V2 (historial, reportes,
+   config): heredan tokens pero les falta jerarquía.
+4. **Richard decorativo** en el espacio derecho del hero (como en el mockup V2).
+5. **Tipografía mobile** afinada pantalla por pantalla.
+
 ## Dónde quedamos
 - **Rediseño "Mostrador" (V2) con tema claro/oscuro — EN PROD (2026-07-10, commit 841cd81)**:
   dirección elegida por el usuario entre 3 mockups de agentes (artifact
