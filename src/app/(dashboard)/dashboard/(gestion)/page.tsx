@@ -25,10 +25,6 @@ function getMensajeMotivacional(cantHoy: number, totalHoy: number): string {
   return `${cantHoy} ventas hoy — ¡día redondo!`;
 }
 
-function getNombre(email: string): string {
-  // "tomas@gmail.com" → "tomas"
-  return email.split('@')[0] ?? 'ahí';
-}
 
 /* ─────────────────────────────────────────────────────────────
    Page
@@ -44,8 +40,8 @@ async function DashboardContent() {
   );
   const horaAR   = ahoraAR.getHours();
   const saludo   = getSaludo(horaAR);
-  const nombre   = getNombre(session.email ?? 'usuario');
-  const primerNombre = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  // El saludo usa el nombre del negocio (Configuración), no el usuario del mail.
+  const nombre = session.tenantNombre;
 
   // Fecha larga en español
   const fechaLabel = ahoraAR.toLocaleDateString('es-AR', {
@@ -60,7 +56,7 @@ async function DashboardContent() {
     <>
       <RichardWelcome
         negocio={session.tenantNombre}
-        firstName={primerNombre}
+        firstName={null}
         plan={session.plan}
         tenantId={session.tenantId}
         yaCompletado={progreso.completado}

@@ -56,18 +56,13 @@ export default async function AtmosfericosPage({
 
   // Onboarding de Richard — solo para gestores (el operario no carga datos/clientes).
   const progreso = esGestor ? await obtenerProgresoOnboarding() : null;
-  const primerNombre = (() => {
-    const n = session.email?.split('@')[0] ?? '';
-    return n ? n.charAt(0).toUpperCase() + n.slice(1) : null;
-  })();
-
   return (
     <>
       {progreso && (
         <>
           <RichardWelcome
             negocio={session.tenantNombre}
-            firstName={primerNombre}
+            firstName={null}
             plan={session.plan}
             tenantId={session.tenantId}
             yaCompletado={progreso.completado}
