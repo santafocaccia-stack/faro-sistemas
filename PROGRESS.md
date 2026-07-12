@@ -21,6 +21,13 @@
 5. **Tipografía mobile** afinada pantalla por pantalla.
 
 ## Dónde quedamos
+- **PWA instalable — 2026-07-12**: `src/app/manifest.ts` (start_url /dashboard,
+  standalone, theme #E85D00), íconos en `public/icons/` generados con
+  `scripts/generar-iconos-pwa.mjs` (sharp; regenerar si cambia el logo),
+  apple-touch-icon + appleWebApp + themeColor por tema en `layout.tsx`.
+  Gotcha: hubo que excluir `manifest.webmanifest` del matcher de `src/proxy.ts`
+  (updateSession lo redirigía a /login y rompía la instalación). Sin service
+  worker (no hace falta para instalar; offline queda para más adelante).
 - **Rediseño "Mostrador" (V2) con tema claro/oscuro — EN PROD (2026-07-10, commit 841cd81)**:
   dirección elegida por el usuario entre 3 mockups de agentes (artifact
   842f4301...e912). Paletas nuevas claro+oscuro en `globals.css` (hex V2 + tokens

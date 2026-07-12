@@ -6,6 +6,21 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Gesto',
   description: 'Gestión comercial para PyMEs argentinas',
+  // PWA: ícono de iOS + modo app al agregar a pantalla de inicio
+  icons: { apple: '/icons/apple-touch-icon.png' },
+  appleWebApp: {
+    capable: true,
+    title: 'Gesto',
+    statusBarStyle: 'default',
+  },
+};
+
+export const viewport = {
+  // Color de la barra del navegador / splash según tema
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FAF8F5' },
+    { media: '(prefers-color-scheme: dark)', color: '#16130F' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

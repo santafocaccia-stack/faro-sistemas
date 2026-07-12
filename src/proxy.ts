@@ -12,6 +12,9 @@ export const config = {
     // oauth callback con su flujo). Sin esta exclusión, updateSession
     // redirige los requests sin sesión a /login y rompe el webhook de
     // Mercado Pago (las suscripciones no se activan) y el cron semanal.
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // manifest.webmanifest: el navegador lo pide sin cookies de sesión al
+    // instalar la PWA; si updateSession lo redirige a /login, la app deja
+    // de ser instalable.
+    '/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
