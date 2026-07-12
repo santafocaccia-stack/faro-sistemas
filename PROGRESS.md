@@ -21,6 +21,15 @@
 5. **Tipografía mobile** afinada pantalla por pantalla.
 
 ## Dónde quedamos
+- **Fix RLS `presupuestos_lineas` — 2026-07-12 (commit ddb05a6, prod)**: crear
+  boleta/presupuesto en plan servicios tiraba "Server Components render error".
+  Causa: la tabla tenía RLS on pero SIN policy (no tiene `tenant_id`, quedó fuera
+  del loop de `0014_rls.sql`) → bajo gesto_app todo INSERT se denegaba. Fix:
+  `0018_rls_presupuestos_lineas.sql` agrega `tenant_id` + policy estándar
+  (aplicada a las 2 DBs), y se setea `tenantId` en los 4 inserts de
+  presupuestosLineas. Verificado por equivalencia con `ventas_lineas` (policy
+  idéntica, que la app usa OK bajo gesto_app). OJO orden: la migración vuelve
+  `tenant_id` NOT NULL, así que el código que lo setea DEBE deployarse junto.
 - **PWA instalable — 2026-07-12**: `src/app/manifest.ts` (start_url /dashboard,
   standalone, theme #E85D00), íconos en `public/icons/` generados con
   `scripts/generar-iconos-pwa.mjs` (sharp; regenerar si cambia el logo),
