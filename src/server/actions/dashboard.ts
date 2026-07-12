@@ -51,7 +51,9 @@ export async function obtenerProgresoOnboarding(): Promise<ProgresoOnboarding & 
 
   const t = tenant[0];
   const progreso: ProgresoOnboarding = {
-    datosNegocio:        !!(t?.cuit && t?.direccion && t?.telefono),
+    // El CUIT es opcional (muchos negocios chicos no lo cargan): alcanza con
+    // dirección y teléfono para dar por completo el paso.
+    datosNegocio:        !!(t?.direccion && t?.telefono),
     clientes:            existe(clientesRows),
     productos:           existe(productosRows),
     ventas:              existe(ventasRows),

@@ -54,7 +54,7 @@ export type OnboardingPlan = {
 const PASO_DATOS: PasoOnboarding = {
   key: 'datosNegocio',
   label: 'Completar los datos del negocio',
-  descripcion: 'CUIT, dirección y teléfono para tus comprobantes',
+  descripcion: 'Dirección y teléfono para tus comprobantes (el CUIT es opcional)',
   href: '/dashboard/config',
   icon: 'config',
 };

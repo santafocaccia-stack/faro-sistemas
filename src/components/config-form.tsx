@@ -95,7 +95,7 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="cuit" className={labelCls}>CUIT</label>
+          <label htmlFor="cuit" className={labelCls}>CUIT <span className="opacity-60 normal-case">(opcional)</span></label>
           <Input
             id="cuit"
             value={cuit}
