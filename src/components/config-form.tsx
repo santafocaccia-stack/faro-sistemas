@@ -73,7 +73,7 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
   }
 
   const inputCls = 'h-9 bg-background/40 border-border/60 text-sm';
-  const labelCls = 'text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70';
+  const labelCls = 'field-label';
   const status = statusBadge[tenant.status] ?? { label: tenant.status, className: 'bg-muted text-muted-foreground' };
 
   return (
@@ -283,10 +283,10 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+    <div className="panel p-5 space-y-4">
       <div className="flex items-center gap-2.5">
-        <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Icon className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+        <div className="icon-chip h-7 w-7">
+          <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
         </div>
         <div>
           <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
@@ -322,7 +322,7 @@ function CanalRow({
 function InfoCell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">{label}</p>
+      <p className="field-label mb-1">{label}</p>
       {children}
     </div>
   );
@@ -333,10 +333,10 @@ function MPSection({ tenant, mpStatus }: { tenant: Tenant; mpStatus?: string }) 
   const conectado = !!tenant.mpNegocioAccessToken;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-4 mt-4">
+    <div className="panel p-5 space-y-4 mt-4">
       <div className="flex items-center gap-2.5">
-        <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Wallet className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+        <div className="icon-chip h-7 w-7">
+          <Wallet className="h-3.5 w-3.5" strokeWidth={1.75} />
         </div>
         <div>
           <h2 className="text-sm font-semibold tracking-tight">Mercado Pago</h2>

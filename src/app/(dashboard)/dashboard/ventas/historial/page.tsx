@@ -96,15 +96,15 @@ export default async function HistorialPage({ searchParams }: Props) {
       <form method="get" action="/dashboard/ventas/historial" className="panel p-3 sm:p-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="canal" value={canal} />
         <div className="space-y-1">
-          <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 block">Desde</label>
+          <label className="field-label block">Desde</label>
           <input type="date" name="desde" defaultValue={filtros.desde ?? ''} className="h-9 bg-background border border-border rounded-md px-2.5 text-sm" />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 block">Hasta</label>
+          <label className="field-label block">Hasta</label>
           <input type="date" name="hasta" defaultValue={filtros.hasta ?? ''} className="h-9 bg-background border border-border rounded-md px-2.5 text-sm" />
         </div>
         <div className="space-y-1 min-w-[160px]">
-          <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 block">Cliente</label>
+          <label className="field-label block">Cliente</label>
           <select name="cliente" defaultValue={filtros.clienteId ?? ''} className="h-9 bg-background border border-border rounded-md px-2.5 text-sm w-full">
             <option value="">Todos</option>
             {clientes.map((c) => (
@@ -113,7 +113,7 @@ export default async function HistorialPage({ searchParams }: Props) {
           </select>
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 block">Estado</label>
+          <label className="field-label block">Estado</label>
           <select name="estado" defaultValue={filtros.estado ?? ''} className="h-9 bg-background border border-border rounded-md px-2.5 text-sm capitalize">
             <option value="">Todos</option>
             {ESTADOS.map((e) => (
@@ -160,7 +160,9 @@ export default async function HistorialPage({ searchParams }: Props) {
         )
       ) : (
         <>
-          <div className="panel overflow-hidden">
+          {/* Ticket de ventas — mismo lenguaje que "últimas ventas" del inicio */}
+          <div className="ticket-paper">
+            <div className="overflow-hidden rounded-[inherit]">
             {/* Mobile: tarjetas */}
             <ul className="md:hidden divide-y divide-border/50 stagger">
               {rows.map(({ venta, clienteNombre }) => {
@@ -235,6 +237,7 @@ export default async function HistorialPage({ searchParams }: Props) {
                 })}
               </TableBody>
             </Table>
+            </div>
             </div>
           </div>
 

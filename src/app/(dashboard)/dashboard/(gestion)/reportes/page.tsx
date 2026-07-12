@@ -105,14 +105,14 @@ export default async function ReportesPage({ searchParams }: Props) {
         <LineChart serie={serie.serie} comparacion={serie.comparacion} />
       </div>
 
-      {/* KPIs por plan */}
+      {/* KPIs por plan — banda unificada, misma lógica que el inicio */}
       {kpis.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="kpi-band grid grid-cols-2 lg:grid-cols-4 lg:divide-x divide-border/60 p-1.5">
           {kpis.map((k, i) => (
-            <div key={k.label} className={`panel p-4 ${i === 0 ? 'stat-accent' : ''}`}>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground/70">{k.label}</p>
-              <p className="text-xl font-semibold font-mono tabular-nums mt-1">{k.valor}</p>
-              {k.sub && <p className="text-[11px] text-muted-foreground mt-0.5">{k.sub}</p>}
+            <div key={k.label} className={`rounded-lg p-3.5 sm:p-4 space-y-1 h-full ${i === 0 ? 'bg-primary/5' : ''}`}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">{k.label}</p>
+              <p className={`font-mono font-bold tabular-nums leading-tight text-[18px] sm:text-[22px] ${i === 0 ? 'text-primary' : ''}`}>{k.valor}</p>
+              {k.sub && <p className="text-[11px] text-muted-foreground">{k.sub}</p>}
             </div>
           ))}
         </div>
