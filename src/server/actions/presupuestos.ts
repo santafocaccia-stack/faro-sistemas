@@ -205,6 +205,7 @@ export async function crearPresupuesto(input: PresupuestoInput) {
     if (input.lineas.length > 0) {
       await tx.insert(presupuestosLineas).values(
         input.lineas.map((l) => ({
+          tenantId,
           presupuestoId:  inserted.id,
           productoId:     l.productoId || null,
           descripcion:    l.descripcion,
@@ -265,6 +266,7 @@ export async function crearBoleta(input: BoletaInput) {
     if (input.lineas.length > 0) {
       await tx.insert(presupuestosLineas).values(
         input.lineas.map((l) => ({
+          tenantId,
           presupuestoId:  inserted.id,
           productoId:     l.productoId || null,
           descripcion:    l.descripcion,
@@ -323,6 +325,7 @@ export async function editarPresupuesto(id: string, input: PresupuestoInput) {
     if (input.lineas.length > 0) {
       await tx.insert(presupuestosLineas).values(
         input.lineas.map((l) => ({
+          tenantId,
           presupuestoId:  id,
           productoId:     l.productoId || null,
           descripcion:    l.descripcion,
@@ -558,6 +561,7 @@ export async function usarPlantilla(
       if (datos.lineas.length > 0) {
         await tx.insert(presupuestosLineas).values(
           datos.lineas.map((l) => ({
+            tenantId,
             presupuestoId:  inserted.id,
             productoId:     l.productoId || null,
             descripcion:    l.descripcion,

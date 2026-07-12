@@ -81,6 +81,12 @@ export const presupuestos = pgTable(
 
 export const presupuestosLineas = pgTable('presupuestos_lineas', {
   id: uuid('id').defaultRandom().primaryKey(),
+  // tenant_id para que aplique la policy RLS estándar (igual que ventas_lineas
+  // y pedidos_lineas). Sin esta columna la tabla quedaba fuera del loop de
+  // 0014_rls.sql: RLS on pero sin policy → gesto_app no podía insertar líneas.
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
   presupuestoId: uuid('presupuesto_id')
     .notNull()
     .references(() => presupuestos.id, { onDelete: 'cascade' }),
