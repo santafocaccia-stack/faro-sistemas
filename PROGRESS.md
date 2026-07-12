@@ -9,8 +9,14 @@
    correr solo en una fecha determinada (cron, ej. cierre de mes).
 2. **Agenda**: rediseñar el formato (hoy poco intuitivo) + alertas que avisen
    12 horas antes y 1 hora antes de cada evento.
-3. **Pulido pantalla por pantalla** con la lógica V2 (historial, reportes,
-   config): heredan tokens pero les falta jerarquía.
+3. ~~**Pulido pantalla por pantalla** (historial, reportes, config)~~ — HECHO
+   y en prod 2026-07-12 (commit e3491cb): historial→`.ticket-paper` (wrapper
+   interno `overflow-hidden rounded-[inherit]` para no cortar las muescas),
+   reportes→`.kpi-band` con divide-x como el inicio (1er KPI en primary),
+   config→`.panel`+`.icon-chip`+`.field-label`. QA con demo-market@gesto.app
+   (dev; datos vía `npx tsx scripts/seed-market-rico.ts` con DATABASE_URL de
+   `.env.development.local` — ojo: `.env.local` tiene la URL directa vieja que
+   ya no resuelve; el server usa `.env.development.local` que la pisa).
 4. **Richard decorativo** en el espacio derecho del hero (como en el mockup V2).
 5. **Tipografía mobile** afinada pantalla por pantalla.
 
