@@ -2,7 +2,7 @@
 
 SaaS multi-tenant de gestión comercial para PyMEs argentinas (kioscos, carnicerías,
 comida, servicios). Integra mayorista + minorista en un sistema. Deploy en Vercel:
-`faro-sistemas-gold.vercel.app`.
+`faro-sistemas.vercel.app`.
 
 ## Stack
 - Next.js 15 App Router, TS estricto (sin `any`), Turbopack

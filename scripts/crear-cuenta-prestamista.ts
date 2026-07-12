@@ -255,7 +255,7 @@ async function main() {
   console.log('\n✨ Listo. Cuenta demo del plan PRESTAMISTA:\n');
   console.log(`  📧 ${EMAIL}`);
   console.log(`  🔑 ${PASSWORD}`);
-  console.log(`  🌐 https://faro-sistemas-gold.vercel.app/login\n`);
+  console.log(`  🌐 https://faro-sistemas.vercel.app/login\n`);
 }
 
 main().catch((e) => {

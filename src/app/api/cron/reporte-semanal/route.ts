@@ -153,7 +153,7 @@ export async function GET(req: Request) {
         totalCantidad: Number(p.totalCantidad),
       }));
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://faro-sistemas-gold.vercel.app';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://faro-sistemas.vercel.app';
 
     const html = buildReporteSemanalHtml({
       negocioNombre:  tenant.nombre,

@@ -106,7 +106,7 @@ async function main() {
     console.log(`  📧 ${c.email}`);
     console.log(`  🔑 ${PASSWORD}\n`);
   }
-  console.log('  🌐 https://faro-sistemas-gold.vercel.app/login');
+  console.log('  🌐 https://faro-sistemas.vercel.app/login');
   console.log(`  📅 Vencen: ${trialEnd.toLocaleDateString('es-AR')}`);
 }
 

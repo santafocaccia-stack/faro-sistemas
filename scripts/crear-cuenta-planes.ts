@@ -89,7 +89,7 @@ async function main() {
   console.log('\n✨ ¡Listo! Credenciales:\n');
   console.log(`   📧 Email:    ${EMAIL}`);
   console.log(`   🔑 Password: ${PASSWORD}`);
-  console.log(`   🌐 URL:      https://faro-sistemas-gold.vercel.app/login`);
+  console.log(`   🌐 URL:      https://faro-sistemas.vercel.app/login`);
   console.log('\n   Al ingresar verá automáticamente la pantalla de planes.');
 }
 

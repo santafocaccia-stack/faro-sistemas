@@ -34,7 +34,7 @@ El objetivo es ser una alternativa simple, mobile-first y asequible a sistemas c
 | Base de datos | **PostgreSQL** via **Supabase** |
 | ORM | **Drizzle ORM** (type-safe, sin Prisma) |
 | Auth | **Supabase Auth** (email/password, SSR con cookies) |
-| Deploy | **Vercel** (producción: `https://faro-sistemas-gold.vercel.app`) |
+| Deploy | **Vercel** (producción: `https://faro-sistemas.vercel.app`) |
 | Pagos suscripción | **Mercado Pago Preapproval API** (Faro cobra a los negocios) |
 | Pagos del negocio | **Mercado Pago OAuth** (el negocio cobra a sus clientes via QR/tarjeta) |
 | Tipo de cambio | `dolarapi.com/v1/dolares/bolsa` (MEP, revalidado cada hora) |
@@ -356,7 +356,7 @@ SUPABASE_SECRET_KEY=            # service role, solo server
 DATABASE_URL=                   # postgres:// directo para Drizzle
 
 # App
-NEXT_PUBLIC_APP_URL=https://faro-sistemas-gold.vercel.app
+NEXT_PUBLIC_APP_URL=https://faro-sistemas.vercel.app
 
 # Mercado Pago — suscripciones (Faro cobra a los negocios)
 MP_ACCESS_TOKEN=

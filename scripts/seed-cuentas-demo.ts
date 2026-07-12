@@ -462,7 +462,7 @@ async function main() {
   console.log('\n' + '='.repeat(55));
   console.log('\n✨ ¡Listo! Las 4 cuentas de prueba están creadas:\n');
 
-  const url = 'https://faro-sistemas-gold.vercel.app/login';
+  const url = 'https://faro-sistemas.vercel.app/login';
   for (const c of CUENTAS) {
     console.log(`  🏷️  ${c.plan.toUpperCase().padEnd(10)} — ${c.negocioNombre}`);
     console.log(`      📧 ${c.email}`);

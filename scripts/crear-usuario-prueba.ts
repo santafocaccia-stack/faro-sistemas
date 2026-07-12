@@ -226,7 +226,7 @@ async function main() {
   console.log('\n✨ ¡Listo! Usuario de prueba creado:\n');
   console.log(`   📧 Email:    ${DEMO_EMAIL}`);
   console.log(`   🔑 Password: ${DEMO_PASSWORD}`);
-  console.log(`   🌐 URL:      https://faro-sistemas-gold.vercel.app/login\n`);
+  console.log(`   🌐 URL:      https://faro-sistemas.vercel.app/login\n`);
 }
 
 main().catch((e) => {

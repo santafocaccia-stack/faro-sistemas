@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-05-31
 **Rama:** `feat/pre-lanzamiento`
-**Entorno auditado:** `faro-sistemas-gold.vercel.app` (código deployado) + código local
+**Entorno auditado:** `faro-sistemas.vercel.app` (código deployado) + código local
 **Alcance:** auditoría de arquitectura, seguridad (OWASP/STRIDE), QA en vivo de flujos críticos y remediación.
 
 ---
