@@ -21,6 +21,16 @@
 5. **Tipografía mobile** afinada pantalla por pantalla.
 
 ## Dónde quedamos
+- **Fugas de plan (esquema de revisión) — 2026-07-12, prod**: se armó un esquema
+  reutilizable (6 ramas) para detectar cosas de otros rubros mostradas/accesibles
+  a todos los planes. Fixes: (1) acceso — `boletas/layout` y `cocina/page` no
+  gateaban por capacidad → agregado `requireCapacidad` (un owner de otro plan las
+  abría por URL porque los permisos owner=todos); (2) nav — `command-palette` era
+  ciego al plan → ahora deriva de `NAV_POR_PLAN[plan]`+`planTiene`; (3) placeholders
+  — "Carnicería El Toro" fijo en config-form y onboarding → `ejemplosPlan(plan).negocio`
+  (nuevo campo). Verificado en dev con demo-market. PENDIENTE MENOR: `gastos/page`
+  no tiene guard de permiso propio (capacidad universal, no es fuga de plan, pero
+  le falta `requirePermiso('ver_reportes')` por consistencia).
 - **Fix RLS `presupuestos_lineas` — 2026-07-12 (commit ddb05a6, prod)**: crear
   boleta/presupuesto en plan servicios tiraba "Server Components render error".
   Causa: la tabla tenía RLS on pero SIN policy (no tiene `tenant_id`, quedó fuera
