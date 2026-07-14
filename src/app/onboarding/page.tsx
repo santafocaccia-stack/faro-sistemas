@@ -5,7 +5,7 @@ import { crearTenant } from '@/server/actions/tenants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { PLANES_ARRAY, type PlanId } from '@/lib/planes';
+import { PLANES_ARRAY, ejemplosPlan, type PlanId } from '@/lib/planes';
 import { Check, Store, ShoppingCart, ChefHat, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -232,7 +232,7 @@ export default function OnboardingPage() {
               </label>
               <Input
                 id="nombre"
-                placeholder="Ej: Carnicería El Gaucho"
+                placeholder={`Ej: ${ejemplosPlan(plan).negocio}`}
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 required

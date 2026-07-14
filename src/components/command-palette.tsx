@@ -4,33 +4,47 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
 import {
-  ShoppingCart, Package, Users, BookOpen, History, BarChart3,
-  Settings, LayoutDashboard, Plus, Search, ArrowRight, Loader2,
+  Package, BookOpen, FileText, Landmark,
+  Settings, Plus, Search, ArrowRight, Loader2,
 } from 'lucide-react';
 import { listarProductos } from '@/server/actions/productos';
 import { listarClientes } from '@/server/actions/clientes';
 import type { Producto, Cliente } from '@/server/db/schema';
 import { formatARS } from '@/lib/utils';
+import { planTiene, type PlanId } from '@/lib/planes';
+import { NAV_POR_PLAN } from '@/lib/nav';
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  plan: PlanId;
 };
 
-export function CommandPalette({ open, onOpenChange }: Props) {
+export function CommandPalette({ open, onOpenChange, plan }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [productos, setProductos] = useState<Producto[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [cargando, setCargando] = useState(false);
 
-  // Cargar datos solo la primera vez que se abre el palette
+  // Qué capacidades aplican al plan (fuente de verdad: CAPACIDADES_POR_PLAN).
+  const tieneProductos = planTiene(plan, 'productos');
+  const tieneClientes = planTiene(plan, 'clientes');
+  const tienePos = planTiene(plan, 'pos');
+  const tienePresupuestos = planTiene(plan, 'presupuestos');
+  const tienePrestamos = planTiene(plan, 'prestamos');
+  const tieneCC = planTiene(plan, 'cuentaCorriente');
+
+  // Ítems de navegación del plan (mismos que el sidebar) + Configuración.
+  const navItems = [...NAV_POR_PLAN[plan].primary, ...NAV_POR_PLAN[plan].secondary];
+
+  // Cargar datos solo la primera vez que se abre el palette, y solo lo que el plan usa.
   useEffect(() => {
-    if (!open || productos.length > 0) return;
+    if (!open || cargando || productos.length > 0 || clientes.length > 0) return;
     setCargando(true);
     Promise.all([
-      listarProductos({ soloActivos: true }),
-      listarClientes(),
+      tieneProductos ? listarProductos({ soloActivos: true }) : Promise.resolve([]),
+      tieneClientes ? listarClientes() : Promise.resolve([]),
     ])
       .then(([prods, clients]) => {
         setProductos(prods);
@@ -96,24 +110,22 @@ export function CommandPalette({ open, onOpenChange }: Props) {
               Sin resultados.
             </Command.Empty>
 
-            {/* Acciones rápidas */}
+            {/* Acciones rápidas — según lo que el plan puede hacer */}
             <Command.Group heading="Acciones rápidas" className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/50 font-medium px-2 py-1.5">
-              <CommandItem icon={Plus} label="Nueva venta"     hint="POS" onSelect={() => go('/dashboard/ventas')} />
-              <CommandItem icon={Plus} label="Nuevo producto"  onSelect={() => go('/dashboard/productos/nuevo')} />
-              <CommandItem icon={Plus} label="Nuevo cliente"   onSelect={() => go('/dashboard/clientes/nuevo')} />
-              <CommandItem icon={BookOpen} label="Registrar pago" hint="Cuenta corriente" onSelect={() => go('/dashboard/cc')} />
+              {tienePos && <CommandItem icon={Plus} label="Nueva venta" hint="POS" onSelect={() => go('/dashboard/ventas')} />}
+              {tieneProductos && <CommandItem icon={Plus} label="Nuevo producto" onSelect={() => go('/dashboard/productos/nuevo')} />}
+              {tienePresupuestos && <CommandItem icon={FileText} label="Nuevo presupuesto" onSelect={() => go('/dashboard/presupuestos/nuevo')} />}
+              {tienePrestamos && <CommandItem icon={Landmark} label="Nuevo préstamo" onSelect={() => go('/dashboard/prestamos/nuevo')} />}
+              {tieneClientes && <CommandItem icon={Plus} label="Nuevo cliente" onSelect={() => go('/dashboard/clientes/nuevo')} />}
+              {tieneCC && <CommandItem icon={BookOpen} label="Registrar pago" hint="Cuenta corriente" onSelect={() => go('/dashboard/cc')} />}
             </Command.Group>
 
-            {/* Navegación */}
+            {/* Navegación — los mismos ítems que el sidebar del plan */}
             <Command.Group heading="Navegación" className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground/50 font-medium px-2 py-1.5 mt-2">
-              <CommandItem icon={LayoutDashboard} label="Inicio"          onSelect={() => go('/dashboard')} />
-              <CommandItem icon={ShoppingCart}    label="Punto de venta"  onSelect={() => go('/dashboard/ventas')} />
-              <CommandItem icon={History}         label="Historial"       onSelect={() => go('/dashboard/ventas/historial')} />
-              <CommandItem icon={Package}         label="Productos"       onSelect={() => go('/dashboard/productos')} />
-              <CommandItem icon={Users}           label="Clientes"        onSelect={() => go('/dashboard/clientes')} />
-              <CommandItem icon={BookOpen}        label="Cuenta corriente" onSelect={() => go('/dashboard/cc')} />
-              <CommandItem icon={BarChart3}       label="Reportes"        onSelect={() => go('/dashboard/reportes')} />
-              <CommandItem icon={Settings}        label="Configuración"   onSelect={() => go('/dashboard/config')} />
+              {navItems.map((item) => (
+                <CommandItem key={item.href} icon={item.icon} label={item.label} onSelect={() => go(item.href)} />
+              ))}
+              <CommandItem icon={Settings} label="Configuración" onSelect={() => go('/dashboard/config')} />
             </Command.Group>
 
             {/* Productos */}
@@ -148,7 +160,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
                   <Command.Item
                     key={c.id}
                     value={`cliente ${c.razonSocial} ${c.nombreFantasia ?? ''} ${c.cuit ?? ''}`}
-                    onSelect={() => go(c.habilitaCuentaCorriente ? `/dashboard/cc/${c.id}` : `/dashboard/clientes/${c.id}`)}
+                    onSelect={() => go(c.habilitaCuentaCorriente && tieneCC ? `/dashboard/cc/${c.id}` : `/dashboard/clientes/${c.id}`)}
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm aria-selected:bg-foreground/[0.06] data-[selected=true]:bg-foreground/[0.06] transition-colors"
                   >
                     <div className="h-7 w-7 rounded-full bg-muted border border-border/60 flex items-center justify-center shrink-0">

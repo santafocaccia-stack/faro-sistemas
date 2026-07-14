@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Building2, ShoppingBag, CreditCard, Wallet, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
-import { planTiene } from '@/lib/planes';
+import { planTiene, ejemplosPlan } from '@/lib/planes';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Input } from '@/components/ui/input';
@@ -88,7 +88,7 @@ export function ConfigForm({ tenant, mpStatus }: Props) {
             id="nombre"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            placeholder="Carnicería El Toro"
+            placeholder={ejemplosPlan(tenant.plan).negocio}
             required
             className={inputCls}
           />

@@ -145,13 +145,13 @@ export function tenantTiene(
  * `producto`: nombre de producto/ítem · `categoria`: nombre de categoría ·
  * `lineaSuelta`: ítem vendido sin estar en el catálogo (POS línea suelta).
  */
-export const EJEMPLOS_PLAN: Record<PlanId, { producto: string; categoria: string; lineaSuelta: string }> = {
-  servicios:    { producto: 'Service de aire split',          categoria: 'Mano de obra', lineaSuelta: 'Ej: Visita técnica' },
-  market:       { producto: 'Alfajor Guaymallén - Chocolate', categoria: 'Golosinas',    lineaSuelta: 'Ej: Caramelos sueltos' },
-  food:         { producto: 'Hamburguesa completa',           categoria: 'Hamburguesas', lineaSuelta: 'Ej: Adicional de queso' },
-  balanza:      { producto: 'Bola de lomo',                   categoria: 'Carnes rojas', lineaSuelta: 'Ej: Bola de lomo 0.350 kg' },
-  prestamista:  { producto: 'Producto o servicio',            categoria: 'Categoría',    lineaSuelta: 'Ej: Ítem' },
-  atmosfericos: { producto: 'Servicio de pozo',               categoria: 'Zona',         lineaSuelta: 'Ej: Visita extra' },
+export const EJEMPLOS_PLAN: Record<PlanId, { producto: string; categoria: string; lineaSuelta: string; negocio: string }> = {
+  servicios:    { producto: 'Service de aire split',          categoria: 'Mano de obra', lineaSuelta: 'Ej: Visita técnica',       negocio: 'Juan Pérez - Refrigeración' },
+  market:       { producto: 'Alfajor Guaymallén - Chocolate', categoria: 'Golosinas',    lineaSuelta: 'Ej: Caramelos sueltos',    negocio: 'Kiosco Don José' },
+  food:         { producto: 'Hamburguesa completa',           categoria: 'Hamburguesas', lineaSuelta: 'Ej: Adicional de queso',   negocio: 'Burger House' },
+  balanza:      { producto: 'Bola de lomo',                   categoria: 'Carnes rojas', lineaSuelta: 'Ej: Bola de lomo 0.350 kg', negocio: 'Carnicería El Toro' },
+  prestamista:  { producto: 'Producto o servicio',            categoria: 'Categoría',    lineaSuelta: 'Ej: Ítem',                 negocio: 'Créditos del Sur' },
+  atmosfericos: { producto: 'Servicio de pozo',               categoria: 'Zona',         lineaSuelta: 'Ej: Visita extra',         negocio: 'Atmosféricos del Sur' },
 };
 
 /** Ejemplos de placeholders del plan (default: market si no se reconoce). */

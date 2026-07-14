@@ -79,6 +79,7 @@ export function DashboardShell({ email, plan, rol, permisos, tenantNombre, child
         <CommandPalette
           open={openCmd}
           onOpenChange={setOpenCmd}
+          plan={plan}
         />
       )}
       <Toaster />

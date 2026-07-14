@@ -1,16 +1,16 @@
 import { UtensilsCrossed } from 'lucide-react';
 import Link from 'next/link';
-import { requireSession } from '@/server/auth/session';
+import { requireCapacidad } from '@/server/auth/plan-guard';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 
 /**
  * Pantalla de cocina (KDS) — próximamente.
- * El ítem aparece deshabilitado en la nav ("pronto"), pero la URL directa
- * antes daba 404; esta página lo explica con la voz de la casa.
+ * El ítem aparece deshabilitado en la nav ("pronto") solo en el plan food;
+ * el guard de capacidad hace que otros planes reciban 404 (no es su vertical).
  */
 export default async function CocinaPage() {
-  await requireSession();
+  await requireCapacidad('cocina');
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">
