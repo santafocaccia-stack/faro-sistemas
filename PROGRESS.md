@@ -177,6 +177,19 @@ Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
   que un abogado revise los textos (sobre todo tratamiento de datos de terceros y AFIP).
 - Seguridad: verificar firma webhook MP, rate limiting en auth, tests de venta/producto.
 
+## Checklist de lanzamiento (7 puntos, 2026-07-17)
+1. **Monitoreo de errores** — Sentry YA configurado en repo (client/server/edge + CSP). FALTA: verificar `SENTRY_DSN` en Vercel prod y que lleguen eventos.
+2. **Soporte visible** — botón de WhatsApp dentro del dashboard. NO HECHO.
+3. **Legal** — ✓ HECHO (páginas + checkbox). Falta completar placeholders (acción del usuario).
+4. **Backups verificados** — hacer un simulacro de restore de Supabase antes de clientes reales. NO HECHO.
+5. **Cobro real punta a punta** — probar suscripción MP completa (pago, vencimiento, fallo, cambio de plan). Bloqueado por CUIT/Mobbex (ver arriba).
+6. **Analytics de abandono** — Posthog u similar para ver dónde se caen los registros. NO HECHO.
+7. **Dominio propio** — `gesto.com.ar` o similar (acción del usuario; mejora confianza, PWA y emails).
+
+Estrategia acordada: **beta cerrada de 5-10 conocidos** (2-3 del rubro servicios) antes del
+lanzamiento abierto. Pre-beta: agente QA autónomo (`qa/agente/`) recorriendo el plan servicios
+con personas por rubro.
+
 ## Cómo seguir barato en el chat nuevo
 - Leer SOLO este archivo + los 2-3 archivos de código que vas a tocar (Grep, no Read full).
 - No releer CLAUDE.md / AGENTS.md / ARCHITECTURE.md (ya cargan solos).
