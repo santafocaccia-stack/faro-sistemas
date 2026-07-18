@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Plus, Receipt, ChevronRight } from 'lucide-react';
 import { listarBoletas } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
+import { formatFechaAR } from '@/lib/fechas';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import {
@@ -50,9 +51,7 @@ export default async function BoletasPage() {
           {/* Mobile: tarjetas */}
           <ul className="md:hidden divide-y divide-border/50 stagger">
             {boletas.map((b) => {
-              const fecha = new Date(b.cobradoAt ?? new Date()).toLocaleDateString('es-AR', {
-                day: '2-digit', month: '2-digit', year: '2-digit',
-              });
+              const fecha = formatFechaAR(b.cobradoAt ?? new Date(), { day: '2-digit', month: '2-digit', year: '2-digit' });
               return (
                 <li key={b.id}>
                   <Link href={`/dashboard/presupuestos/${b.id}`} className="list-row flex items-center gap-3 px-4 py-3">
@@ -84,9 +83,7 @@ export default async function BoletasPage() {
               </TableHeader>
               <TableBody>
                 {boletas.map((b) => {
-                  const fecha = new Date(b.cobradoAt ?? new Date()).toLocaleDateString('es-AR', {
-                    day: '2-digit', month: '2-digit', year: '2-digit',
-                  });
+                  const fecha = formatFechaAR(b.cobradoAt ?? new Date(), { day: '2-digit', month: '2-digit', year: '2-digit' });
                   return (
                     <TableRow
                       key={b.id}

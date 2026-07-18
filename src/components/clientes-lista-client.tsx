@@ -18,9 +18,11 @@ const tipoLabel: Record<string, string> = {
 export function ClientesListaClient({
   clientes,
   esAtmos,
+  esServicios = false,
 }: {
   clientes: Cliente[];
   esAtmos: boolean;
+  esServicios?: boolean;
 }) {
   const [q, setQ] = useState('');
 
@@ -91,8 +93,7 @@ export function ClientesListaClient({
                         </div>
                       ) : (
                         <p className="text-xs text-muted-foreground truncate">
-                          {tipoLabel[c.tipo]}
-                          {c.telefono ? ` · ${c.telefono}` : ''}
+                          {esServicios ? (c.telefono ?? '') : `${tipoLabel[c.tipo]}${c.telefono ? ` · ${c.telefono}` : ''}`}
                         </p>
                       )}
                     </div>
@@ -166,7 +167,7 @@ export function ClientesListaClient({
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b border-border/60">
                     <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 pl-4">Razón social</TableHead>
-                    <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Tipo</TableHead>
+                    {!esServicios && <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Tipo</TableHead>}
                     <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Contacto</TableHead>
                     <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">Cond. IVA</TableHead>
                     <TableHead className="h-10 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Saldo</TableHead>
@@ -186,11 +187,13 @@ export function ClientesListaClient({
                             )}
                           </Link>
                         </TableCell>
+                        {!esServicios && (
                         <TableCell className="py-2.5">
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border border-border bg-muted text-muted-foreground">
                             {tipoLabel[c.tipo]}
                           </span>
                         </TableCell>
+                        )}
                         <TableCell className="py-2.5 text-xs text-muted-foreground">
                           {c.telefono ?? c.email ?? <span className="text-muted-foreground/40">—</span>}
                         </TableCell>

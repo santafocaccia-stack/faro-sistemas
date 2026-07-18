@@ -55,7 +55,7 @@ export default async function ClientesPage() {
           </Link>
         </div>
       ) : (
-        <ClientesListaClient clientes={clientes} esAtmos={esAtmos} />
+        <ClientesListaClient clientes={clientes} esAtmos={esAtmos} esServicios={session.plan === 'servicios'} />
       )}
     </div>
   );

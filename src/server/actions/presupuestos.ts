@@ -262,6 +262,7 @@ export async function crearBoleta(input: BoletaInput) {
         estado:        'cobrado',
         cobradoAt:     new Date(),
         metodoCobro:   input.metodoPago,
+        montoCobrado:  total.toFixed(2),
         notas:         input.notas || null,
         subtotal:      subtotal.toFixed(2),
         descuento:     descuento.toFixed(2),
@@ -270,6 +271,16 @@ export async function crearBoleta(input: BoletaInput) {
       .returning({ id: presupuestos.id });
 
     if (!inserted) throw new Error('Error al crear la boleta');
+
+    // El pago también vive en presupuestos_cobros: reportes y "cobrado del mes"
+    // suman desde ahí (una boleta nace cobrada por el total).
+    await tx.insert(presupuestosCobros).values({
+      tenantId,
+      presupuestoId: inserted.id,
+      monto: total.toFixed(2),
+      metodo: input.metodoPago,
+      cobradoAt: new Date(),
+    });
 
     if (input.lineas.length > 0) {
       await tx.insert(presupuestosLineas).values(

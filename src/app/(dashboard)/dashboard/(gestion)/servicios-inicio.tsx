@@ -26,8 +26,12 @@ export async function ServiciosInicio({
     { label: 'Presupuestos abiertos', value: String(resumen.abiertos), sub: 'borradores / enviados' },
   ];
 
+  // timeZone explícita: el server corre en UTC y mostraba la hora corrida (+3)
   const fmtHora = (d: Date | string) =>
-    new Date(d).toLocaleString('es-AR', { weekday: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    new Date(d).toLocaleString('es-AR', {
+      weekday: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit',
+      timeZone: 'America/Argentina/Buenos_Aires',
+    });
   const fmtFecha = (s: string) =>
     new Date(s + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 
