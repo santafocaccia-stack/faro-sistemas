@@ -31,6 +31,19 @@ export function sumarMeses(base: Date, n: number): Date {
  * local con `new Date('YYYY-MM-DDT00:00:00')`): así el conteo de días entre
  * vencimiento y hoy es entero y no se corre por la diferencia UTC-3.
  */
+/**
+ * Formatea un timestamp según el calendario ARGENTINO.
+ * Imprescindible en Server Components: el runtime corre en UTC, así que
+ * `toLocaleDateString('es-AR')` a secas muestra el día corrido de noche
+ * (a las 22hs AR ya es "mañana" en UTC).
+ */
+export function formatFechaAR(
+  fecha: Date | string,
+  opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' },
+): string {
+  return new Date(fecha).toLocaleDateString('es-AR', { ...opts, timeZone: TZ_AR });
+}
+
 export function hoyArgentina(): Date {
   const ar = new Date(new Date().toLocaleString('en-US', { timeZone: TZ_AR }));
   return new Date(ar.getFullYear(), ar.getMonth(), ar.getDate());

@@ -63,6 +63,7 @@ export function PresupuestoAcciones({ id, estadoActual, total, montoCobrado, num
           const titulo = `Presupuesto #${String(numero).padStart(5, '0')}${clienteNombre ? ` · ${clienteNombre}` : ''}`;
           toast.success('Presupuesto aprobado', {
             description: '¿Agendamos la visita?',
+            duration: 12_000, // que dé tiempo a tocar "Agendar"
             action: {
               label: 'Agendar',
               onClick: () =>

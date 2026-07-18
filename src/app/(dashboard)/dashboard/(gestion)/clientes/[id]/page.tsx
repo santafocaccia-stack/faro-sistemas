@@ -10,6 +10,7 @@ import { listarPresupuestosDeCliente } from '@/server/actions/presupuestos';
 import { listarPedidosDeCliente } from '@/server/actions/pedidos-atmosfericos';
 import { requireSession } from '@/server/auth/session';
 import { formatARS } from '@/lib/utils';
+import { formatFechaAR } from '@/lib/fechas';
 
 const tipoLabel: Record<string, string> = {
   mayorista: 'Mayorista',
@@ -295,7 +296,7 @@ export default async function FichaClientePage({
                     <Link href={`/dashboard/presupuestos/${t.id}`} className="list-row flex items-center gap-3 px-5 py-2.5">
                       <span className="font-mono text-xs text-muted-foreground w-14 shrink-0">#{String(t.numero).padStart(5, '0')}</span>
                       <span className="text-xs text-muted-foreground flex-1 tabular-nums">
-                        {new Date(t.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                        {formatFechaAR(t.fecha, { day: '2-digit', month: '2-digit', year: '2-digit' })}
                       </span>
                       <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border uppercase tracking-wide ${estadoTrabajoBadge[t.estado] ?? 'bg-muted text-muted-foreground'}`}>
                         {seniado ? 'Señado' : t.estado}
@@ -335,7 +336,7 @@ export default async function FichaClientePage({
                   <Link href={`/dashboard/ventas/historial/${v.id}`} className="list-row flex items-center gap-3 px-5 py-2.5">
                     <span className="font-mono text-xs text-muted-foreground w-14 shrink-0">#{v.numero}</span>
                     <span className="text-xs text-muted-foreground flex-1 tabular-nums">
-                      {new Date(v.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      {formatFechaAR(v.fecha, { day: '2-digit', month: '2-digit', year: '2-digit' })}
                       <span className="ml-2 capitalize">{v.canal}</span>
                     </span>
                     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border uppercase tracking-wide ${estadoBadge[v.estado] ?? 'bg-muted text-muted-foreground'}`}>

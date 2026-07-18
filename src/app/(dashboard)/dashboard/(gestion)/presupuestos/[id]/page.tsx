@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ChevronLeft, Pencil, MessageCircle } from 'lucide-react';
 import { obtenerPresupuesto } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
+import { formatFechaAR } from '@/lib/fechas';
 import { METODO_LABEL } from '@/lib/constants';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -40,7 +41,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
   // Link de WhatsApp: si el cliente tiene teléfono va directo a su chat
   const lineasTxt = lineas.map((l) => `• ${l.descripcion}: ${formatARS(Number(l.subtotal))}`).join('\n');
   const waTexto = encodeURIComponent(
-    `¡Hola${clienteDisplay !== 'Sin cliente' ? ` ${clienteDisplay}` : ''}! Te paso el presupuesto #${String(pres.numero).padStart(5, '0')}:\n${lineasTxt}\nTotal: ${formatARS(Number(pres.total))}\nVálido hasta el ${vencimiento.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}.`,
+    `¡Hola${clienteDisplay !== 'Sin cliente' ? ` ${clienteDisplay}` : ''}! Te paso el presupuesto #${String(pres.numero).padStart(5, '0')}:\n${lineasTxt}\nTotal: ${formatARS(Number(pres.total))}\nVálido hasta el ${formatFechaAR(vencimiento)}.`,
   );
   const waDigits = clienteTelefono ? clienteTelefono.replace(/\D/g, '').replace(/^0/, '') : null;
   const waHref = waDigits
@@ -109,9 +110,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
             {esBoleta ? 'Boleta' : 'Presupuesto'} {formatARS(Number(pres.total))}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {new Date(pres.fecha).toLocaleDateString('es-AR', {
-              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-            })}
+            {formatFechaAR(pres.fecha, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
       </div>
@@ -131,7 +130,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
           <div className="rounded-xl border border-border bg-card p-4">
             <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">Válido hasta</p>
             <p className="text-[13px] font-medium">
-              {vencimiento.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              {formatFechaAR(vencimiento)}
               <span className="text-[11px] text-muted-foreground ml-1">({pres.validezDias} días)</span>
             </p>
           </div>
@@ -207,7 +206,7 @@ export default async function DetallePresupuestoPage({ params }: Props) {
             {cobros.map((c) => (
               <div key={c.id} className="flex items-center justify-between py-2 text-sm">
                 <span className="text-muted-foreground">
-                  {new Date(c.cobradoAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  {formatFechaAR(c.cobradoAt)}
                   <span className="ml-2 text-xs">{METODO_LABEL[c.metodo] ?? c.metodo}</span>
                 </span>
                 <span className="font-mono tabular-nums font-semibold">{formatARS(Number(c.monto))}</span>

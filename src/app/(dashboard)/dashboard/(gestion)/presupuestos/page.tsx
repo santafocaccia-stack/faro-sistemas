@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Plus, FileText, BookMarked, ChevronRight } from 'lucide-react';
 import { listarPresupuestos, listarPlantillas } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
+import { formatFechaAR } from '@/lib/fechas';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { UsarPlantillaButton } from '@/components/plantilla-button';
@@ -85,7 +86,7 @@ export default async function PresupuestosPage() {
           <ul className="md:hidden divide-y divide-border/50 stagger">
             {presupuestos.map((p) => {
               const badge = ESTADO_BADGE[p.estado] ?? ESTADO_BADGE.borrador!;
-              const fecha = new Date(p.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+              const fecha = formatFechaAR(p.fecha, { day: '2-digit', month: '2-digit', year: '2-digit' });
               return (
                 <li key={p.id}>
                   <Link href={`/dashboard/presupuestos/${p.id}`} className="list-row flex items-center gap-3 px-4 py-3">
