@@ -60,6 +60,19 @@ const server = createServer(async (req, res) => {
   };
   try {
     if (req.method === 'GET' && req.url === '/snapshot') return responder(200, await estado());
+    // Descarga autenticada (comparte cookies de la sesión del browser)
+    if (req.method === 'GET' && req.url?.startsWith('/descargar?ruta=')) {
+      const ruta = decodeURIComponent(req.url.slice('/descargar?ruta='.length));
+      const r = await page.request.get(BASE + ruta);
+      const cuerpo = await r.body();
+      return responder(200, {
+        status: r.status(),
+        contentType: r.headers()['content-type'] ?? '',
+        bytes: cuerpo.length,
+        cabecera: cuerpo.subarray(0, 8).toString('latin1'),
+        finValido: cuerpo.subarray(-32).toString('latin1').includes('%%EOF'),
+      });
+    }
     if (req.method === 'POST' && req.url === '/cerrar') {
       responder(200, { ok: true });
       await browser.close();
