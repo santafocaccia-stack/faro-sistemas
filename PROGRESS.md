@@ -177,14 +177,23 @@ Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
   que un abogado revise los textos (sobre todo tratamiento de datos de terceros y AFIP).
 - Seguridad: verificar firma webhook MP, rate limiting en auth, tests de venta/producto.
 
-## Checklist de lanzamiento (7 puntos, 2026-07-17)
-1. **Monitoreo de errores** — Sentry YA configurado en repo (client/server/edge + CSP). FALTA: verificar `SENTRY_DSN` en Vercel prod y que lleguen eventos.
-2. **Soporte visible** — botón de WhatsApp dentro del dashboard. NO HECHO.
-3. **Legal** — ✓ HECHO (páginas + checkbox). Falta completar placeholders (acción del usuario).
-4. **Backups verificados** — hacer un simulacro de restore de Supabase antes de clientes reales. NO HECHO.
-5. **Cobro real punta a punta** — probar suscripción MP completa (pago, vencimiento, fallo, cambio de plan). Bloqueado por CUIT/Mobbex (ver arriba).
-6. **Analytics de abandono** — Posthog u similar para ver dónde se caen los registros. NO HECHO.
-7. **Dominio propio** — `gesto.com.ar` o similar (acción del usuario; mejora confianza, PWA y emails).
+## Checklist de lanzamiento (7 puntos — estado 2026-07-18)
+1. **Monitoreo de errores** — código listo; **`NEXT_PUBLIC_SENTRY_DSN` NO existe en Vercel** →
+   Sentry mudo. ACCIÓN USUARIO: crear proyecto en sentry.io y cargar el DSN en Vercel (prod+preview).
+2. **Soporte visible** — ✓ botón flotante de WhatsApp en dashboard (oculto en POS). ACCIÓN
+   USUARIO: cargar `NEXT_PUBLIC_WHATSAPP_SOPORTE` en Vercel (dígitos con país, ej 549...).
+3. **Legal** — ✓ páginas + checkbox. Falta completar placeholders (acción del usuario).
+4. **Backups** — ✓ simulacro 2026-07-18: `backup-db.mjs` contra prod, 30 tablas / 251 filas,
+   JSON validado restaurable (carpeta `backups/`, gitignoreada). Restore real de Supabase
+   (point-in-time) queda como prueba opcional pre-beta.
+5. **Cobro real punta a punta** — bloqueado por CUIT/Mobbex (ver arriba).
+6. **Analytics de abandono** — pendiente de decisión: Posthog (cuenta nueva) o Vercel Web
+   Analytics (activar en el dashboard de Vercel y avisar para agregar el package).
+7. **Dominio propio** — acción del usuario.
+- Extra hecho 2026-07-18: `formatFechaAR` extendido a pedidos (lista+detalle) y pagos de
+  préstamos (cerrada la deuda TZ de otros planes); PDFs de presupuesto y recibo verificados
+  estructuralmente (200/application/pdf/EOF) vía endpoint `/descargar` del agente QA;
+  gastos/page ya tenía guard (`requireAdmin`) — pendiente menor cerrado.
 
 Estrategia acordada: **beta cerrada de 5-10 conocidos** (2-3 del rubro servicios) antes del
 lanzamiento abierto. Pre-beta: agente QA autónomo (`qa/agente/`) recorriendo el plan servicios
