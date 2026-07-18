@@ -190,6 +190,16 @@ Estrategia acordada: **beta cerrada de 5-10 conocidos** (2-3 del rubro servicios
 lanzamiento abierto. Pre-beta: agente QA autónomo (`qa/agente/`) recorriendo el plan servicios
 con personas por rubro.
 
+### Loops QA Roberto (plomero) + Lucía (profe) COMPLETOS (2026-07-18 — EN PROD)
+Roberto: boleta ahora registra su pago en presupuestos_cobros (KPI la ignoraba — regresión
+del refactor de señas, backfill re-aplicado), hora de "Próximos turnos" en TZ AR, lista de
+clientes sin columna Minorista, fechas de boletas TZ AR. Lucía: turnos con "Se repite ×N
+semanas", editar/reprogramar turno (lápiz), confirmación al borrar turno, lista de
+presupuestos con "SEÑADO · RESTA $X". Deuda: serie recurrente sin vínculo entre turnos,
+recordatorios WhatsApp pre-turno (conecta con backlog agenda), vocabulario de turnos por rubro.
+Nota diseño pendiente de decisión: saldo de presupuesto señado vs. cuenta corriente (dos
+nociones de "me debe" conviven).
+
 ### Loop QA servicios COMPLETO (3 iteraciones, 2026-07-17 — EN PROD)
 Persona 01 (técnico refrigeración). Arreglado y verificado: cobros parciales/señas
 (tabla `presupuestos_cobros` + `monto_cobrado`, mig 0019 en ambas DBs, diálogo de
