@@ -21,7 +21,7 @@ export async function ServiciosInicio({
   const alertas = vencimientos.filter((v) => v.alerta !== 'al_dia').slice(0, 5);
 
   const cards = [
-    { label: 'Cobrado este mes', value: formatARS(resumen.cobradoMes), sub: `${resumen.cobradoMesCant} cobros` },
+    { label: 'Cobrado este mes', value: formatARS(resumen.cobradoMes), sub: `${resumen.cobradoMesCant} ${resumen.cobradoMesCant === 1 ? 'cobro' : 'cobros'}` },
     { label: 'Por cobrar', value: formatARS(resumen.porCobrar), sub: `${resumen.porCobrarCant} aprobados` },
     { label: 'Presupuestos abiertos', value: String(resumen.abiertos), sub: 'borradores / enviados' },
   ];

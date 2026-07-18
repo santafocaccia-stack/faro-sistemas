@@ -77,6 +77,8 @@ export function ClienteForm({ cliente, plan }: { cliente?: Cliente; plan?: strin
       <FormSection icon={User} title="Datos del cliente">
         {!esAtmos && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Minorista/Mayorista es jerga de comercio: en servicios/préstamos no aplica */}
+            {plan !== 'servicios' && plan !== 'prestamista' && (
             <Field label="Tipo" htmlFor="tipo" labelCls={labelCls}>
               <Select value={form.tipo} onValueChange={(v) => set('tipo', v as ClienteInput['tipo'])}>
                 <SelectTrigger id="tipo" className={inputCls}><SelectValue /></SelectTrigger>
@@ -87,6 +89,7 @@ export function ClienteForm({ cliente, plan }: { cliente?: Cliente; plan?: strin
                 </SelectContent>
               </Select>
             </Field>
+            )}
             <Field label="Condición IVA" htmlFor="condicionIva" labelCls={labelCls}>
               <Select value={form.condicionIva} onValueChange={(v) => set('condicionIva', v as ClienteInput['condicionIva'])}>
                 <SelectTrigger id="condicionIva" className={inputCls}><SelectValue /></SelectTrigger>
@@ -174,7 +177,11 @@ export function ClienteForm({ cliente, plan }: { cliente?: Cliente; plan?: strin
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm">Habilitar cuenta corriente</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Permite vender a crédito y registrar cobros</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {plan === 'servicios'
+                  ? 'Permite dejarle saldo pendiente y registrar cobros después'
+                  : 'Permite vender a crédito y registrar cobros'}
+              </p>
             </div>
             <Switch
               id="cc"

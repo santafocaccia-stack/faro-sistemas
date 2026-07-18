@@ -2,7 +2,7 @@
 
 import { and, eq, sql, type SQL } from 'drizzle-orm';
 import { withTenant, type Tx } from '@/server/db';
-import { ventas, ventasLineas, pagos, productos, presupuestos, pagosPrestamo } from '@/server/db/schema';
+import { ventas, ventasLineas, pagos, productos, presupuestos, presupuestosCobros, pagosPrestamo } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
 import { requirePermiso } from '@/server/auth/session';
 import { planTiene, type PlanId } from '@/lib/planes';
@@ -88,14 +88,13 @@ export async function obtenerSerieReporte(granularidad: Granularidad = 'dia') {
       sql`(${ventas.fecha} AT TIME ZONE ${tz})::date >= ${spanStartIso}::date`,
     ))).map((r) => ({ d: r.d, monto: Number(r.monto) }));
   } else if (planTiene(plan as PlanId, 'presupuestos')) {
+    // Cada pago (seña o cobro final) cuenta en la fecha en que entró
     filas = (await db.select({
-      d: sql<string>`(${presupuestos.cobradoAt} AT TIME ZONE ${tz})::date::text`,
-      monto: sql<number>`${presupuestos.total}::numeric`,
-    }).from(presupuestos).where(and(
-      byTenant(tenantId, presupuestos),
-      eq(presupuestos.estado, 'cobrado'),
-      sql`${presupuestos.cobradoAt} is not null`,
-      sql`(${presupuestos.cobradoAt} AT TIME ZONE ${tz})::date >= ${spanStartIso}::date`,
+      d: sql<string>`(${presupuestosCobros.cobradoAt} AT TIME ZONE ${tz})::date::text`,
+      monto: sql<number>`${presupuestosCobros.monto}::numeric`,
+    }).from(presupuestosCobros).where(and(
+      byTenant(tenantId, presupuestosCobros),
+      sql`(${presupuestosCobros.cobradoAt} AT TIME ZONE ${tz})::date >= ${spanStartIso}::date`,
     ))).map((r) => ({ d: r.d, monto: Number(r.monto) }));
   } else if (planTiene(plan as PlanId, 'prestamos')) {
     filas = (await db.select({

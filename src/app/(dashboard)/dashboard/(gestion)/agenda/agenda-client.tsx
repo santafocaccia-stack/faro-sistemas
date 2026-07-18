@@ -47,17 +47,24 @@ type VencVM = {
 
 const inputCls = 'h-9 bg-background border-border';
 
+type ClienteVM = { id: string; razonSocial: string; direccion: string | null; localidad: string | null };
+
 export function AgendaClient({
-  turnos, vencimientos, lunesISO, offset,
+  turnos, vencimientos, clientes, lunesYmd, offset, prefill,
 }: {
-  turnos: TurnoVM[]; vencimientos: VencVM[]; lunesISO: string; offset: number;
+  turnos: TurnoVM[]; vencimientos: VencVM[]; clientes: ClienteVM[];
+  lunesYmd: string; offset: number;
+  prefill: { titulo: string; clienteId: string } | null;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [formTurno, setFormTurno] = useState(false);
+  const [formTurno, setFormTurno] = useState(!!prefill);
   const [formVenc, setFormVenc] = useState(false);
 
-  const lunes = new Date(lunesISO);
+  // lunesYmd es fecha-calendario (YYYY-MM-DD): parsear como fecha LOCAL para
+  // que los días de la grilla no se corran respecto del huso del usuario.
+  const [ly, lm, ld] = lunesYmd.split('-').map(Number);
+  const lunes = new Date(ly!, lm! - 1, ld!);
   const dias = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(lunes); d.setDate(lunes.getDate() + i); return d;
   });
@@ -69,18 +76,26 @@ export function AgendaClient({
   const refresh = () => router.refresh();
 
   // ── Form turno ──
-  const [tTitulo, setTTitulo] = useState('');
+  const [tTitulo, setTTitulo] = useState(prefill?.titulo ?? '');
   const [tFecha, setTFecha] = useState('');
   const [tHora, setTHora] = useState('09:00');
   const [tDur, setTDur] = useState('60');
   const [tDir, setTDir] = useState('');
+  const [tCliente, setTCliente] = useState(prefill?.clienteId ?? '');
+  const elegirCliente = (id: string) => {
+    setTCliente(id);
+    // Autocompletar la dirección del trabajo con la del cliente (editable)
+    const c = clientes.find((x) => x.id === id);
+    if (c && !tDir) setTDir([c.direccion, c.localidad].filter(Boolean).join(', '));
+  };
   const guardarTurno = () =>
     start(async () => {
       const r = await crearTurno({
         titulo: tTitulo, inicio: new Date(`${tFecha}T${tHora}`).toISOString(),
         duracionMin: Number(tDur) || 60, direccion: tDir || null,
+        clienteId: tCliente || null,
       });
-      if (r.ok) { setFormTurno(false); setTTitulo(''); setTFecha(''); setTDir(''); refresh(); }
+      if (r.ok) { setFormTurno(false); setTTitulo(''); setTFecha(''); setTDir(''); setTCliente(''); refresh(); }
     });
 
   // ── Form vencimiento ──
@@ -132,6 +147,13 @@ export function AgendaClient({
             <Input className={inputCls} placeholder="ej: Cambio de termotanque" value={tTitulo} onChange={(e) => setTTitulo(e.target.value)} />
           </label>
           <label className="space-y-1 block">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Cliente (opcional)</span>
+            <select className={`${inputCls} rounded-md px-3 w-full border`} value={tCliente} onChange={(e) => elegirCliente(e.target.value)}>
+              <option value="">Sin cliente</option>
+              {clientes.map((c) => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
+            </select>
+          </label>
+          <label className="space-y-1 block">
             <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Dirección</span>
             <Input className={inputCls} placeholder="Dirección del trabajo" value={tDir} onChange={(e) => setTDir(e.target.value)} />
           </label>
@@ -179,6 +201,7 @@ export function AgendaClient({
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-[12px] font-medium truncate">{hora} · {t.titulo}</p>
+                            {t.clienteNombre && <p className="text-[11px] text-primary/80 truncate">{t.clienteNombre}</p>}
                             {t.direccion && <p className="text-[11px] text-muted-foreground truncate">{t.direccion}</p>}
                           </div>
                           <button onClick={() => start(async () => { await eliminarTurno(t.id); refresh(); })}

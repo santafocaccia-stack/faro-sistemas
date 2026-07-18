@@ -65,7 +65,7 @@ export default async function ReportesPage({ searchParams }: Props) {
     : rs
     ? [
         { label: 'Cobrado', valor: formatARS(serie.totalActual), sub: 'período actual' },
-        { label: 'Cobrado este mes', valor: formatARS(rs.cobradoMes), sub: `${rs.cobradoMesCant} cobros` },
+        { label: 'Cobrado este mes', valor: formatARS(rs.cobradoMes), sub: `${rs.cobradoMesCant} ${rs.cobradoMesCant === 1 ? 'cobro' : 'cobros'}` },
         { label: 'Por cobrar', valor: formatARS(rs.porCobrar), sub: `${rs.porCobrarCant} aprobados` },
         { label: 'Presupuestos abiertos', valor: String(rs.abiertos), sub: 'borradores / enviados' },
       ]

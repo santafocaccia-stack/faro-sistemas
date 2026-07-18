@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { eq, and, desc, gte, sql } from 'drizzle-orm';
 import { withTenant } from '@/server/db';
 import {
-  presupuestos, presupuestosLineas, clientes,
+  presupuestos, presupuestosLineas, presupuestosCobros, clientes,
   type PresupuestoEstado, type MetodoPago,
 } from '@/server/db/schema';
 import { byTenant } from '@/server/db/tenant-context';
@@ -152,16 +152,24 @@ export async function obtenerPresupuesto(id: string) {
 
   // Nombre del cliente — filtrar también por tenant para no cruzar datos
   let clienteDisplay = pres.clienteNombre ?? 'Sin cliente';
+  let clienteTelefono: string | null = null;
   if (pres.clienteId) {
     const [c] = await db
-      .select({ razonSocial: clientes.razonSocial })
+      .select({ razonSocial: clientes.razonSocial, telefono: clientes.telefono })
       .from(clientes)
       .where(and(byTenant(tenantId, clientes), eq(clientes.id, pres.clienteId)))
       .limit(1);
-    if (c) clienteDisplay = c.razonSocial;
+    if (c) { clienteDisplay = c.razonSocial; clienteTelefono = c.telefono; }
   }
 
-  return { pres, lineas, clienteDisplay };
+  // Pagos registrados (señas + cobros)
+  const cobros = await db
+    .select()
+    .from(presupuestosCobros)
+    .where(and(byTenant(tenantId, presupuestosCobros), eq(presupuestosCobros.presupuestoId, id)))
+    .orderBy(presupuestosCobros.cobradoAt);
+
+  return { pres, lineas, clienteDisplay, clienteTelefono, cobros };
   });
 }
 
@@ -358,43 +366,112 @@ export async function cambiarEstadoPresupuesto(id: string, estado: PresupuestoEs
   revalidatePath(`/dashboard/presupuestos/${id}`);
 }
 
+/** Historial de presupuestos/boletas de un cliente (para su ficha, plan servicios). */
+export async function listarPresupuestosDeCliente(clienteId: string) {
+  const session = await requirePermiso('gestionar_presupuestos');
+  return withTenant(session.tenantId, (db) =>
+    db
+      .select({
+        id: presupuestos.id,
+        numero: presupuestos.numero,
+        tipo: presupuestos.tipo,
+        fecha: presupuestos.fecha,
+        estado: presupuestos.estado,
+        total: presupuestos.total,
+        montoCobrado: presupuestos.montoCobrado,
+      })
+      .from(presupuestos)
+      .where(and(
+        byTenant(session.tenantId, presupuestos),
+        eq(presupuestos.clienteId, clienteId),
+        eq(presupuestos.esPlantilla, false),
+      ))
+      .orderBy(desc(presupuestos.fecha))
+      .limit(10),
+  );
+}
+
 // ── Cobrar (plan servicios) ─────────────────────────────────────────────────────
 
 /**
- * Marca un presupuesto como cobrado: registra el ingreso (fecha + método).
- * Es el flujo de cobro del plan Servicios — reemplaza al POS.
+ * Registra un cobro (total o seña) de un presupuesto. Es el flujo de cobro
+ * del plan Servicios — reemplaza al POS. Acumula pagos en presupuestos_cobros;
+ * cuando lo cobrado alcanza el total, el presupuesto pasa a 'cobrado'.
  */
-export async function marcarCobrado(
+export async function registrarCobro(
   id: string,
+  monto: number,
   metodo: MetodoPago,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; saldo: number } | { ok: false; error: string }> {
   const session = await requirePermiso('gestionar_presupuestos');
-  const result = await withTenant(session.tenantId, (db) =>
-    db
-      .update(presupuestos)
-      .set({ estado: 'cobrado', cobradoAt: new Date(), metodoCobro: metodo })
+  if (!Number.isFinite(monto) || monto <= 0) {
+    return { ok: false, error: 'El monto tiene que ser mayor a cero' };
+  }
+
+  const resultado = await withTenant(session.tenantId, async (db) => {
+    const [pres] = await db
+      .select({ total: presupuestos.total, montoCobrado: presupuestos.montoCobrado, estado: presupuestos.estado })
+      .from(presupuestos)
       .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
-      .returning({ id: presupuestos.id }),
-  );
-  if (result.length === 0) return { ok: false, error: 'Presupuesto no encontrado' };
-  revalidatePath('/dashboard/presupuestos');
-  revalidatePath(`/dashboard/presupuestos/${id}`);
-  revalidatePath('/dashboard');
-  return { ok: true };
+      .limit(1);
+    if (!pres) return { ok: false as const, error: 'Presupuesto no encontrado' };
+    if (pres.estado === 'cobrado') return { ok: false as const, error: 'Este presupuesto ya está cobrado' };
+
+    const total = Number(pres.total);
+    const yaCobrado = Number(pres.montoCobrado);
+    const saldo = total - yaCobrado;
+    // Tolerancia de centavos por redondeo
+    if (monto > saldo + 0.01) {
+      return { ok: false as const, error: `El monto supera el saldo pendiente (${saldo.toFixed(2)})` };
+    }
+
+    const ahora = new Date();
+    const nuevoCobrado = Math.min(yaCobrado + monto, total);
+    const quedaCobrado = total - nuevoCobrado < 0.01;
+
+    await db.insert(presupuestosCobros).values({
+      tenantId: session.tenantId,
+      presupuestoId: id,
+      monto: monto.toFixed(2),
+      metodo,
+      cobradoAt: ahora,
+    });
+    await db
+      .update(presupuestos)
+      .set({
+        montoCobrado: nuevoCobrado.toFixed(2),
+        cobradoAt: ahora,
+        metodoCobro: metodo,
+        ...(quedaCobrado ? { estado: 'cobrado' as const } : {}),
+      })
+      .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)));
+
+    return { ok: true as const, saldo: quedaCobrado ? 0 : total - nuevoCobrado };
+  });
+
+  if (resultado.ok) {
+    revalidatePath('/dashboard/presupuestos');
+    revalidatePath(`/dashboard/presupuestos/${id}`);
+    revalidatePath('/dashboard');
+  }
+  return resultado;
 }
 
-/** Revierte un cobro: vuelve el presupuesto a 'aprobado' y limpia el cobro. */
+/** Revierte los cobros: vuelve el presupuesto a 'aprobado' y borra los pagos. */
 export async function revertirCobro(
   id: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const session = await requirePermiso('gestionar_presupuestos');
-  const result = await withTenant(session.tenantId, (db) =>
-    db
+  const result = await withTenant(session.tenantId, async (db) => {
+    await db
+      .delete(presupuestosCobros)
+      .where(and(byTenant(session.tenantId, presupuestosCobros), eq(presupuestosCobros.presupuestoId, id)));
+    return db
       .update(presupuestos)
-      .set({ estado: 'aprobado', cobradoAt: null, metodoCobro: null })
+      .set({ estado: 'aprobado', cobradoAt: null, metodoCobro: null, montoCobrado: '0' })
       .where(and(byTenant(session.tenantId, presupuestos), eq(presupuestos.id, id)))
-      .returning({ id: presupuestos.id }),
-  );
+      .returning({ id: presupuestos.id });
+  });
   if (result.length === 0) return { ok: false, error: 'Presupuesto no encontrado' };
   revalidatePath('/dashboard/presupuestos');
   revalidatePath(`/dashboard/presupuestos/${id}`);
@@ -415,20 +492,21 @@ export async function resumenServicios() {
   // Promise.all dentro de la tx: postgres-js pipelinea (sin perder paralelismo).
   const [[cobrado], [porCobrar], [abiertos]] = await withTenant(session.tenantId, (db) =>
     Promise.all([
+      // Cobrado del mes: suma de pagos individuales (incluye señas)
       db
         .select({
-          total: sql<string>`coalesce(sum(${presupuestos.total}), 0)`,
+          total: sql<string>`coalesce(sum(${presupuestosCobros.monto}), 0)`,
           cantidad: sql<number>`count(*)::int`,
         })
-        .from(presupuestos)
+        .from(presupuestosCobros)
         .where(and(
-          byTenant(session.tenantId, presupuestos),
-          eq(presupuestos.estado, 'cobrado'),
-          gte(presupuestos.cobradoAt, inicioMes),
+          byTenant(session.tenantId, presupuestosCobros),
+          gte(presupuestosCobros.cobradoAt, inicioMes),
         )),
+      // Por cobrar: saldo pendiente de los aprobados (total menos señas)
       db
         .select({
-          total: sql<string>`coalesce(sum(${presupuestos.total}), 0)`,
+          total: sql<string>`coalesce(sum(${presupuestos.total} - ${presupuestos.montoCobrado}), 0)`,
           cantidad: sql<number>`count(*)::int`,
         })
         .from(presupuestos)

@@ -44,7 +44,7 @@ export default async function ClientesPage() {
           <p className="text-xs text-muted-foreground mb-5 max-w-sm mx-auto">
             {esAtmos
               ? 'Guardá los clientes frecuentes para pre-cargar su dirección y litros del pozo en cada pedido.'
-              : 'Cargá los clientes frecuentes para asociarlos a las ventas y la cuenta corriente.'}
+              : 'Cargá los clientes frecuentes para tener su historial y su cuenta corriente a mano.'}
           </p>
           <Link
             href="/dashboard/clientes/nuevo"

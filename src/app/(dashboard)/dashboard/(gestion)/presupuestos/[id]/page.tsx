@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, Pencil } from 'lucide-react';
+import { ChevronLeft, Pencil, MessageCircle } from 'lucide-react';
 import { obtenerPresupuesto } from '@/server/actions/presupuestos';
 import { formatARS } from '@/lib/utils';
 import { METODO_LABEL } from '@/lib/constants';
@@ -29,11 +29,23 @@ export default async function DetallePresupuestoPage({ params }: Props) {
 
   if (!data) notFound();
 
-  const { pres, lineas, clienteDisplay } = data;
+  const { pres, lineas, clienteDisplay, clienteTelefono, cobros } = data;
   const esBoleta = pres.tipo === 'boleta';
   const badge = ESTADO_BADGE[pres.estado] ?? ESTADO_BADGE.borrador!;
 
   const vencimiento = new Date(new Date(pres.fecha).getTime() + pres.validezDias * 86_400_000);
+  const montoCobrado = Number(pres.montoCobrado);
+  const saldo = Number(pres.total) - montoCobrado;
+
+  // Link de WhatsApp: si el cliente tiene teléfono va directo a su chat
+  const lineasTxt = lineas.map((l) => `• ${l.descripcion}: ${formatARS(Number(l.subtotal))}`).join('\n');
+  const waTexto = encodeURIComponent(
+    `¡Hola${clienteDisplay !== 'Sin cliente' ? ` ${clienteDisplay}` : ''}! Te paso el presupuesto #${String(pres.numero).padStart(5, '0')}:\n${lineasTxt}\nTotal: ${formatARS(Number(pres.total))}\nVálido hasta el ${vencimiento.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}.`,
+  );
+  const waDigits = clienteTelefono ? clienteTelefono.replace(/\D/g, '').replace(/^0/, '') : null;
+  const waHref = waDigits
+    ? `https://wa.me/${waDigits.startsWith('54') ? waDigits : `549${waDigits}`}?text=${waTexto}`
+    : `https://wa.me/?text=${waTexto}`;
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-3xl mx-auto space-y-6 animate-fade-up">
@@ -49,7 +61,26 @@ export default async function DetallePresupuestoPage({ params }: Props) {
         </Link>
 
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-          {!esBoleta && <PresupuestoAcciones id={pres.id} estadoActual={pres.estado} />}
+          {!esBoleta && (
+            <PresupuestoAcciones
+              id={pres.id}
+              estadoActual={pres.estado}
+              total={Number(pres.total)}
+              montoCobrado={montoCobrado}
+              numero={pres.numero}
+              clienteId={pres.clienteId}
+              clienteNombre={clienteDisplay !== 'Sin cliente' ? clienteDisplay : null}
+            />
+          )}
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md text-xs font-medium border border-success/30 bg-success/10 text-success hover:bg-success/15 transition-colors"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            WhatsApp
+          </a>
           {!esBoleta && (
             <Link
               href={`/dashboard/presupuestos/${pres.id}/editar`}
@@ -153,8 +184,38 @@ export default async function DetallePresupuestoPage({ params }: Props) {
             <span>Total</span>
             <span className="font-mono tabular-nums">{formatARS(Number(pres.total))}</span>
           </div>
+          {montoCobrado > 0 && saldo > 0.01 && (
+            <>
+              <div className="flex justify-between w-full sm:max-w-xs text-success text-sm">
+                <span>Señado</span>
+                <span className="font-mono tabular-nums">− {formatARS(montoCobrado)}</span>
+              </div>
+              <div className="flex justify-between w-full sm:max-w-xs text-sm font-semibold text-warning">
+                <span>Saldo pendiente</span>
+                <span className="font-mono tabular-nums">{formatARS(saldo)}</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Pagos registrados */}
+      {cobros.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70 mb-2">Pagos registrados</p>
+          <div className="divide-y divide-border/40">
+            {cobros.map((c) => (
+              <div key={c.id} className="flex items-center justify-between py-2 text-sm">
+                <span className="text-muted-foreground">
+                  {new Date(c.cobradoAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  <span className="ml-2 text-xs">{METODO_LABEL[c.metodo] ?? c.metodo}</span>
+                </span>
+                <span className="font-mono tabular-nums font-semibold">{formatARS(Number(c.monto))}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Notas */}
       {pres.notas && (

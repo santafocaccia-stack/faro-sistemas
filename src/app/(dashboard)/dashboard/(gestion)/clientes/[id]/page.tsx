@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { obtenerCliente } from '@/server/actions/clientes';
 import { comprasRecientesCliente } from '@/server/actions/ventas';
+import { listarPresupuestosDeCliente } from '@/server/actions/presupuestos';
 import { listarPedidosDeCliente } from '@/server/actions/pedidos-atmosfericos';
 import { requireSession } from '@/server/auth/session';
 import { formatARS } from '@/lib/utils';
@@ -48,14 +49,16 @@ export default async function FichaClientePage({
 }) {
   const [{ id }, session] = await Promise.all([params, requireSession()]);
   const esAtmos = session.plan === 'atmosfericos';
+  const esServicios = session.plan === 'servicios';
 
   const cliente = await obtenerCliente(id);
   if (!cliente) notFound();
 
   const saldo = Number(cliente.saldoActual);
-  const [compras, pedidos] = await Promise.all([
-    esAtmos ? Promise.resolve([]) : comprasRecientesCliente(id),
+  const [compras, pedidos, trabajos] = await Promise.all([
+    esAtmos || esServicios ? Promise.resolve([]) : comprasRecientesCliente(id),
     esAtmos ? listarPedidosDeCliente(id) : Promise.resolve([]),
+    esServicios ? listarPresupuestosDeCliente(id) : Promise.resolve([]),
   ]);
 
   const direccion = [cliente.direccion, cliente.localidad, cliente.provincia]
@@ -67,7 +70,8 @@ export default async function FichaClientePage({
   const totalCobrado = completados.reduce((s, p) => s + Number(p.montoCobrado ?? 0), 0);
 
   const datosMarket: { label: string; valor: string }[] = [
-    { label: 'Tipo', valor: tipoLabel[cliente.tipo] ?? cliente.tipo },
+    // Minorista/Mayorista es jerga de comercio: no aplica en servicios
+    ...(esServicios ? [] : [{ label: 'Tipo', valor: tipoLabel[cliente.tipo] ?? cliente.tipo }]),
     { label: 'Condición IVA', valor: ivaLabel[cliente.condicionIva] ?? cliente.condicionIva },
     ...(cliente.cuit ? [{ label: 'CUIT', valor: cliente.cuit }] : []),
     ...(cliente.email ? [{ label: 'Email', valor: cliente.email }] : []),
@@ -257,8 +261,58 @@ export default async function FichaClientePage({
         </div>
       )}
 
+      {/* Historial de trabajos (plan servicios: presupuestos y boletas) */}
+      {esServicios && (
+        <div className="panel overflow-hidden">
+          <div className="px-5 py-3 border-b border-border/60 flex items-center justify-between">
+            <h2 className="text-sm font-semibold tracking-tight">Trabajos recientes</h2>
+            <Link href="/dashboard/presupuestos" className="text-[12px] text-primary hover:underline">
+              Ver todos
+            </Link>
+          </div>
+          {trabajos.length === 0 ? (
+            <div className="px-5 py-10 text-center">
+              <BookOpen className="h-5 w-5 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Sin trabajos registrados</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                Cuando le hagas un presupuesto (eligiéndolo como cliente) va a aparecer acá.
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border/40">
+              {trabajos.map((t) => {
+                const estadoTrabajoBadge: Record<string, string> = {
+                  cobrado:   'bg-success/15 text-success border-success/20',
+                  aprobado:  'bg-warning/15 text-warning border-warning/20',
+                  enviado:   'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                  borrador:  'bg-muted text-muted-foreground border-border',
+                  rechazado: 'bg-destructive/15 text-destructive border-destructive/20',
+                  vencido:   'bg-destructive/15 text-destructive border-destructive/20',
+                };
+                const seniado = t.estado === 'aprobado' && Number(t.montoCobrado) > 0;
+                return (
+                  <li key={t.id}>
+                    <Link href={`/dashboard/presupuestos/${t.id}`} className="list-row flex items-center gap-3 px-5 py-2.5">
+                      <span className="font-mono text-xs text-muted-foreground w-14 shrink-0">#{String(t.numero).padStart(5, '0')}</span>
+                      <span className="text-xs text-muted-foreground flex-1 tabular-nums">
+                        {new Date(t.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      </span>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border uppercase tracking-wide ${estadoTrabajoBadge[t.estado] ?? 'bg-muted text-muted-foreground'}`}>
+                        {seniado ? 'Señado' : t.estado}
+                      </span>
+                      <span className="font-mono tabular-nums text-[13px] font-semibold w-24 text-right">{formatARS(Number(t.total))}</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+
       {/* Historial de compras (otros planes) */}
-      {!esAtmos && (
+      {!esAtmos && !esServicios && (
         <div className="panel overflow-hidden">
           <div className="px-5 py-3 border-b border-border/60 flex items-center justify-between">
             <h2 className="text-sm font-semibold tracking-tight">Compras recientes</h2>

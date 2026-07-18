@@ -50,9 +50,12 @@ export const presupuestos = pgTable(
     // Estado
     estado: presupuestoEstadoEnum('estado').notNull().default('borrador'),
 
-    // Cobro (plan servicios): cuándo y cómo se cobró este presupuesto
+    // Cobro (plan servicios): cuándo y cómo se cobró este presupuesto.
+    // montoCobrado acumula los pagos parciales (señas); el detalle vive en
+    // presupuestos_cobros. cobradoAt/metodoCobro reflejan el último pago.
     cobradoAt:   timestamp('cobrado_at', { withTimezone: true }),
     metodoCobro: metodoPagoEnum('metodo_cobro'),
+    montoCobrado: numeric('monto_cobrado', { precision: 12, scale: 2 }).notNull().default('0'),
 
     // Contenido
     notas: text('notas'),
@@ -98,6 +101,22 @@ export const presupuestosLineas = pgTable('presupuestos_lineas', {
   subtotal:       numeric('subtotal',        { precision: 12, scale: 2 }).notNull(),
 });
 
+// Pagos individuales de un presupuesto (soporta señas / cobros parciales)
+export const presupuestosCobros = pgTable('presupuestos_cobros', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  presupuestoId: uuid('presupuesto_id')
+    .notNull()
+    .references(() => presupuestos.id, { onDelete: 'cascade' }),
+  monto: numeric('monto', { precision: 12, scale: 2 }).notNull(),
+  metodo: metodoPagoEnum('metodo').notNull(),
+  cobradoAt: timestamp('cobrado_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type PresupuestoCobro = typeof presupuestosCobros.$inferSelect;
 export type Presupuesto      = typeof presupuestos.$inferSelect;
 export type NewPresupuesto   = typeof presupuestos.$inferInsert;
 export type PresupuestoLinea = typeof presupuestosLineas.$inferSelect;

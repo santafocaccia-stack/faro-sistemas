@@ -60,6 +60,10 @@ type Props = {
   modo?: 'presupuesto' | 'boleta';
 };
 
+/** Normaliza para comparar nombres: sin tildes, minúsculas, espacios colapsados. */
+const norm = (s: string) =>
+  s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
+
 export function PresupuestoForm({ productos, clientes, initialData, sugerencias = [], modo = 'presupuesto' }: Props) {
   const esBoleta = modo === 'boleta';
   const router = useRouter();
@@ -84,6 +88,11 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
     clientes.find((c) => c.id === initialData?.clienteId)?.razonSocial ??
     '',
   );
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const clienteMatch = clientes.find((c) => norm(c.razonSocial) === norm(clienteTexto));
+  const clientesSugeridos = clienteTexto.trim()
+    ? clientes.filter((c) => norm(c.razonSocial).includes(norm(clienteTexto))).slice(0, 6)
+    : clientes.slice(0, 6);
   const [validezDias, setValidezDias] = useState(initialData?.validezDias ?? 15);
   const [descuento, setDescuento] = useState(initialData?.descuento ?? 0);
   const [notas, setNotas] = useState(initialData?.notas ?? '');
@@ -139,7 +148,8 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
     if (!txt) { toast.error('Indicá un cliente'); return; }
 
     // ¿Coincide con un cliente registrado? → lo linkeamos; si no, nombre libre.
-    const match = clientes.find((c) => c.razonSocial.toLowerCase().trim() === txt.toLowerCase());
+    // Comparación normalizada (sin tildes/mayúsculas) para no perder el vínculo.
+    const match = clientes.find((c) => norm(c.razonSocial) === norm(txt));
 
     const clienteId = match?.id ?? null;
     const clienteNombre = match ? null : txt;
@@ -196,28 +206,52 @@ export function PresupuestoForm({ productos, clientes, initialData, sugerencias 
   return (
     <div className="space-y-4">
 
-      <datalist id="gesto-clientes">
-        {clientes.map((c) => <option key={c.id} value={c.razonSocial} />)}
-      </datalist>
       {sugerencias.length > 0 && (
         <datalist id="gesto-desc-sugeridas">
           {sugerencias.map((s) => <option key={s} value={s} />)}
         </datalist>
       )}
 
-      {/* ── Cliente (un solo campo) ────────────────────────────────────── */}
+      {/* ── Cliente (un solo campo con sugerencias propias) ───────────── */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-1.5">
         <label className={labelCls}>Cliente</label>
-        <Input
-          list="gesto-clientes"
-          value={clienteTexto}
-          onChange={(e) => setClienteTexto(e.target.value)}
-          placeholder="Elegí un cliente o escribí un nombre nuevo..."
-          className={inputCls}
-        />
-        <p className="text-[11px] text-muted-foreground/50">
-          Si ya es cliente, elegilo de la lista; si no, escribí el nombre y listo.
-        </p>
+        <div className="relative">
+          <Input
+            value={clienteTexto}
+            onChange={(e) => { setClienteTexto(e.target.value); setMostrarSugerencias(true); }}
+            onFocus={() => setMostrarSugerencias(true)}
+            onBlur={() => setTimeout(() => setMostrarSugerencias(false), 150)}
+            placeholder="Elegí un cliente o escribí un nombre nuevo..."
+            className={inputCls}
+          />
+          {mostrarSugerencias && !clienteMatch && clientesSugeridos.length > 0 && (
+            <div className="absolute z-10 left-0 right-0 mt-1 rounded-lg border border-border bg-popover shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+              {clientesSugeridos.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); setClienteTexto(c.razonSocial); setMostrarSugerencias(false); }}
+                  className="w-full px-3 py-2.5 hover:bg-foreground/[0.04] transition-colors text-left text-[13px] font-medium border-b border-border/30 last:border-0"
+                >
+                  {c.razonSocial}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {clienteMatch ? (
+          <p className="text-[11px] text-success">
+            ✓ Vinculado a {clienteMatch.razonSocial} — el trabajo va a aparecer en su ficha.
+          </p>
+        ) : clienteTexto.trim() ? (
+          <p className="text-[11px] text-muted-foreground/60">
+            Se guarda como nombre suelto (sin ficha de cliente). Si es un cliente que vuelve, cargalo en Clientes.
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground/50">
+            Si ya es cliente, elegilo de la lista; si no, escribí el nombre y listo.
+          </p>
+        )}
       </div>
 
       {/* ── Método de pago (solo boleta) ──────────────────────────────── */}
