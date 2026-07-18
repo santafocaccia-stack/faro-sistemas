@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
+import { PosthogInit } from '@/components/posthog-init';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -48,6 +50,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full bg-background text-foreground font-sans">
+        {/* Suspense: useSearchParams exige un boundary para no romper el prerender */}
+        <Suspense fallback={null}>
+          <PosthogInit />
+        </Suspense>
         {children}
       </body>
     </html>

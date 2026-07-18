@@ -11,7 +11,7 @@ const cspDirectives = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co https://api.mercadopago.com https://*.sentry.io https://*.ingest.sentry.io https://vercel.live wss://*.pusher.com",
+  "connect-src 'self' https://*.supabase.co https://api.mercadopago.com https://*.sentry.io https://*.ingest.sentry.io https://*.posthog.com https://vercel.live wss://*.pusher.com",
   "frame-src 'self' https://*.mercadopago.com https://*.mercadopago.com.ar https://vercel.live",
   "worker-src 'self' blob:",
   "object-src 'none'",
