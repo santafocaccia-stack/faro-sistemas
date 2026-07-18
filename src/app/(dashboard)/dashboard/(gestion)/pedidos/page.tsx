@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatFechaAR } from '@/lib/fechas';
 import { ClipboardList, Truck, ChevronRight, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { listarPedidos, nuevoPedido } from '@/server/actions/pedidos';
@@ -68,9 +69,7 @@ export default async function PedidosPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{proveedorNombre}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(pedido.createdAt).toLocaleDateString('es-AR', {
-                      day: 'numeric', month: 'short', year: 'numeric',
-                    })}
+                    {formatFechaAR(pedido.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
                 </div>
                 <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${cfg.cls}`}>

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { formatFechaAR } from '@/lib/fechas';
 import { ArrowLeft } from 'lucide-react';
 import { obtenerPedido } from '@/server/actions/pedidos';
 import { obtenerTenant } from '@/server/actions/config';
@@ -27,9 +28,7 @@ export default async function PedidoPage({ params }: Props) {
         <div>
           <h1 className="text-xl font-bold tracking-tight">{data.proveedor.nombre}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Pedido · {new Date(data.pedido.createdAt).toLocaleDateString('es-AR', {
-              weekday: 'long', day: 'numeric', month: 'long',
-            })}
+            Pedido · {formatFechaAR(data.pedido.createdAt, { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
       </div>

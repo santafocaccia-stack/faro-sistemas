@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { obtenerPrestamo } from '@/server/actions/prestamos';
 import { formatARS } from '@/lib/utils';
+import { formatFechaAR } from '@/lib/fechas';
 import { PagoPrestamoForm } from './pago-form';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -129,7 +130,7 @@ export default async function PrestamoDetallePage({ params }: { params: Promise<
             {pagos.map((p) => (
               <div key={p.id} className="flex items-center justify-between px-4 py-2.5">
                 <div>
-                  <p className="text-[12px]">{new Date(p.fecha).toLocaleDateString('es-AR')} · {p.metodo.replace('_', ' ')}</p>
+                  <p className="text-[12px]">{formatFechaAR(p.fecha)} · {p.metodo.replace('_', ' ')}</p>
                   <p className="text-[11px] text-muted-foreground">capital {formatARS(p.aCapital)} · interés {formatARS(p.aInteres)} · mora {formatARS(p.aMora)}</p>
                 </div>
                 <p className="font-mono tabular-nums text-[13px] font-semibold">{formatARS(p.montoTotal)}</p>
