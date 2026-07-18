@@ -190,6 +190,16 @@ Estrategia acordada: **beta cerrada de 5-10 conocidos** (2-3 del rubro servicios
 lanzamiento abierto. Pre-beta: agente QA autónomo (`qa/agente/`) recorriendo el plan servicios
 con personas por rubro.
 
+### Loop QA servicios COMPLETO (3 iteraciones, 2026-07-17 — EN PROD)
+Persona 01 (técnico refrigeración). Arreglado y verificado: cobros parciales/señas
+(tabla `presupuestos_cobros` + `monto_cobrado`, mig 0019 en ambas DBs, diálogo de
+cobro con monto), agenda en TZ AR + turno con cliente + prefill, autocomplete de
+cliente con vínculo real (ficha muestra "Trabajos recientes"), botón WhatsApp,
+aprobar→ofrecer agendar, `formatFechaAR()` (server UTC corría fechas de noche),
+vocabulario por plan. Reportes/resumen suman por pago individual.
+Deuda: `formatFechaAR` pendiente en pantallas de otros planes (boletas/pedidos/préstamos);
+falta `ANTHROPIC_API_KEY` en Vercel (IA de gastos muerta en prod — acción del usuario).
+
 ## Cómo seguir barato en el chat nuevo
 - Leer SOLO este archivo + los 2-3 archivos de código que vas a tocar (Grep, no Read full).
 - No releer CLAUDE.md / AGENTS.md / ARCHITECTURE.md (ya cargan solos).
