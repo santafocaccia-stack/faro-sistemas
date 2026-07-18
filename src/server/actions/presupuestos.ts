@@ -80,6 +80,7 @@ export async function listarPresupuestos() {
         validezDias:   presupuestos.validezDias,
         estado:        presupuestos.estado,
         total:         presupuestos.total,
+        montoCobrado:  presupuestos.montoCobrado,
       })
       .from(presupuestos)
       .leftJoin(clientes, eq(presupuestos.clienteId, clientes.id))
@@ -91,6 +92,7 @@ export async function listarPresupuestos() {
     ...r,
     clienteDisplay: r.clienteRazon ?? r.clienteNombre ?? 'Sin cliente',
     total: Number(r.total),
+    montoCobrado: Number(r.montoCobrado),
   }));
 }
 

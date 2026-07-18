@@ -85,7 +85,10 @@ export default async function PresupuestosPage() {
           {/* Mobile: tarjetas */}
           <ul className="md:hidden divide-y divide-border/50 stagger">
             {presupuestos.map((p) => {
-              const badge = ESTADO_BADGE[p.estado] ?? ESTADO_BADGE.borrador!;
+              const seniado = p.estado === 'aprobado' && p.montoCobrado > 0;
+              const badge = seniado
+                ? { label: `Señado · resta ${formatARS(p.total - p.montoCobrado)}`, cls: 'bg-warning/10 text-warning border-warning/20' }
+                : ESTADO_BADGE[p.estado] ?? ESTADO_BADGE.borrador!;
               const fecha = formatFechaAR(p.fecha, { day: '2-digit', month: '2-digit', year: '2-digit' });
               return (
                 <li key={p.id}>
@@ -122,10 +125,11 @@ export default async function PresupuestosPage() {
             </TableHeader>
             <TableBody>
               {presupuestos.map((p) => {
-                const badge = ESTADO_BADGE[p.estado] ?? ESTADO_BADGE.borrador!;
-                const fecha = new Date(p.fecha).toLocaleDateString('es-AR', {
-                  day: '2-digit', month: '2-digit', year: '2-digit',
-                });
+                const seniado = p.estado === 'aprobado' && p.montoCobrado > 0;
+                const badge = seniado
+                  ? { label: `Señado · resta ${formatARS(p.total - p.montoCobrado)}`, cls: 'bg-warning/10 text-warning border-warning/20' }
+                  : ESTADO_BADGE[p.estado] ?? ESTADO_BADGE.borrador!;
+                const fecha = formatFechaAR(p.fecha, { day: '2-digit', month: '2-digit', year: '2-digit' });
                 return (
                   <TableRow
                     key={p.id}

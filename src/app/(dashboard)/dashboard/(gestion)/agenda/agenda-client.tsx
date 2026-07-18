@@ -3,11 +3,13 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Plus, Trash2, AlarmClock, CalendarDays, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Pencil, AlarmClock, CalendarDays, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import {
   crearTurno,
+  actualizarTurno,
   cambiarEstadoTurno,
   eliminarTurno,
   crearVencimiento,
@@ -37,7 +39,8 @@ const PERIODICIDADES = [
 
 type TurnoVM = {
   id: string; titulo: string; descripcion: string | null; direccion: string | null;
-  inicio: string; duracionMin: number; estado: string; clienteNombre: string | null;
+  inicio: string; duracionMin: number; estado: string;
+  clienteId: string | null; clienteNombre: string | null;
 };
 type VencVM = {
   id: string; titulo: string; tipo: string; proximoVencimiento: string;
@@ -82,20 +85,52 @@ export function AgendaClient({
   const [tDur, setTDur] = useState('60');
   const [tDir, setTDir] = useState('');
   const [tCliente, setTCliente] = useState(prefill?.clienteId ?? '');
+  const [tRepetir, setTRepetir] = useState('1'); // semanas consecutivas (1 = no se repite)
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const elegirCliente = (id: string) => {
     setTCliente(id);
     // Autocompletar la dirección del trabajo con la del cliente (editable)
     const c = clientes.find((x) => x.id === id);
     if (c && !tDir) setTDir([c.direccion, c.localidad].filter(Boolean).join(', '));
   };
+  const limpiarForm = () => {
+    setFormTurno(false); setEditandoId(null);
+    setTTitulo(''); setTFecha(''); setTDir(''); setTCliente(''); setTRepetir('1');
+  };
+  const editarTurno = (t: TurnoVM) => {
+    const d = new Date(t.inicio);
+    setTTitulo(t.titulo);
+    setTFecha(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    setTHora(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+    setTDur(String(t.duracionMin));
+    setTDir(t.direccion ?? '');
+    setTCliente(t.clienteId ?? '');
+    setEditandoId(t.id);
+    setFormTurno(true);
+  };
   const guardarTurno = () =>
     start(async () => {
-      const r = await crearTurno({
-        titulo: tTitulo, inicio: new Date(`${tFecha}T${tHora}`).toISOString(),
-        duracionMin: Number(tDur) || 60, direccion: tDir || null,
-        clienteId: tCliente || null,
-      });
-      if (r.ok) { setFormTurno(false); setTTitulo(''); setTFecha(''); setTDir(''); setTCliente(''); refresh(); }
+      const base = {
+        titulo: tTitulo, duracionMin: Number(tDur) || 60,
+        direccion: tDir || null, clienteId: tCliente || null,
+      };
+      if (editandoId) {
+        const r = await actualizarTurno(editandoId, {
+          ...base, inicio: new Date(`${tFecha}T${tHora}`).toISOString(),
+        });
+        if (r.ok) { limpiarForm(); refresh(); }
+        return;
+      }
+      // Repetir semanal: crea el mismo turno N semanas seguidas (clases, abonos)
+      const semanas = Number(tRepetir) || 1;
+      let ok = true;
+      for (let i = 0; i < semanas; i++) {
+        const inicio = new Date(`${tFecha}T${tHora}`);
+        inicio.setDate(inicio.getDate() + i * 7);
+        const r = await crearTurno({ ...base, inicio: inicio.toISOString() });
+        if (!r.ok) { ok = false; break; }
+      }
+      if (ok) { limpiarForm(); refresh(); }
     });
 
   // ── Form vencimiento ──
@@ -171,9 +206,22 @@ export function AgendaClient({
               <Input className={inputCls} type="number" placeholder="min" value={tDur} onChange={(e) => setTDur(e.target.value)} />
             </label>
           </div>
+          {!editandoId && (
+            <label className="space-y-1 block">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Se repite</span>
+              <select className={`${inputCls} rounded-md px-3 w-full border`} value={tRepetir} onChange={(e) => setTRepetir(e.target.value)}>
+                <option value="1">No se repite</option>
+                <option value="4">Cada semana × 4</option>
+                <option value="8">Cada semana × 8</option>
+                <option value="12">Cada semana × 12</option>
+              </select>
+            </label>
+          )}
           <div className="sm:col-span-2 flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setFormTurno(false)}>Cancelar</Button>
-            <Button size="sm" className="glow-primary" disabled={pending || !tTitulo || !tFecha} onClick={guardarTurno}>Guardar turno</Button>
+            <Button variant="ghost" size="sm" onClick={limpiarForm}>Cancelar</Button>
+            <Button size="sm" className="glow-primary" disabled={pending || !tTitulo || !tFecha} onClick={guardarTurno}>
+              {editandoId ? 'Guardar cambios' : 'Guardar turno'}
+            </Button>
           </div>
         </div>
       )}
@@ -204,10 +252,23 @@ export function AgendaClient({
                             {t.clienteNombre && <p className="text-[11px] text-primary/80 truncate">{t.clienteNombre}</p>}
                             {t.direccion && <p className="text-[11px] text-muted-foreground truncate">{t.direccion}</p>}
                           </div>
-                          <button onClick={() => start(async () => { await eliminarTurno(t.id); refresh(); })}
-                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition">
+                            <button onClick={() => editarTurno(t)} aria-label="Editar turno"
+                              className="text-muted-foreground hover:text-primary transition">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <ConfirmDialog
+                              trigger={
+                                <button aria-label="Eliminar turno" className="text-muted-foreground hover:text-destructive transition">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              }
+                              title="¿Eliminar este turno?"
+                              description={`${t.titulo} — esta acción no se puede deshacer.`}
+                              confirmLabel="Sí, eliminar"
+                              onConfirm={() => start(async () => { await eliminarTurno(t.id); refresh(); })}
+                            />
+                          </div>
                         </div>
                         <select value={t.estado}
                           onChange={(e) => start(async () => { await cambiarEstadoTurno(t.id, e.target.value as never); refresh(); })}
