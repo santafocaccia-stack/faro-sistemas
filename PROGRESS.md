@@ -186,7 +186,13 @@ Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
 4. **Backups** — ✓ simulacro 2026-07-18: `backup-db.mjs` contra prod, 30 tablas / 251 filas,
    JSON validado restaurable (carpeta `backups/`, gitignoreada). Restore real de Supabase
    (point-in-time) queda como prueba opcional pre-beta.
-5. **Cobro real punta a punta** — bloqueado por CUIT/Mobbex (ver arriba).
+5. **Cobro real punta a punta** — revisado 2026-07-18: MÁS AVANZADO de lo anotado. La firma
+   del webhook MP YA está implementada (HMAC timing-safe, fail-closed en prod sin secret) y
+   el webhook de cobros re-consulta a MP (no confía en el payload). La vía por transferencia
+   (aviso + confirmación super-admin + dólar MEP) ya funciona SIN MP → alcanza para la beta.
+   FALTA (usuario): CUIT → cuenta MP vendedor → cargar `MP_ACCESS_TOKEN` + `MP_WEBHOOK_SECRET`
+   en Vercel → prueba real de suscripción. Beta testers: `npx tsx scripts/extender-trial.ts
+   <email> [dias=90]` (probado; default DB prod).
 6. **Analytics de abandono** — ✓ Posthog integrado (decisión 2026-07-18): pageviews manuales
    App Router, autocapture off, CSP actualizada. ACCIÓN USUARIO: crear cuenta en posthog.com
    (plan gratis) → copiar la "Project API key" (phc_...) → cargar `NEXT_PUBLIC_POSTHOG_KEY`
