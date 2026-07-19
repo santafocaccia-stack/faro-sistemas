@@ -187,8 +187,11 @@ Resumen histórico del trabajo nocturno: `docs/RESUMEN-NOCHE-2026-06-02.md`.
    JSON validado restaurable (carpeta `backups/`, gitignoreada). Restore real de Supabase
    (point-in-time) queda como prueba opcional pre-beta.
 5. **Cobro real punta a punta** — bloqueado por CUIT/Mobbex (ver arriba).
-6. **Analytics de abandono** — pendiente de decisión: Posthog (cuenta nueva) o Vercel Web
-   Analytics (activar en el dashboard de Vercel y avisar para agregar el package).
+6. **Analytics de abandono** — ✓ Posthog integrado (decisión 2026-07-18): pageviews manuales
+   App Router, autocapture off, CSP actualizada. ACCIÓN USUARIO: crear cuenta en posthog.com
+   (plan gratis) → copiar la "Project API key" (phc_...) → cargar `NEXT_PUBLIC_POSTHOG_KEY`
+   en Vercel (prod). Si el proyecto es región EU, cargar también
+   `NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com`.
 7. **Dominio propio** — acción del usuario.
 - Extra hecho 2026-07-18: `formatFechaAR` extendido a pedidos (lista+detalle) y pagos de
   préstamos (cerrada la deuda TZ de otros planes); PDFs de presupuesto y recibo verificados
