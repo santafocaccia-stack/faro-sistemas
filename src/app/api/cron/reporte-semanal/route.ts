@@ -14,6 +14,7 @@ import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { dbAdmin as db } from '@/server/db';
 import { tenants, users, usersTenants, ventas, ventasLineas, productos } from '@/server/db/schema';
 import { buildReporteSemanalHtml, semanaLabel } from '@/lib/email/reporte-semanal';
+import { getAppUrl } from '@/lib/app-url';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -153,7 +154,7 @@ export async function GET(req: Request) {
         totalCantidad: Number(p.totalCantidad),
       }));
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://faro-sistemas.vercel.app';
+    const appUrl = getAppUrl();
 
     const html = buildReporteSemanalHtml({
       negocioNombre:  tenant.nombre,
