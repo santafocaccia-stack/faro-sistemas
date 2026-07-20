@@ -145,7 +145,6 @@ export function Pricing({ dolarMep, onElegir }: { dolarMep: number; onElegir: (p
                 <button
                   type="button"
                   className="gl-pbtn"
-                  style={{ background: plan.color, color: 'var(--gl-ink)' }}
                   onClick={() => onElegir(plan.id)}
                 >
                   Probar {plan.nombre.replace('Gesto ', '')} gratis

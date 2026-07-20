@@ -14,6 +14,10 @@
   --gl-accent: #d2723f; /* brasa quemada, menos saturada que el primary neón */
   --gl-soft: color-mix(in oklch, var(--gl-accent) 14%, transparent);
   --gl-ink: #1a0f06;
+  /* Marca ESTABLE: --gl-accent lo pisa el selector de rubro, esta no.
+     La usan los CTAs de planes — acción = naranja, siempre (opción A). */
+  --gl-brand: #d2723f;
+  --gl-brand-ink: #1a0f06;
 
   position: relative;
   background: var(--background);
@@ -377,7 +381,7 @@
 .gl-plan ul { list-style: none; display: flex; flex-direction: column; gap: 10px; margin: 20px 0; flex: 1; padding: 0; }
 .gl-plan li { display: flex; gap: 9px; font-size: 13.5px; color: var(--foreground); align-items: flex-start; }
 .gl-plan li svg { height: 16px; width: 16px; flex-shrink: 0; margin-top: 2px; }
-.gl-pbtn { height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; cursor: pointer; transition: filter .15s; }
+.gl-pbtn { height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; cursor: pointer; transition: filter .15s; background: var(--gl-brand); color: var(--gl-brand-ink); border: 0; }
 .gl-pbtn:hover { filter: brightness(1.07); }
 .gl-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px; margin-top: 28px; }
 .gl-trust span { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted-foreground); }
