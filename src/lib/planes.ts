@@ -1,3 +1,5 @@
+import { planVivid } from './plan-colors';
+
 export type PlanId = 'servicios' | 'market' | 'food' | 'balanza' | 'prestamista' | 'atmosfericos';
 
 export const PLANES = {
@@ -12,7 +14,7 @@ export const PLANES = {
       'Ruta optimizada en Google Maps',
       'Actualización en tiempo real para el equipo',
     ],
-    color: 'oklch(0.60 0.18 200)',
+    color: planVivid('atmosfericos'),
     proximamente: false,
   },
   servicios: {
@@ -26,7 +28,7 @@ export const PLANES = {
       'Historial de cobros',
       'Reportes básicos',
     ],
-    color: 'oklch(0.65 0.15 250)',
+    color: planVivid('servicios'),
     proximamente: false,
   },
   market: {
@@ -41,7 +43,7 @@ export const PLANES = {
       'Cuenta corriente de clientes',
       'Reportes de ventas',
     ],
-    color: 'oklch(0.68 0.19 38)',
+    color: planVivid('market'),
     proximamente: false,
   },
   food: {
@@ -55,7 +57,7 @@ export const PLANES = {
       'Pantalla de cocina (KDS)',
       'Gestión de mesas y turnos',
     ],
-    color: 'oklch(0.65 0.18 145)',
+    color: planVivid('food'),
     proximamente: true,
   },
   balanza: {
@@ -69,7 +71,7 @@ export const PLANES = {
       'Lee etiquetas de balanza por PLU',
       'Categorías y grupos de variantes',
     ],
-    color: 'oklch(0.62 0.16 320)',
+    color: planVivid('balanza'),
     proximamente: false,
   },
   prestamista: {
@@ -83,7 +85,7 @@ export const PLANES = {
       'Registro de pagos con cálculo de mora',
       'Cartera: total prestado, a cobrar y en mora',
     ],
-    color: 'oklch(0.6 0.15 160)',
+    color: planVivid('prestamista'),
     proximamente: false,
   },
 } as const;

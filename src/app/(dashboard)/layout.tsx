@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireSession } from '@/server/auth/session';
 import { DashboardShell } from '@/components/dashboard-shell';
+import { planAccentVars } from '@/lib/plan-colors';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
@@ -12,7 +13,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const mostrarBanner = session.status === 'trial' && diasRestantes !== null && diasRestantes <= 7;
 
   return (
-    <div data-plan={session.plan} className="h-[100dvh] flex flex-col overflow-hidden">
+    <div
+      data-plan={session.plan}
+      style={planAccentVars(session.plan)}
+      className="h-[100dvh] flex flex-col overflow-hidden"
+    >
       {mostrarBanner && (
         <div className="shrink-0 w-full bg-warning/10 border-b border-warning/20 px-4 py-2 flex items-center justify-between gap-4 text-sm no-print">
           <p className="text-warning font-medium">

@@ -194,92 +194,43 @@
 }
 
 /* ── ACENTO POR PLAN ─────────────────────────────────────────
-   El layout del dashboard pone data-plan="..." en un wrapper.
-   Eso sobrescribe --primary (y derivados) para esa vertical, así
-   TODOS los botones, nav activo, ribbon, focus y tintes (bg-primary/10,
-   text-primary, border-primary/30) toman el color del plan sin refactor.
-   Cada plan define su acento en AMBOS temas: claro (L~0.52, tinta
-   blanca) y oscuro (L~0.67, tinta oscura). Croma contenido para que
-   no sea chillón. */
-[data-plan="servicios"] {
-  --primary:             oklch(0.50 0.15 250);
-  --primary-foreground:  #FFFFFF;
-  --ring:                oklch(0.50 0.15 250 / 0.40);
-  --sidebar-primary:     oklch(0.50 0.15 250);
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-ring:        oklch(0.50 0.15 250 / 0.40);
+   Los matices NO viven acá. Salen de src/lib/plan-colors.ts, que es la
+   fuente única de verdad, y el layout del dashboard los inyecta inline
+   como --plan-accent-light / --plan-accent-dark / --plan-ink-dark sobre
+   el wrapper que ya tenía data-plan.
+
+   Antes había un bloque por plan acá Y otra lista en planes.ts. Se
+   desincronizaron (atmosféricos y préstamos habían quedado cruzados),
+   así que el cliente veía un color en la página de precios y otro al
+   entrar. Con una sola regla genérica eso no puede volver a pasar:
+   agregar un plan no requiere tocar este archivo.
+
+   PENDIENTE — separar marca de dato: hoy el acento del plan sigue
+   pisando --primary, así que el naranja Gesto no se ve dentro de la app.
+   La decisión tomada es que --primary quede siempre naranja (logo, nav
+   activa, CTA principal) y que el color del plan viva solo en los datos
+   (KPIs, gráficos, chips) vía var(--plan-accent). Cuando se haga ese
+   pase, se borran las cuatro líneas marcadas abajo y se migran los
+   componentes que hoy usan primary para pintar datos. */
+[data-plan] {
+  --plan-accent:      var(--plan-accent-light);
+  --plan-accent-ink:  #FFFFFF;
+
+  /* ↓ temporal — ver PENDIENTE arriba */
+  --primary:             var(--plan-accent);
+  --primary-foreground:  var(--plan-accent-ink);
+  --sidebar-primary:     var(--plan-accent);
+  --sidebar-primary-foreground: var(--plan-accent-ink);
+
+  --ring:         color-mix(in oklch, var(--plan-accent) 40%, transparent);
+  --sidebar-ring: color-mix(in oklch, var(--plan-accent) 40%, transparent);
 }
-.dark [data-plan="servicios"] {
-  --primary:             oklch(0.66 0.15 250);
-  --primary-foreground:  oklch(0.16 0.02 250);
-  --ring:                oklch(0.66 0.15 250 / 0.50);
-  --sidebar-primary:     oklch(0.66 0.15 250);
-  --sidebar-primary-foreground: oklch(0.16 0.02 250);
-  --sidebar-ring:        oklch(0.66 0.15 250 / 0.50);
-}
-[data-plan="market"] {
-  --primary:             oklch(0.56 0.16 45);
-  --primary-foreground:  #FFFFFF;
-  --ring:                oklch(0.56 0.16 45 / 0.40);
-  --sidebar-primary:     oklch(0.56 0.16 45);
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-ring:        oklch(0.56 0.16 45 / 0.40);
-}
-.dark [data-plan="market"] {
-  --primary:             oklch(0.68 0.16 45);
-  --primary-foreground:  oklch(0.17 0.03 45);
-  --ring:                oklch(0.68 0.16 45 / 0.50);
-  --sidebar-primary:     oklch(0.68 0.16 45);
-  --sidebar-primary-foreground: oklch(0.17 0.03 45);
-  --sidebar-ring:        oklch(0.68 0.16 45 / 0.50);
-}
-[data-plan="food"] {
-  --primary:             oklch(0.52 0.14 158);
-  --primary-foreground:  #FFFFFF;
-  --ring:                oklch(0.52 0.14 158 / 0.40);
-  --sidebar-primary:     oklch(0.52 0.14 158);
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-ring:        oklch(0.52 0.14 158 / 0.40);
-}
-.dark [data-plan="food"] {
-  --primary:             oklch(0.67 0.15 158);
-  --primary-foreground:  oklch(0.15 0.03 158);
-  --ring:                oklch(0.67 0.15 158 / 0.50);
-  --sidebar-primary:     oklch(0.67 0.15 158);
-  --sidebar-primary-foreground: oklch(0.15 0.03 158);
-  --sidebar-ring:        oklch(0.67 0.15 158 / 0.50);
-}
-[data-plan="balanza"] {
-  --primary:             oklch(0.52 0.16 320);
-  --primary-foreground:  #FFFFFF;
-  --ring:                oklch(0.52 0.16 320 / 0.40);
-  --sidebar-primary:     oklch(0.52 0.16 320);
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-ring:        oklch(0.52 0.16 320 / 0.40);
-}
-.dark [data-plan="balanza"] {
-  --primary:             oklch(0.66 0.16 320);
-  --primary-foreground:  oklch(0.16 0.02 320);
-  --ring:                oklch(0.66 0.16 320 / 0.50);
-  --sidebar-primary:     oklch(0.66 0.16 320);
-  --sidebar-primary-foreground: oklch(0.16 0.02 320);
-  --sidebar-ring:        oklch(0.66 0.16 320 / 0.50);
-}
-[data-plan="prestamista"] {
-  --primary:             oklch(0.50 0.12 200);
-  --primary-foreground:  #FFFFFF;
-  --ring:                oklch(0.50 0.12 200 / 0.40);
-  --sidebar-primary:     oklch(0.50 0.12 200);
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-ring:        oklch(0.50 0.12 200 / 0.40);
-}
-.dark [data-plan="prestamista"] {
-  --primary:             oklch(0.67 0.13 200);
-  --primary-foreground:  oklch(0.15 0.02 200);
-  --ring:                oklch(0.67 0.13 200 / 0.50);
-  --sidebar-primary:     oklch(0.67 0.13 200);
-  --sidebar-primary-foreground: oklch(0.15 0.02 200);
-  --sidebar-ring:        oklch(0.67 0.13 200 / 0.50);
+.dark [data-plan] {
+  --plan-accent:      var(--plan-accent-dark);
+  --plan-accent-ink:  var(--plan-ink-dark);
+
+  --ring:         color-mix(in oklch, var(--plan-accent) 50%, transparent);
+  --sidebar-ring: color-mix(in oklch, var(--plan-accent) 50%, transparent);
 }
 
 /* ── PLAN ATMOSFÉRICOS: TEMA CLARO ───────────────────────────
@@ -298,7 +249,7 @@
   --card-raised:         oklch(0.965 0.006 240);
   --popover:             oklch(1     0     0);
   --popover-foreground:  oklch(0.18  0.02  255);
-  --primary:             oklch(0.52  0.17  250);  /* azul agua fuerte */
+  --primary:             var(--plan-accent);       /* cyan agua, desde plan-colors.ts */
   --primary-foreground:  oklch(0.99  0.004 240);
   --secondary:           oklch(0.94  0.01  240);
   --secondary-foreground:oklch(0.24  0.02  255);
@@ -311,16 +262,16 @@
   --warning:             oklch(0.62  0.15  70);
   --border:              oklch(0.18  0.02  255  / 0.16);
   --input:               oklch(0.18  0.02  255  / 0.18);
-  --ring:                oklch(0.52  0.17  250  / 0.45);
+  --ring:                color-mix(in oklch, var(--plan-accent) 45%, transparent);
   --sidebar:             oklch(0.955 0.008 240);
   --sidebar-foreground:  oklch(0.18  0.02  255);
-  --sidebar-primary:     oklch(0.52  0.17  250);
+  --sidebar-primary:     var(--plan-accent);
   --sidebar-primary-foreground: oklch(0.99 0.004 240);
   --sidebar-accent:      oklch(0.92  0.012 240);
   --sidebar-accent-foreground: oklch(0.24 0.02 255);
   --sidebar-border:      oklch(0.18  0.02 255  / 0.10);
-  --sidebar-ring:        oklch(0.52  0.17 250  / 0.45);
-  --chart-1:             oklch(0.52  0.17 250);
+  --sidebar-ring:        color-mix(in oklch, var(--plan-accent) 45%, transparent);
+  --chart-1:             var(--plan-accent);
   --chart-2:             oklch(0.52  0.15 150);
   --chart-3:             oklch(0.62  0.15 70);
   --chart-4:             oklch(0.55  0.18 25);
@@ -329,6 +280,15 @@
   /* El wrapper pinta su propio fondo claro para tapar el body oscuro. */
   background-color: var(--background);
   color: var(--foreground);
+}
+
+/* `.dark [data-plan]` (0,1,1) le gana a `[data-plan="atmosfericos"]` (0,1,0),
+   así que con el tema oscuro activo este subárbol tomaría el acento CLARO
+   (L 0.72) sobre su propio fondo casi blanco y se caería el contraste.
+   Este selector (0,2,0) lo devuelve al valor de tema claro. */
+.dark [data-plan="atmosfericos"] {
+  --plan-accent:     var(--plan-accent-light);
+  --plan-accent-ink: #FFFFFF;
 }
 
 /* En claro, el grano y los gradientes ambientales (pensados para fondo
