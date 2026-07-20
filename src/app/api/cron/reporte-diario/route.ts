@@ -15,6 +15,7 @@ import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { dbAdmin as db } from '@/server/db';
 import { tenants, users, usersTenants, ventas, ventasLineas, productos } from '@/server/db/schema';
 import { buildReporteSemanalHtml } from '@/lib/email/reporte-semanal';
+import { getAppUrl } from '@/lib/app-url';
 import { procesarBalancesMensuales } from '@/server/balance/balance-service';
 
 export const runtime = 'nodejs';
@@ -115,7 +116,7 @@ export async function GET(req: Request) {
     .where(and(inArray(usersTenants.tenantId, tenantIds), eq(usersTenants.rol, 'owner')));
   const ownerByTenant = Object.fromEntries(ownerRows.map((r) => [r.tenantId, r.email]));
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://faro-sistemas.vercel.app';
+  const appUrl = getAppUrl();
   let enviados = 0;
 
   for (const tenant of tenantsActivos) {
