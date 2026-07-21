@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { PLANES_ARRAY, ejemplosPlan, type PlanId } from '@/lib/planes';
 import { Check, Store, ShoppingCart, ChefHat, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GestoLogo, GestoIsotipo } from '@/components/brand/gesto-logo';
 
 // ── Pantalla de loading animada ───────────────────────────────────────────────
 const PASOS_ANIMACION = [
@@ -66,7 +67,7 @@ function LoadingScreen({ fase }: { fase: LoadingFase }) {
             <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
               {listo
                 ? <Check className="h-7 w-7 text-primary-foreground" strokeWidth={2.5} />
-                : <span className="text-primary-foreground font-bold text-2xl leading-none tracking-tight">G</span>
+                : <GestoIsotipo color="currentColor" className="h-9 w-9 text-primary-foreground" />
               }
             </div>
             {!listo && <div className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-primary" />}
@@ -207,12 +208,7 @@ export default function OnboardingPage() {
 
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
-              <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>
-            </div>
-            <p className="font-semibold text-base tracking-tight">Gesto</p>
-          </div>
+          <GestoLogo markColor="var(--gesto-brand)" style={{ height: 28, width: 'auto' }} />
         </div>
 
         <div className="rounded-xl border border-border bg-card/80 backdrop-blur-xl p-7 shadow-[0_0_0_1px_oklch(1_0_0_/_0.04),0_24px_64px_oklch(0_0_0_/_0.4)]">

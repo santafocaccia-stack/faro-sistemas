@@ -30,6 +30,7 @@
   --popover:             #FFFFFF;
   --popover-foreground:  #211D18;
   --primary:             #E85D00;   /* naranja Gesto, rol de acento */
+  --gesto-brand:         #E85D00;   /* naranja de marca ESTABLE: el logo/isotipo lo usan siempre, el color de plan NO lo pisa */
   --primary-foreground:  #FFFFFF;
   --secondary:           #F4F1ED;
   --secondary-foreground:#37312A;
@@ -91,6 +92,7 @@
   --popover-foreground:  #F3EEE7;
 
   --primary:             #FF7518;   /* brasa */
+  --gesto-brand:         #FF7518;   /* naranja de marca ESTABLE en oscuro (ver :root) */
   --primary-foreground:  #1C0F04;   /* tinta oscura sobre naranja — 8:1 */
 
   --secondary:           #26211B;

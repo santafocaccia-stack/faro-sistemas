@@ -1,5 +1,6 @@
 import { Anton } from 'next/font/google';
 import { Check } from 'lucide-react';
+import { GestoLogo } from '@/components/brand/gesto-logo';
 
 const anton = Anton({ subsets: ['latin'], weight: '400', display: 'swap' });
 
@@ -37,11 +38,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         />
 
         {/* Logo */}
-        <div className="relative flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.1)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
-            <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>
-          </div>
-          <span className="font-semibold text-lg tracking-tight">Gesto</span>
+        <div className="relative flex items-center">
+          <GestoLogo markColor="#FF7518" style={{ height: 30, width: 'auto', color: '#F5F0EA' }} />
         </div>
 
         {/* Mensaje */}

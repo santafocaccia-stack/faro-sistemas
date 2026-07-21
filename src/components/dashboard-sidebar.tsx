@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { GestoIsotipo } from '@/components/brand/gesto-logo';
 import {
   Settings, LogOut, Search, Command, UsersRound,
   ShoppingCart, ArrowRight,
@@ -71,9 +72,8 @@ export function DashboardSidebar({ email, plan, rol, permisos, tenantNombre, onO
       {/* ── Header: Logo + nombre del negocio ─────────────── */}
       <div className="relative h-[3.75rem] flex items-center px-3 border-b border-sidebar-border shrink-0">
         <Link href="/dashboard" className="flex items-center gap-2.5 group min-w-0 px-1.5 py-1.5 -mx-1.5 rounded-lg hover:bg-foreground/[0.04] transition-colors flex-1">
-          <div className="relative h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-[oklch(0.55_0.20_30)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_4px_14px_oklch(0.70_0.22_43_/_0.40)] shrink-0">
-            <span className="text-primary-foreground font-bold text-sm leading-none tracking-tight">G</span>
-          </div>
+          <GestoIsotipo color="var(--gesto-brand)" className="h-8 w-8 shrink-0" />
+
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-[13px] text-sidebar-foreground tracking-tight leading-tight truncate">
               {tenantNombre}

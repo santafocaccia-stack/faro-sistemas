@@ -3,6 +3,8 @@
  * Se envía cada lunes al dueño con los KPIs de la semana anterior.
  */
 
+import { getAppUrl } from '@/lib/app-url';
+
 type TopProducto = { nombre: string | null; totalMonto: number; totalCantidad: number };
 type PorMetodo   = { metodo: string; total: number };
 
@@ -78,7 +80,7 @@ export function buildReporteSemanalHtml(datos: DatosReporteSemanal): string {
           <table cellpadding="0" cellspacing="0">
             <tr>
               <td style="width:40px;height:40px;background:#f97316;border-radius:10px;text-align:center;vertical-align:middle">
-                <span style="font-weight:900;font-size:18px;color:#fff;line-height:40px">G</span>
+                <img src="${getAppUrl()}/icons/logo-email.png" width="24" height="24" alt="Gesto" style="display:inline-block;vertical-align:middle" />
               </td>
               <td style="padding-left:12px;vertical-align:middle">
                 <p style="margin:0;font-size:16px;font-weight:700;color:#e8e2d9">Gesto</p>

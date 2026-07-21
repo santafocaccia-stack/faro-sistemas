@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { PLANES_ARRAY, type PlanId } from '@/lib/planes';
 import { fmtARS } from './landing-data';
+import { GestoLogo } from '@/components/brand/gesto-logo';
 
 /* ── Antes / Después ─────────────────────────────────────────────────────── */
 export function AntesDespues() {
@@ -220,10 +221,8 @@ export function LandingFooter() {
     <footer className="gl-footer">
       <div className="gl-wrap gl-footin">
         <div className="gl-fb">
-          <span className="gl-logo" style={{ height: 30, width: 30, fontSize: 16 }}>
-            G
-          </span>
-          Gesto · El sistema para tu negocio
+          <GestoLogo markColor="var(--gl-brand)" style={{ height: 26, width: 'auto' }} />
+          <span>· El sistema para tu negocio</span>
         </div>
         <div className="gl-footlinks">
           <a className="gl-link" href="/login">Ingresar</a>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Anton, Hanken_Grotesk } from 'next/font/google';
 import { ArrowLeft } from 'lucide-react';
+import { GestoLogo } from '@/components/brand/gesto-logo';
 import './legal.css';
 
 const display = Anton({ subsets: ['latin'], weight: '400', variable: '--font-legal-display', display: 'swap' });
@@ -19,8 +20,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       <header className="legal-header">
         <div className="legal-header-in">
           <Link href="/" className="legal-brand">
-            <span className="legal-logo">G</span>
-            Gesto
+            <GestoLogo markColor="var(--gesto-brand, #E85D00)" style={{ height: 26, width: 'auto' }} />
           </Link>
           <Link href="/" className="legal-back">
             <ArrowLeft /> Volver al inicio

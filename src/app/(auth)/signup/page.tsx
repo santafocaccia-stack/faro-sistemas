@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
+import { GestoLogo } from '@/components/brand/gesto-logo';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -76,10 +77,7 @@ export default function SignupPage() {
       <div className="animate-fade-up text-center">
         <div className="flex items-center justify-center mb-8 lg:hidden">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
-              <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>
-            </div>
-            <p className="font-semibold text-base tracking-tight">Gesto</p>
+            <GestoLogo markColor="var(--gesto-brand)" style={{ height: 28, width: 'auto' }} />
           </div>
         </div>
         <div className="rounded-xl border border-border bg-card/80 backdrop-blur-xl p-8 shadow-[0_0_0_1px_oklch(1_0_0_/_0.04),0_24px_64px_oklch(0_0_0_/_0.4)]">
@@ -109,12 +107,7 @@ export default function SignupPage() {
       {/* Logo + brand */}
       <div className="flex items-center justify-center mb-8 lg:hidden">
         <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
-            <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>
-          </div>
-          <div className="leading-tight">
-            <p className="font-semibold text-base tracking-tight">Gesto</p>
-          </div>
+          <GestoLogo markColor="var(--gesto-brand)" style={{ height: 28, width: 'auto' }} />
         </div>
       </div>
 

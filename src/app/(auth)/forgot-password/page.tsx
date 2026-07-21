@@ -6,6 +6,7 @@ import { ChevronLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { GestoLogo } from '@/components/brand/gesto-logo';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -38,12 +39,7 @@ export default function ForgotPasswordPage() {
       {/* Logo */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-[10px] bg-gradient-to-br from-primary to-[oklch(0.55_0.18_28)] flex items-center justify-center shadow-[0_0_0_1px_oklch(1_0_0_/_0.08)_inset,0_8px_24px_oklch(0.68_0.19_38_/_0.4)]">
-            <span className="text-primary-foreground font-bold text-base leading-none tracking-tight">G</span>
-          </div>
-          <div className="leading-tight">
-            <p className="font-semibold text-base tracking-tight">Gesto</p>
-          </div>
+          <GestoLogo markColor="var(--gesto-brand)" style={{ height: 28, width: 'auto' }} />
         </div>
       </div>
 

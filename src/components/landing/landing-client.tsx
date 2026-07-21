@@ -12,6 +12,7 @@ import { LandingPos } from './landing-pos';
 import { ScanShowcase } from './landing-scan';
 import { AntesDespues, Features, Pricing, Faq, LandingFooter } from './landing-sections';
 import { AuthWizard } from './auth-wizard';
+import { GestoLogo, GestoIsotipo } from '@/components/brand/gesto-logo';
 import './landing.css';
 
 const MARQUEE = ['Vendé', 'Cobrá', 'Cuenta corriente al día', 'Mirá tus números', 'Cargá el stock', 'Pasá presupuestos'];
@@ -104,7 +105,7 @@ export function LandingClient({ dolarMep }: { dolarMep: number }) {
       <header className="gl-header">
         <div className="gl-wrap gl-nav">
           <div className="gl-brand">
-            <span className="gl-logo">G</span>Gesto
+            <GestoLogo markColor="var(--gl-brand)" style={{ height: 30, width: 'auto' }} />
           </div>
           <nav className="gl-navlinks">
             <a href="#rubros">Versiones</a>
@@ -310,7 +311,7 @@ function AppWindow({ rubro }: { rubro: RubroDemo }) {
             {/* SIDEBAR */}
             <aside className="gl-side">
               <div className="gl-sidehead">
-                <span className="gl-logo">G</span>
+                <GestoIsotipo color="var(--gl-brand)" style={{ height: 30, width: 30 }} />
                 <div className="gl-meta">
                   <div className="gl-tn">{rubro.tenant}</div>
                   <div className="gl-pl">{rubro.planLabel}</div>

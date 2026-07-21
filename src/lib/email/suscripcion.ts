@@ -10,6 +10,8 @@
  * es un comprobante de pago de la suscripción.
  */
 
+import { getAppUrl } from '@/lib/app-url';
+
 /** Escapa texto para interpolarlo seguro en el HTML del email (nombre de
  *  negocio, email, etc. son datos controlados por el usuario). */
 function esc(s: string): string {
@@ -42,7 +44,7 @@ function layout(subtitulo: string, contenido: string, appUrl: string): string {
           <table cellpadding="0" cellspacing="0">
             <tr>
               <td style="width:40px;height:40px;background:#f97316;border-radius:10px;text-align:center;vertical-align:middle">
-                <span style="font-weight:900;font-size:18px;color:#fff;line-height:40px">G</span>
+                <img src="${getAppUrl()}/icons/logo-email.png" width="24" height="24" alt="Gesto" style="display:inline-block;vertical-align:middle" />
               </td>
               <td style="padding-left:12px;vertical-align:middle">
                 <p style="margin:0;font-size:16px;font-weight:700;color:#e8e2d9">Gesto</p>
